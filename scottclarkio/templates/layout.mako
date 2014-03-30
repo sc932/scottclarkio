@@ -6,8 +6,7 @@
   <meta name="keywords" content="python web application" />
   <meta name="description" content="pyramid web application" />
   <link rel="shortcut icon" href="${request.static_url('scottclarkio:static/ico/favicon.ico')}" />
-  <link rel="stylesheet" href="${request.static_url('scottclarkio:static/css/bootstrap.css')}" type="text/css" media="screen" charset="utf-8" />
-  <link rel="stylesheet" href="${request.static_url('scottclarkio:static/css/bootstrap-responsive.css')}" type="text/css" media="screen" charset="utf-8" />
+  <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/2.3.2/css/bootstrap.min.css" type="text/css" media="all" charset="utf-8" />
   <link href="//netdna.bootstrapcdn.com/font-awesome/4.0.3/css/font-awesome.css" rel="stylesheet">
 </head>
 <body>

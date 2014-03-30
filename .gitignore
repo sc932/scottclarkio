@@ -1,4 +1,8 @@
-*.sqllite
+*.sqlite
 *.egg-info
 *.pyc
 *.swp
+# There are secrets in here!
+scottclarkio/scripts/initializedb.py
+scottclarkio/constant.py
+
