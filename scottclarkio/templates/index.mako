@@ -18,5 +18,13 @@
           </div>
         </div>
 
-<p><a href="${request.route_url('blog_action',action='create')}">
-Create a new blog entry</a></p>
+
+<%
+from pyramid.security import authenticated_userid
+user_id = authenticated_userid(request)
+%>
+% if user_id:
+    <p><a href="${request.route_url('blog_action',action='create')}">
+    Create a new blog entry</a></p>
+%else:
+%endif
