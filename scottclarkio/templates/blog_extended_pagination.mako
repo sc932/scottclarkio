@@ -18,5 +18,9 @@
       <h4>No blog entries found.</h4>
 
 %endif
+
+% if paginator.pager():
    More entries: ${paginator.pager()}
+% else:
+%endif
 </%block>
