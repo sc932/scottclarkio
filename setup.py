@@ -20,6 +20,7 @@ requires = [
     'wtforms',
     'webhelpers',
     'cryptacular',
+	'cherrypy',
     ]
 
 setup(name='scottclarkio',

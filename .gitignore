@@ -1,4 +1,4 @@
-*.sqllite
+*.sqlite
 *.egg-info
 *.pyc
 *.swp
