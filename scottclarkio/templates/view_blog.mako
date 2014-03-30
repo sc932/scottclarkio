@@ -6,7 +6,7 @@
 <p>${ main_entry.body | n }</p>
 <hr/>
 
-<p><a href="${request.route_url('home')}">Go Back</a>
+<p>
 <%
 from pyramid.security import authenticated_userid
 user_id = authenticated_userid(request)
