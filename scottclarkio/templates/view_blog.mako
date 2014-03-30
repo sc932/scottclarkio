@@ -6,10 +6,17 @@
 <p>${ main_entry.body | n }</p>
 <hr/>
 
-<p><a href="${request.route_url('home')}">Go Back</a> ::
+<p><a href="${request.route_url('home')}">Go Back</a>
+<%
+from pyramid.security import authenticated_userid
+user_id = authenticated_userid(request)
+%>
+% if user_id:
+ ::
 <a href="${request.route_url('blog_action', action='edit',
 _query=(('id',main_entry.id),))}">Edit Entry</a>
-
+%else:
+%endif
 </p>
 
         <div class="row-fluid">
