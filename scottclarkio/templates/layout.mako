@@ -58,7 +58,7 @@
 <!-- footer -->
       <hr>
       <footer>
-      <center><p><a href="${request.route_url('home')}">Home</a> | <a href="blog.html">Blog</a> | <a href="http://github.com/sc932/resume">Resume/CV</a> | <a href="about.html">About</a></p></center>
+      <center><p><a href="${request.route_url('home')}">Home</a> | <a href="${request.route_url('blog_index')}">Blog</a> | <a href="http://github.com/sc932/resume">Resume/CV</a> | <a href="${request.route_url('about')}">About</a></p></center>
       <center><p>
               <a href="mailto:scott@scottclark.io" target="_blank"><i class="fa fa-envelope"></i></a> | 
               <a href="http://www.facebook.com/therealscottclark" target="_blank"><i class="fa fa-facebook"></i></a> | 
