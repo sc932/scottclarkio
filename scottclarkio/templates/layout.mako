@@ -111,12 +111,12 @@ for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,e,d])};b.__SV=1.2;a=f.createElemen
             });
     mixpanel.track_links(
             "#left-nav-resume",
-            "click left nav twitter", {
+            "click left nav resume", {
                 "uri": document.documentURI,
             });
     mixpanel.track_links(
             "#left-nav-about",
-            "click left nav linkedin", {
+            "click left nav about", {
                 "uri": document.documentURI,
             });
     mixpanel.track_links(
@@ -156,12 +156,12 @@ for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,e,d])};b.__SV=1.2;a=f.createElemen
             });
     mixpanel.track_links(
             "#footer-nav-resume",
-            "click footer nav twitter", {
+            "click footer nav resume", {
                 "uri": document.documentURI,
             });
     mixpanel.track_links(
             "#footer-nav-about",
-            "click footer nav linkedin", {
+            "click footer nav about", {
                 "uri": document.documentURI,
             });
     mixpanel.track_links(
