@@ -29,13 +29,7 @@ for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,e,d])};b.__SV=1.2;a=f.createElemen
                 <li>
               % endif
               <a id="left-nav-home" href="${request.route_url('home')}">Home</a></li>
-              % if route_type == 'blog': 
-                <li class="active">
-              % else:
-                <li>
-              % endif
-              <a id="left-nav-home" href="blog">Blog</a></li>
-              <li><a id="left-nav-resume" href="http://github.com/sc932/resume" target="_blank">Resume/CV</a></li>
+              <li><a id="left-nav-resume" href="${request.static_url('scottclarkio:static/pdf/ScottClarkResume.pdf')}" target="_blank">Resume</a></li>
               % if route_type == 'about': 
                 <li class="active">
               % else:
@@ -66,8 +60,7 @@ for(g=0;g<i.length;g++)f(c,i[g]);b._i.push([a,e,d])};b.__SV=1.2;a=f.createElemen
       <footer>
       <center><p>
           <a id="footer-nav-home" href="${request.route_url('home')}">Home</a> | 
-          <a id="footer-nav-blog" href="${request.route_url('blog_index')}">Blog</a> | 
-          <a id="footer-nav-resume" href="http://github.com/sc932/resume">Resume/CV</a> | 
+          <a id="footer-nav-resume" href="${request.static_url('scottclarkio:static/pdf/ScottClarkResume.pdf')}">Resume</a> | 
           <a id="footer-nav-about" href="${request.route_url('about')}">About</a>
       </p></center>
       <center><p>

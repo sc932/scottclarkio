@@ -5,7 +5,7 @@
       <div class="row-fluid">
         <div class="span3">
           <div class="well sidebar-nav">
-            <img src="${request.static_url('scottclarkio:static/img/scott_clark.jpg')}" >
+            <img src="${request.static_url('scottclarkio:static/img/scott_clark.png')}" width="180px">
             <ul class="nav nav-list">
               <li class="nav-header"><h4>Scott Clark</h4></li>
               <li><a id="cc-nav-email" href="mailto:scott@scottclark.io" target="_blank"><i class="fa fa-envelope"></i> scott@scottclark.io</a></li>
