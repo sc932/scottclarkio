@@ -1,0 +1,37 @@
+---
+import PageLayout from "../layouts/PageLayout.astro";
+import TalkCard from "../components/TalkCard.astro";
+import { getCollection } from "astro:content";
+
+const talks = (await getCollection("talks"))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<PageLayout
+  title="Talks — Scott Clark"
+  description="Conference talks, presentations, and speaking engagements by Scott Clark."
+>
+  <div class="mx-auto max-w-4xl px-6 py-16">
+    <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">Talks</h1>
+    <p class="mb-12 text-xl text-text-secondary">
+      Conference talks and presentations.
+    </p>
+
+    <div class="space-y-8">
+      {talks.map((talk) => (
+        <TalkCard
+          title={talk.data.title}
+          event={talk.data.event}
+          date={talk.data.date}
+          videoUrl={talk.data.videoUrl}
+          slidesUrl={talk.data.slidesUrl}
+          description={talk.data.description}
+        />
+      ))}
+    </div>
+
+    {talks.length === 0 && (
+      <p class="text-text-muted">No talks yet. Check back soon!</p>
+    )}
+  </div>
+</PageLayout>

@@ -1,0 +1,34 @@
+---
+interface Props {
+  title: string;
+  subtitle: string;
+  tagline?: string;
+}
+
+const { title, subtitle, tagline } = Astro.props;
+---
+
+<section class="relative overflow-hidden py-24 md:py-32">
+  <!-- Background gradient -->
+  <div class="absolute inset-0 bg-gradient-to-br from-accent-dark/20 via-surface to-surface-light/50"></div>
+  <div class="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--color-accent)_0%,_transparent_50%)] opacity-10"></div>
+
+  <div class="relative mx-auto max-w-6xl px-6">
+    <div class="max-w-3xl">
+      {tagline && (
+        <p class="mb-4 text-sm font-semibold uppercase tracking-widest text-accent-light">
+          {tagline}
+        </p>
+      )}
+      <h1 class="mb-6 text-5xl font-extrabold leading-tight tracking-tight md:text-7xl">
+        {title}
+      </h1>
+      <p class="mb-8 text-xl leading-relaxed text-text-secondary md:text-2xl">
+        {subtitle}
+      </p>
+      <div class="flex flex-wrap gap-4">
+        <slot />
+      </div>
+    </div>
+  </div>
+</section>

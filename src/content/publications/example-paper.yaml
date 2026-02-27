@@ -1,0 +1,10 @@
+title: "Example Publication Title"
+authors:
+  - Scott Clark
+  - Collaborator One
+  - Collaborator Two
+venue: "Conference on Example Topics (CET)"
+year: 2024
+url: "https://example.com/paper"
+doi: "10.1234/example.2024.001"
+abstract: "This is a placeholder for an actual publication abstract. Replace this with your real publications."

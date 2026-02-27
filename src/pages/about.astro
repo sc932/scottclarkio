@@ -1,0 +1,86 @@
+---
+import PageLayout from "../layouts/PageLayout.astro";
+---
+
+<PageLayout
+  title="About — Scott Clark"
+  description="Bio, experience, education, and skills for Scott Clark."
+>
+  <div class="mx-auto max-w-4xl px-6 py-16">
+    <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">About Me</h1>
+    <p class="mb-12 text-xl text-text-secondary">
+      Engineer, researcher, and builder.
+    </p>
+
+    <!-- Bio -->
+    <section class="mb-16">
+      <p class="mb-4 leading-relaxed text-text-secondary">
+        <!-- Replace with your actual bio -->
+        This is a placeholder bio. Write a few paragraphs about yourself, your background,
+        what drives you, and what you're currently working on. Think of this as your
+        LinkedIn summary but with more personality.
+      </p>
+    </section>
+
+    <!-- Experience -->
+    <section class="mb-16">
+      <h2 class="mb-8 text-2xl font-bold tracking-tight">Experience</h2>
+      <div class="space-y-8">
+        <!-- Replace with your actual experience -->
+        <div class="border-l-2 border-accent/30 pl-6">
+          <div class="mb-1 text-sm font-semibold text-accent-light">2020 — Present</div>
+          <h3 class="mb-1 text-lg font-bold">Job Title</h3>
+          <p class="mb-2 text-sm text-text-muted">Company Name</p>
+          <p class="text-sm leading-relaxed text-text-secondary">
+            Description of your role and accomplishments. Replace with your actual experience.
+          </p>
+        </div>
+
+        <div class="border-l-2 border-surface-lighter pl-6">
+          <div class="mb-1 text-sm font-semibold text-accent-light">2016 — 2020</div>
+          <h3 class="mb-1 text-lg font-bold">Previous Job Title</h3>
+          <p class="mb-2 text-sm text-text-muted">Previous Company</p>
+          <p class="text-sm leading-relaxed text-text-secondary">
+            Description of your role and accomplishments. Replace with your actual experience.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Education -->
+    <section class="mb-16">
+      <h2 class="mb-8 text-2xl font-bold tracking-tight">Education</h2>
+      <div class="space-y-6">
+        <!-- Replace with your actual education -->
+        <div class="border-l-2 border-accent/30 pl-6">
+          <div class="mb-1 text-sm font-semibold text-accent-light">Year</div>
+          <h3 class="mb-1 text-lg font-bold">Degree — Field of Study</h3>
+          <p class="text-sm text-text-muted">University Name</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Skills -->
+    <section class="mb-16">
+      <h2 class="mb-8 text-2xl font-bold tracking-tight">Skills</h2>
+      <div class="flex flex-wrap gap-2">
+        {/* Replace with your actual skills */}
+        {["Python", "TypeScript", "Machine Learning", "Distributed Systems", "AWS", "Data Science"].map((skill) => (
+          <span class="rounded-full border border-surface-lighter bg-surface-light px-4 py-1.5 text-sm font-medium text-text-secondary">
+            {skill}
+          </span>
+        ))}
+      </div>
+    </section>
+
+    <!-- Resume Download -->
+    <section>
+      <a
+        href="/resume/scott-clark-resume.pdf"
+        class="inline-flex items-center gap-2 rounded-lg bg-accent px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-accent/25 transition-all hover:bg-accent-light hover:shadow-accent-light/25"
+      >
+        Download Resume (PDF)
+      </a>
+    </section>
+  </div>
+</PageLayout>

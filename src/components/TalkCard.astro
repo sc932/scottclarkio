@@ -1,0 +1,47 @@
+---
+import VideoEmbed from "./VideoEmbed.astro";
+
+interface Props {
+  title: string;
+  event: string;
+  date: Date;
+  videoUrl?: string;
+  slidesUrl?: string;
+  description: string;
+}
+
+const { title, event, date, videoUrl, slidesUrl, description } = Astro.props;
+
+const formattedDate = date.toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+});
+---
+
+<article class="rounded-xl border border-surface-lighter bg-surface-light/50 p-6 transition-all hover:border-accent/30 hover:bg-surface-light">
+  {videoUrl && (
+    <div class="mb-4">
+      <VideoEmbed url={videoUrl} title={title} />
+    </div>
+  )}
+
+  <div class="mb-2 flex items-center gap-2 text-sm text-text-muted">
+    <span class="font-semibold text-accent-light">{formattedDate}</span>
+    <span>&middot;</span>
+    <span>{event}</span>
+  </div>
+
+  <h3 class="mb-2 text-lg font-bold text-text-primary">{title}</h3>
+  <p class="mb-3 text-sm leading-relaxed text-text-secondary">{description}</p>
+
+  {slidesUrl && (
+    <a
+      href={slidesUrl}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="inline-flex items-center gap-1 text-sm font-medium text-accent-light hover:text-accent transition-colors"
+    >
+      View Slides &rarr;
+    </a>
+  )}
+</article>

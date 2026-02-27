@@ -1,0 +1,53 @@
+---
+import PageLayout from "../layouts/PageLayout.astro";
+import PublicationCard from "../components/PublicationCard.astro";
+import { getCollection } from "astro:content";
+
+const publications = (await getCollection("publications"))
+  .sort((a, b) => b.data.year - a.data.year);
+
+// Group by year
+const byYear = publications.reduce<Record<number, typeof publications>>((acc, pub) => {
+  const year = pub.data.year;
+  if (!acc[year]) acc[year] = [];
+  acc[year].push(pub);
+  return acc;
+}, {});
+
+const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+---
+
+<PageLayout
+  title="Publications — Scott Clark"
+  description="Research publications and academic papers by Scott Clark."
+>
+  <div class="mx-auto max-w-4xl px-6 py-16">
+    <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">Publications</h1>
+    <p class="mb-12 text-xl text-text-secondary">
+      Research papers and academic work.
+    </p>
+
+    {years.map((year) => (
+      <section class="mb-12">
+        <h2 class="mb-6 text-xl font-bold text-accent-light">{year}</h2>
+        <div class="space-y-4">
+          {byYear[year].map((pub) => (
+            <PublicationCard
+              title={pub.data.title}
+              authors={pub.data.authors}
+              venue={pub.data.venue}
+              year={pub.data.year}
+              url={pub.data.url}
+              doi={pub.data.doi}
+              abstract={pub.data.abstract}
+            />
+          ))}
+        </div>
+      </section>
+    ))}
+
+    {publications.length === 0 && (
+      <p class="text-text-muted">No publications yet. Check back soon!</p>
+    )}
+  </div>
+</PageLayout>

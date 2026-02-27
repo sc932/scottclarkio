@@ -1,0 +1,36 @@
+---
+import PageLayout from "../layouts/PageLayout.astro";
+import ProjectCard from "../components/ProjectCard.astro";
+import { getCollection } from "astro:content";
+
+const projects = await getCollection("projects");
+---
+
+<PageLayout
+  title="Projects — Scott Clark"
+  description="Open source projects and side projects by Scott Clark."
+>
+  <div class="mx-auto max-w-4xl px-6 py-16">
+    <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">Projects</h1>
+    <p class="mb-12 text-xl text-text-secondary">
+      Things I've built and contributed to.
+    </p>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      {projects.map((project) => (
+        <ProjectCard
+          title={project.data.title}
+          description={project.data.description}
+          url={project.data.url}
+          repo={project.data.repo}
+          image={project.data.image}
+          tags={project.data.tags}
+        />
+      ))}
+    </div>
+
+    {projects.length === 0 && (
+      <p class="text-text-muted">No projects listed yet. Check back soon!</p>
+    )}
+  </div>
+</PageLayout>

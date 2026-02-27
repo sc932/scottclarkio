@@ -1,0 +1,50 @@
+---
+interface Props {
+  title: string;
+  authors: string[];
+  venue: string;
+  year: number;
+  url?: string;
+  doi?: string;
+  abstract?: string;
+}
+
+const { title, authors, venue, year, url, doi, abstract } = Astro.props;
+---
+
+<article class="group rounded-xl border border-surface-lighter bg-surface-light/50 p-6 transition-all hover:border-accent/30 hover:bg-surface-light">
+  <div class="mb-2 flex items-center gap-2 text-sm text-text-muted">
+    <span class="font-semibold text-accent-light">{year}</span>
+    <span>&middot;</span>
+    <span>{venue}</span>
+  </div>
+
+  <h3 class="mb-2 text-lg font-bold leading-snug text-text-primary group-hover:text-accent-light transition-colors">
+    {url ? (
+      <a href={url} target="_blank" rel="noopener noreferrer">{title}</a>
+    ) : (
+      title
+    )}
+  </h3>
+
+  <p class="mb-3 text-sm text-text-secondary">
+    {authors.join(", ")}
+  </p>
+
+  {abstract && (
+    <p class="text-sm leading-relaxed text-text-muted line-clamp-3">
+      {abstract}
+    </p>
+  )}
+
+  {doi && (
+    <a
+      href={`https://doi.org/${doi}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      class="mt-3 inline-block text-xs font-medium text-accent-light hover:text-accent transition-colors"
+    >
+      DOI: {doi}
+    </a>
+  )}
+</article>

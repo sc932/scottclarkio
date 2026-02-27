@@ -1,0 +1,36 @@
+---
+import PageLayout from "../layouts/PageLayout.astro";
+import ArticleCard from "../components/ArticleCard.astro";
+import { getCollection } from "astro:content";
+
+const articles = (await getCollection("articles"))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<PageLayout
+  title="Press — Scott Clark"
+  description="Articles, press mentions, and media coverage of Scott Clark."
+>
+  <div class="mx-auto max-w-4xl px-6 py-16">
+    <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">Press</h1>
+    <p class="mb-12 text-xl text-text-secondary">
+      Articles and media mentions.
+    </p>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      {articles.map((article) => (
+        <ArticleCard
+          title={article.data.title}
+          publication={article.data.publication}
+          date={article.data.date}
+          url={article.data.url}
+          excerpt={article.data.excerpt}
+        />
+      ))}
+    </div>
+
+    {articles.length === 0 && (
+      <p class="text-text-muted">No press mentions yet. Check back soon!</p>
+    )}
+  </div>
+</PageLayout>

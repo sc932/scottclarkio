@@ -1,0 +1,37 @@
+---
+import PageLayout from "../../layouts/PageLayout.astro";
+import BlogPostCard from "../../components/BlogPostCard.astro";
+import { getCollection } from "astro:content";
+
+const posts = (await getCollection("blog", ({ data }) => !data.draft))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+---
+
+<PageLayout
+  title="Blog — Scott Clark"
+  description="Blog posts by Scott Clark on engineering, research, and technology."
+>
+  <div class="mx-auto max-w-4xl px-6 py-16">
+    <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">Blog</h1>
+    <p class="mb-12 text-xl text-text-secondary">
+      Thoughts on engineering, research, and technology.
+    </p>
+
+    <div class="grid gap-6 md:grid-cols-2">
+      {posts.map((post) => (
+        <BlogPostCard
+          title={post.data.title}
+          description={post.data.description}
+          date={post.data.date}
+          slug={post.id}
+          tags={post.data.tags}
+          image={post.data.image}
+        />
+      ))}
+    </div>
+
+    {posts.length === 0 && (
+      <p class="text-text-muted">No posts yet. Check back soon!</p>
+    )}
+  </div>
+</PageLayout>

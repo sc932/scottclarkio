@@ -1,0 +1,21 @@
+{
+  "name": "scottclarkio",
+  "type": "module",
+  "version": "1.0.0",
+  "description": "Personal website for Scott Clark — scottclark.io",
+  "scripts": {
+    "dev": "astro dev",
+    "build": "astro build",
+    "preview": "astro preview",
+    "deploy": "bash scripts/deploy.sh",
+    "new-post": "bash scripts/new-post.sh"
+  },
+  "dependencies": {
+    "astro": "^5.5.0",
+    "@astrojs/mdx": "^4.2.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.1.0",
+    "tailwindcss": "^4.1.0"
+  }
+}

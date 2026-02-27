@@ -1,0 +1,62 @@
+---
+interface Props {
+  title: string;
+  description: string;
+  date: Date;
+  slug: string;
+  tags?: string[];
+  image?: string;
+}
+
+const { title, description, date, slug, tags, image } = Astro.props;
+
+const formattedDate = date.toLocaleDateString("en-US", {
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+});
+---
+
+<article class="group flex flex-col overflow-hidden rounded-xl border border-surface-lighter bg-surface-light/50 transition-all hover:border-accent/30 hover:bg-surface-light">
+  {image && (
+    <div class="aspect-video overflow-hidden bg-surface-lighter">
+      <img
+        src={image}
+        alt={title}
+        class="h-full w-full object-cover transition-transform group-hover:scale-105"
+        loading="lazy"
+      />
+    </div>
+  )}
+
+  <div class="flex flex-1 flex-col p-6">
+    <div class="mb-2 flex items-center gap-2 text-sm text-text-muted">
+      <time datetime={date.toISOString()}>{formattedDate}</time>
+    </div>
+
+    <h3 class="mb-2 text-xl font-bold leading-snug text-text-primary group-hover:text-accent-light transition-colors">
+      <a href={`/blog/${slug}`}>{title}</a>
+    </h3>
+
+    <p class="mb-4 flex-1 text-sm leading-relaxed text-text-secondary">
+      {description}
+    </p>
+
+    {tags && tags.length > 0 && (
+      <div class="mb-4 flex flex-wrap gap-2">
+        {tags.map((tag) => (
+          <span class="rounded-full bg-accent/10 px-2.5 py-0.5 text-xs font-medium text-accent-light">
+            {tag}
+          </span>
+        ))}
+      </div>
+    )}
+
+    <a
+      href={`/blog/${slug}`}
+      class="text-sm font-medium text-accent-light hover:text-accent transition-colors"
+    >
+      Read More &rarr;
+    </a>
+  </div>
+</article>
