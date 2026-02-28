@@ -1,0 +1,5 @@
+title: "Introducing MOE: A New Open Source Machine Learning Service for Optimal Experiment Design"
+publication: "Yelp Engineering Blog"
+date: 2014-07-24
+url: "https://engineeringblog.yelp.com/2014/07/introducing-moe-metric-optimization-engine-a-new-open-source-machine-learning-service-for-optimal-ex.html"
+excerpt: "MOE is an open-source machine learning tool for solving black-box optimization problems using Bayesian Global Optimization algorithms and Gaussian Processes."

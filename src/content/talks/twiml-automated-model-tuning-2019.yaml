@@ -1,0 +1,5 @@
+title: "Automated Model Tuning"
+event: "TWIML AI Podcast (Episode 324)"
+date: 2019-11-01
+videoUrl: "https://twimlai.com/network/scott-clark/"
+description: "Deep dive into automated model tuning techniques, covering the state of the art in Bayesian optimization and how it applies to production machine learning workflows."

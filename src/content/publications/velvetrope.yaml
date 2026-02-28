@@ -1,0 +1,8 @@
+title: "Velvetrope: A Parallel, Bitwise Algorithm for Finding Homologous Regions within Sequences"
+authors:
+  - Scott C. Clark
+  - Nicholas W. Hengartner
+venue: "BMC Bioinformatics"
+year: 2010
+url: "https://bmcbioinformatics.biomedcentral.com/articles/10.1186/1471-2105-11-S6-S11"
+abstract: "We present Velvetrope, a parallel bitwise algorithm for finding homologous regions within biological sequences, enabling fast and efficient sequence alignment on modern parallel architectures."

@@ -1,0 +1,5 @@
+title: "Using Bayesian Optimization to Tune Machine Learning Models"
+event: "MLconf San Francisco 2016"
+date: 2016-11-01
+slidesUrl: "https://www.slideshare.net/SessionsEvents/scott-clark-cofounder-and-ceo-sigopt-at-mlconf-sf-2016"
+description: "Talk on applying Bayesian optimization techniques to efficiently tune machine learning model hyperparameters, drawing on experience building SigOpt's optimization platform."

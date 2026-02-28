@@ -1,0 +1,12 @@
+title: "A Strategy for Ranking Optimization Methods using Multiple Criteria"
+authors:
+  - Ian Dewancker
+  - Michael McCourt
+  - Scott C. Clark
+  - Patrick Hayes
+  - Alexandra Johnson
+  - George Ke
+venue: "AutoML Workshop at ICML 2016 (PMLR Vol. 64)"
+year: 2016
+url: "https://proceedings.mlr.press/v64/dewancker_strategy_2016.html"
+abstract: "We propose a multi-criteria strategy for ranking optimization methods, enabling principled comparison across diverse benchmark problems and performance metrics."

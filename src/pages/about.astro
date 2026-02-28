@@ -4,45 +4,139 @@ import PageLayout from "../layouts/PageLayout.astro";
 
 <PageLayout
   title="About — Scott Clark"
-  description="Bio, experience, education, and skills for Scott Clark."
+  description="Bio, experience, education, and skills for Scott Clark. CEO of Distributional, former co-founder/CEO of SigOpt (acquired by Intel), Cornell PhD, Forbes 30 Under 30."
 >
   <div class="mx-auto max-w-4xl px-6 py-16">
     <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">About Me</h1>
     <p class="mb-12 text-xl text-text-secondary">
-      Engineer, researcher, and builder.
+      CEO &amp; Co-Founder of Distributional. Building reliable AI for the enterprise.
     </p>
 
     <!-- Bio -->
     <section class="mb-16">
       <p class="mb-4 leading-relaxed text-text-secondary">
-        <!-- Replace with your actual bio -->
-        This is a placeholder bio. Write a few paragraphs about yourself, your background,
-        what drives you, and what you're currently working on. Think of this as your
-        LinkedIn summary but with more personality.
+        I'm an expert in machine learning, Bayesian optimization, and AI observability. I've spent my career
+        applying optimal learning techniques across bioinformatics, production advertising systems, and
+        enterprise AI testing. I'm driven by the belief that AI systems should be trustworthy and reliable
+        before they're deployed in the real world.
       </p>
+      <p class="mb-4 leading-relaxed text-text-secondary">
+        I'm currently building <a href="https://www.distributional.com" class="text-accent-light hover:text-accent transition-colors">Distributional</a>,
+        a modern platform for enterprise AI testing and evaluation. Before that, I co-founded
+        <a href="https://sigopt.com" class="text-accent-light hover:text-accent transition-colors">SigOpt</a>,
+        an intelligent experimentation platform that was acquired by Intel in 2020. At Intel, I led a 200-person
+        AI and HPC software engineering team focused on supercomputer applications.
+      </p>
+      <p class="leading-relaxed text-text-secondary">
+        I hold a Ph.D. in Applied Mathematics and an M.S. in Computer Science from Cornell University, where
+        I was a Department of Energy Computational Science Graduate Fellow. My research focused on parallel
+        machine learning algorithms for bioinformatics and global optimization. I also created the open-source
+        <a href="https://github.com/Yelp/MOE" class="text-accent-light hover:text-accent transition-colors">Metric Optimization Engine (MOE)</a>
+        at Yelp, one of the first production Bayesian optimization systems.
+      </p>
+    </section>
+
+    <!-- Awards -->
+    <section class="mb-16">
+      <h2 class="mb-8 text-2xl font-bold tracking-tight">Awards &amp; Honors</h2>
+      <div class="space-y-4">
+        <div class="flex items-start gap-4 rounded-lg border border-surface-lighter bg-surface-light/50 p-4">
+          <span class="mt-0.5 rounded bg-accent/10 px-2.5 py-0.5 text-sm font-bold text-accent-light">2016</span>
+          <div>
+            <h3 class="font-bold">Forbes 30 Under 30</h3>
+            <p class="text-sm text-text-muted">Enterprise Technology category</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-4 rounded-lg border border-surface-lighter bg-surface-light/50 p-4">
+          <span class="mt-0.5 rounded bg-accent/10 px-2.5 py-0.5 text-sm font-bold text-accent-light">2016</span>
+          <div>
+            <h3 class="font-bold">College of Science Young Alumni Award</h3>
+            <p class="text-sm text-text-muted">Oregon State University</p>
+          </div>
+        </div>
+        <div class="flex items-start gap-4 rounded-lg border border-surface-lighter bg-surface-light/50 p-4">
+          <span class="mt-0.5 rounded bg-accent/10 px-2.5 py-0.5 text-sm font-bold text-accent-light">2008</span>
+          <div>
+            <h3 class="font-bold">DOE Computational Science Graduate Fellowship</h3>
+            <p class="text-sm text-text-muted">Full 4-year scholarship (~$300,000), Department of Energy</p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Experience -->
     <section class="mb-16">
       <h2 class="mb-8 text-2xl font-bold tracking-tight">Experience</h2>
       <div class="space-y-8">
-        <!-- Replace with your actual experience -->
         <div class="border-l-2 border-accent/30 pl-6">
-          <div class="mb-1 text-sm font-semibold text-accent-light">2020 — Present</div>
-          <h3 class="mb-1 text-lg font-bold">Job Title</h3>
-          <p class="mb-2 text-sm text-text-muted">Company Name</p>
+          <div class="mb-1 text-sm font-semibold text-accent-light">2023 — Present</div>
+          <h3 class="mb-1 text-lg font-bold">Co-Founder &amp; CEO</h3>
+          <p class="mb-2 text-sm text-text-muted">Distributional</p>
           <p class="text-sm leading-relaxed text-text-secondary">
-            Description of your role and accomplishments. Replace with your actual experience.
+            Founded Distributional with an 11-person founding team from Bloomberg, Google, Meta, Intel, SigOpt,
+            Slack, Stripe, Uber, and Yelp. Building a modern platform for enterprise AI testing and evaluation
+            to make AI safe, reliable, and secure. Raised $30M from Andreessen Horowitz, Two Sigma Ventures,
+            Point72 Ventures, SV Angel, and 40+ angel investors.
           </p>
         </div>
 
         <div class="border-l-2 border-surface-lighter pl-6">
-          <div class="mb-1 text-sm font-semibold text-accent-light">2016 — 2020</div>
-          <h3 class="mb-1 text-lg font-bold">Previous Job Title</h3>
-          <p class="mb-2 text-sm text-text-muted">Previous Company</p>
+          <div class="mb-1 text-sm font-semibold text-accent-light">2020 — 2023</div>
+          <h3 class="mb-1 text-lg font-bold">VP / General Manager, AI &amp; HPC Software</h3>
+          <p class="mb-2 text-sm text-text-muted">Intel Corporation</p>
           <p class="text-sm leading-relaxed text-text-secondary">
-            Description of your role and accomplishments. Replace with your actual experience.
+            Led a 200-person AI and high-performance computing software engineering team focused on
+            supercomputer applications following Intel's acquisition of SigOpt.
           </p>
+        </div>
+
+        <div class="border-l-2 border-surface-lighter pl-6">
+          <div class="mb-1 text-sm font-semibold text-accent-light">2014 — 2020</div>
+          <h3 class="mb-1 text-lg font-bold">Co-Founder &amp; CEO</h3>
+          <p class="mb-2 text-sm text-text-muted">SigOpt (YC W15, acquired by Intel)</p>
+          <p class="text-sm leading-relaxed text-text-secondary">
+            Built an intelligent experimentation platform that accelerates and amplifies the impact of modelers
+            everywhere. Raised over $17M from Andreessen Horowitz, Intel, and other investors. Grew the team
+            and product from inception to acquisition by Intel in November 2020.
+          </p>
+        </div>
+
+        <div class="border-l-2 border-surface-lighter pl-6">
+          <div class="mb-1 text-sm font-semibold text-accent-light">2012 — 2014</div>
+          <h3 class="mb-1 text-lg font-bold">Data Mining Engineer &amp; Lead, Ad Targeting</h3>
+          <p class="mb-2 text-sm text-text-muted">Yelp</p>
+          <p class="text-sm leading-relaxed text-text-secondary">
+            Developed and open-sourced MOE (Metric Optimization Engine), a Bayesian optimization framework.
+            Implemented multi-armed bandit strategies for ad selection. Led cross-organization teams and
+            directed the Yelp Dataset Challenge.
+          </p>
+        </div>
+
+        <div class="border-l-2 border-surface-lighter pl-6">
+          <div class="mb-1 text-sm font-semibold text-accent-light">2008 — 2012</div>
+          <h3 class="mb-1 text-lg font-bold">Research Fellow (DOE CSGF)</h3>
+          <p class="mb-2 text-sm text-text-muted">Cornell University / DOE National Laboratories</p>
+          <p class="text-sm leading-relaxed text-text-secondary">
+            Practicum research at Lawrence Berkeley National Lab (genome validation software) and
+            Los Alamos National Lab (parallel alignment algorithm development). Earlier research at
+            Max Planck Institute for Physics of Complex Systems and UC Davis.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Volunteer -->
+    <section class="mb-16">
+      <h2 class="mb-8 text-2xl font-bold tracking-tight">Volunteer &amp; Advisory</h2>
+      <div class="space-y-4">
+        <div class="border-l-2 border-surface-lighter pl-6">
+          <div class="mb-1 text-sm font-semibold text-accent-light">2022 — 2025</div>
+          <h3 class="mb-1 text-lg font-bold">Board of Trustees Member</h3>
+          <p class="text-sm text-text-muted">OMSI (Oregon Museum of Science and Industry)</p>
+        </div>
+        <div class="border-l-2 border-surface-lighter pl-6">
+          <h3 class="mb-1 text-lg font-bold">Advisory Roles</h3>
+          <p class="text-sm text-text-muted">Oregon State University College of Science</p>
         </div>
       </div>
     </section>
@@ -51,11 +145,25 @@ import PageLayout from "../layouts/PageLayout.astro";
     <section class="mb-16">
       <h2 class="mb-8 text-2xl font-bold tracking-tight">Education</h2>
       <div class="space-y-6">
-        <!-- Replace with your actual education -->
         <div class="border-l-2 border-accent/30 pl-6">
-          <div class="mb-1 text-sm font-semibold text-accent-light">Year</div>
-          <h3 class="mb-1 text-lg font-bold">Degree — Field of Study</h3>
-          <p class="text-sm text-text-muted">University Name</p>
+          <div class="mb-1 text-sm font-semibold text-accent-light">2008 — 2012</div>
+          <h3 class="mb-1 text-lg font-bold">Ph.D. in Applied Mathematics</h3>
+          <p class="mb-1 text-sm text-text-muted">Cornell University, Ithaca, NY</p>
+          <p class="text-sm leading-relaxed text-text-secondary">
+            M.S. in Computer Science (2011). DOE Computational Science Graduate Fellowship.
+            Advisor: Peter Frazier. Thesis: "Parallel Machine Learning Algorithms in Bioinformatics
+            and Global Optimization."
+          </p>
+        </div>
+
+        <div class="border-l-2 border-surface-lighter pl-6">
+          <div class="mb-1 text-sm font-semibold text-accent-light">2004 — 2008</div>
+          <h3 class="mb-1 text-lg font-bold">B.Sc. Mathematics, B.Sc. Computational Physics, B.Sc. Physics</h3>
+          <p class="mb-1 text-sm text-text-muted">Oregon State University, Corvallis, OR</p>
+          <p class="text-sm leading-relaxed text-text-secondary">
+            Graduated Magna Cum Laude with three bachelor's degrees. Minors in Actuarial Sciences
+            and Mathematical Sciences.
+          </p>
         </div>
       </div>
     </section>
@@ -64,8 +172,14 @@ import PageLayout from "../layouts/PageLayout.astro";
     <section class="mb-16">
       <h2 class="mb-8 text-2xl font-bold tracking-tight">Skills</h2>
       <div class="flex flex-wrap gap-2">
-        {/* Replace with your actual skills */}
-        {["Python", "TypeScript", "Machine Learning", "Distributed Systems", "AWS", "Data Science"].map((skill) => (
+        {[
+          "Machine Learning", "Bayesian Optimization", "AI Testing & Observability",
+          "Python", "C/C++", "CUDA", "TypeScript",
+          "Distributed Systems", "Parallel Computing", "Data Mining",
+          "Bioinformatics", "Global Optimization", "Gaussian Processes",
+          "A/B Testing", "Experiment Design",
+          "AWS", "MapReduce", "Linux",
+        ].map((skill) => (
           <span class="rounded-full border border-surface-lighter bg-surface-light px-4 py-1.5 text-sm font-medium text-text-secondary">
             {skill}
           </span>

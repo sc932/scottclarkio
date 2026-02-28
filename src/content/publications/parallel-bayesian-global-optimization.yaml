@@ -1,0 +1,11 @@
+title: "Parallel Bayesian Global Optimization of Expensive Functions"
+authors:
+  - Jialei Wang
+  - Scott C. Clark
+  - Eric Liu
+  - Peter I. Frazier
+venue: "Operations Research"
+year: 2020
+url: "https://pubsonline.informs.org/doi/10.1287/opre.2019.1966"
+doi: "10.1287/opre.2019.1966"
+abstract: "We develop parallel Bayesian global optimization methods for expensive black-box functions, providing both theoretical analysis and practical algorithms that enable efficient optimization across multiple parallel evaluations."

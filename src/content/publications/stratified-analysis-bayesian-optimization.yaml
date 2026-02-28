@@ -1,0 +1,12 @@
+title: "A Stratified Analysis of Bayesian Optimization Methods"
+authors:
+  - Ian Dewancker
+  - Michael McCourt
+  - Scott C. Clark
+  - Patrick Hayes
+  - Alexandra Johnson
+  - George Ke
+venue: "arXiv preprint"
+year: 2016
+url: "https://arxiv.org/abs/1603.09441"
+abstract: "We present a stratified analysis of Bayesian optimization methods, comparing their performance across different problem types and dimensionalities to provide guidance for practitioners."

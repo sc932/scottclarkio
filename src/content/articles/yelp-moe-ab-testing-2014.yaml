@@ -1,0 +1,5 @@
+title: "Using MOE to Optimize an A/B Testing Experiment Framework"
+publication: "Yelp Engineering Blog"
+date: 2014-10-15
+url: "https://engineeringblog.yelp.com/2014/10/using-moe-the-metric-optimization-engine-to-optimize-an-ab-testing-experiment-framework.html"
+excerpt: "Follow-up on applying the Metric Optimization Engine to optimize A/B testing frameworks, demonstrating practical improvements in experiment efficiency at Yelp."

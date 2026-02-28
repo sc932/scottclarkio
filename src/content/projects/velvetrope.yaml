@@ -1,0 +1,8 @@
+title: "Velvetrope"
+description: "A parallel, bitwise algorithm for finding homologous regions within biological sequences. Developed at Los Alamos National Laboratory, Velvetrope enables fast and efficient sequence alignment on modern parallel architectures. Published in BMC Bioinformatics."
+repo: "https://github.com/sc932/Velvetrope"
+tags:
+  - Bioinformatics
+  - Open Source
+  - Parallel Computing
+  - C

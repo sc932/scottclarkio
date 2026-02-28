@@ -1,0 +1,5 @@
+title: "Bayesian Optimization for Hyperparameter Tuning"
+event: "TWIML AI Podcast (Episode 50)"
+date: 2017-08-01
+videoUrl: "https://twimlai.com/network/scott-clark/"
+description: "Podcast discussion on Bayesian optimization approaches to hyperparameter tuning, the theory behind optimal experiment design, and practical applications in production ML systems."

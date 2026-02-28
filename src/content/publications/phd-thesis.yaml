@@ -1,0 +1,6 @@
+title: "Parallel Machine Learning Algorithms in Bioinformatics and Global Optimization"
+authors:
+  - Scott C. Clark
+venue: "PhD Dissertation, Cornell University"
+year: 2012
+abstract: "This thesis develops parallel machine learning algorithms for two domains: bioinformatics (genome assembly evaluation) and global optimization (Bayesian optimization with parallel evaluations), with applications to real-world computational problems."

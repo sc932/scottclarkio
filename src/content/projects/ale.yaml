@@ -1,0 +1,9 @@
+title: "ALE (Assembly Likelihood Evaluation)"
+description: "A generic assembly likelihood evaluation framework for assessing the accuracy of genome and metagenome assemblies. ALE provides a reference-free quality metric using a probabilistic model of read placement. Published in Bioinformatics with 170+ citations."
+url: "https://github.com/sc932/ALE"
+repo: "https://github.com/sc932/ALE"
+tags:
+  - Bioinformatics
+  - Open Source
+  - Genomics
+  - C

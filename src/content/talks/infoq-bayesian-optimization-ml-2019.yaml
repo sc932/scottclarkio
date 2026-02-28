@@ -1,0 +1,5 @@
+title: "Using Bayesian Optimization to Tune Machine Learning Models"
+event: "InfoQ"
+date: 2019-06-01
+videoUrl: "https://www.infoq.com/presentations/bayesian-optimization-ml/"
+description: "Presentation on practical applications of Bayesian optimization for tuning machine learning models, covering the theory and real-world implementation strategies."

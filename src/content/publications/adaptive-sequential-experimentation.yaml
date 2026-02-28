@@ -1,0 +1,7 @@
+title: "Adaptive Sequential Experimentation Techniques for A/B Testing and Model Tuning"
+authors:
+  - Scott C. Clark
+venue: "The Web Conference (WWW 2015)"
+year: 2015
+doi: "10.1145/2740908.2743063"
+abstract: "We present adaptive sequential experimentation techniques that improve upon traditional A/B testing by dynamically allocating resources to the most promising alternatives."

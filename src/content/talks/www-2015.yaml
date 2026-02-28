@@ -1,0 +1,4 @@
+title: "Adaptive Sequential Experimentation Techniques for A/B Testing and Model Tuning"
+event: "The Web Conference (WWW 2015)"
+date: 2015-05-01
+description: "Presentation on adaptive sequential experimentation methods that improve upon traditional A/B testing by dynamically allocating resources to the most promising alternatives."

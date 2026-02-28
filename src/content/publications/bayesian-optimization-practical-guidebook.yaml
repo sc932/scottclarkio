@@ -1,0 +1,9 @@
+title: "Bayesian Optimization for Machine Learning: A Practical Guidebook"
+authors:
+  - Ian Dewancker
+  - Michael McCourt
+  - Scott C. Clark
+venue: "arXiv preprint"
+year: 2016
+url: "https://arxiv.org/abs/1612.04858"
+abstract: "We present a practical guide to Bayesian optimization for machine learning practitioners, covering the core concepts, common pitfalls, and best practices for hyperparameter tuning and model selection."

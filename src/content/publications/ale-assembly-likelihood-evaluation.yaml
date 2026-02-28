@@ -1,0 +1,11 @@
+title: "ALE: A Generic Assembly Likelihood Evaluation Framework for Assessing the Accuracy of Genome and Metagenome Assemblies"
+authors:
+  - Scott C. Clark
+  - Rob Egan
+  - Peter I. Frazier
+  - Zhong Wang
+venue: "Bioinformatics"
+year: 2013
+url: "https://academic.oup.com/bioinformatics/article/29/4/435/199222"
+doi: "10.1093/bioinformatics/bts723"
+abstract: "We present ALE, a generic assembly likelihood evaluation framework that assesses the accuracy of genome and metagenome assemblies using a probabilistic model of read placement, providing a reference-free quality metric."

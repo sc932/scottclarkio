@@ -1,0 +1,12 @@
+title: "Evaluation System for a Bayesian Optimization Service"
+authors:
+  - Ian Dewancker
+  - Michael McCourt
+  - Scott C. Clark
+  - Patrick Hayes
+  - Alexandra Johnson
+  - George Ke
+venue: "arXiv preprint"
+year: 2016
+url: "https://arxiv.org/abs/1605.06170"
+abstract: "We describe the evaluation system used to benchmark and validate a production Bayesian optimization service, covering metrics, test functions, and evaluation methodologies."

@@ -1,0 +1,9 @@
+title: "MOE (Metric Optimization Engine)"
+description: "A global, black-box Bayesian optimization engine for real-world metric optimization. Built at Yelp, MOE implements state-of-the-art algorithms from Bayesian Global Optimization using Gaussian Processes and provides REST, Python, and C++ interfaces."
+url: "https://github.com/Yelp/MOE"
+repo: "https://github.com/Yelp/MOE"
+tags:
+  - Bayesian Optimization
+  - Open Source
+  - Python
+  - C++

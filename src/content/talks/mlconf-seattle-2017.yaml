@@ -1,0 +1,5 @@
+title: "Bayesian Global Optimization"
+event: "MLconf Seattle 2017"
+date: 2017-05-01
+slidesUrl: "https://www.slideshare.net/SessionsEvents/scott-clark-ceo-sigopt-at-mlconf-seattle-2017"
+description: "Deep dive into Bayesian global optimization methods, covering theory, algorithms, and practical applications for machine learning hyperparameter tuning at scale."
