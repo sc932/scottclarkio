@@ -1,36 +1,70 @@
 ---
-import PageLayout from "../layouts/PageLayout.astro";
-import ProjectCard from "../components/ProjectCard.astro";
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/ibm-plex-sans";
 import { getCollection } from "astro:content";
+import SiteLayout from "../components/SiteLayout.astro";
+import { v2Theme } from "../lib/site-theme";
 
-const projects = await getCollection("projects");
+// Order of meaningful priority (current → former → research / teaching).
+const order = ["distributional", "sigopt", "ale", "velvetrope"];
+const projects = (await getCollection("projects")).sort((a, b) => {
+  const ai = order.indexOf(a.id);
+  const bi = order.indexOf(b.id);
+  if (ai === -1 && bi === -1) return a.data.title.localeCompare(b.data.title);
+  if (ai === -1) return 1;
+  if (bi === -1) return -1;
+  return ai - bi;
+});
 ---
 
-<PageLayout
-  title="Projects — Scott Clark"
-  description="Open source projects and side projects by Scott Clark."
+<SiteLayout
+  {...v2Theme}
+  pageTitle="Projects — Scott Clark"
+  pageDescription="Projects, companies, and open-source software Scott Clark has built or led: Distributional, SigOpt, MOE, ALE, Velvetrope."
 >
-  <div class="mx-auto max-w-4xl px-6 py-16">
-    <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">Projects</h1>
-    <p class="mb-12 text-xl text-text-secondary">
-      Things I've built and contributed to.
+  <header class="page-head">
+    <h1>Projects</h1>
+    <p class="sub">
+      Companies and open-source software Scott has built or led.
     </p>
+  </header>
 
-    <div class="grid gap-6 md:grid-cols-2">
-      {projects.map((project) => (
-        <ProjectCard
-          title={project.data.title}
-          description={project.data.description}
-          url={project.data.url}
-          repo={project.data.repo}
-          image={project.data.image}
-          tags={project.data.tags}
-        />
-      ))}
-    </div>
+  <ol class="project-rows">
+    {
+      projects.map((p) => {
+        const links: { href: string; label: string }[] = [];
+        if (p.data.url) links.push({ href: p.data.url, label: "Website" });
+        if (p.data.repo) links.push({ href: p.data.repo, label: "Source" });
 
-    {projects.length === 0 && (
-      <p class="text-text-muted">No projects listed yet. Check back soon!</p>
-    )}
-  </div>
-</PageLayout>
+        return (
+          <li class="project-row">
+            <div class="row-head">
+              <span class="row-org">{p.data.title}</span>
+              {p.data.tags?.length > 0 && (
+                <ul class="project-tags">
+                  {p.data.tags.map((t, i) => (
+                    <li>
+                      {i > 0 && "· "}
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+            <p class="row-desc">{p.data.description}</p>
+            {links.length > 0 && (
+              <p class="row-links">
+                {links.map((l, i) => (
+                  <>
+                    {i > 0 && <span class="sep">·</span>}
+                    <a href={l.href}>{l.label}</a>
+                  </>
+                ))}
+              </p>
+            )}
+          </li>
+        );
+      })
+    }
+  </ol>
+</SiteLayout>

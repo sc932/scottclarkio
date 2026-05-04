@@ -1,53 +1,77 @@
 ---
-import PageLayout from "../layouts/PageLayout.astro";
-import PublicationCard from "../components/PublicationCard.astro";
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/ibm-plex-sans";
 import { getCollection } from "astro:content";
+import SiteLayout from "../components/SiteLayout.astro";
+import { v2Theme } from "../lib/site-theme";
 
-const publications = (await getCollection("publications"))
-  .sort((a, b) => b.data.year - a.data.year);
+const publications = (await getCollection("publications")).sort(
+  (a, b) => b.data.year - a.data.year
+);
 
-// Group by year
-const byYear = publications.reduce<Record<number, typeof publications>>((acc, pub) => {
-  const year = pub.data.year;
-  if (!acc[year]) acc[year] = [];
-  acc[year].push(pub);
-  return acc;
-}, {});
-
-const years = Object.keys(byYear).map(Number).sort((a, b) => b - a);
+const formatAuthors = (authors: string[]) =>
+  authors.map((a) =>
+    a === "Scott C. Clark" ? `<strong>${a}</strong>` : a
+  ).join(", ");
 ---
 
-<PageLayout
-  title="Publications — Scott Clark"
-  description="Research publications and academic papers by Scott Clark."
+<SiteLayout
+  {...v2Theme}
+  pageTitle="Research — Scott Clark"
+  pageDescription="Peer-reviewed publications, granted patents, and academic work by Scott Clark across Bayesian optimization, machine learning, applied mathematics, and bioinformatics."
 >
-  <div class="mx-auto max-w-4xl px-6 py-16">
-    <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">Publications</h1>
-    <p class="mb-12 text-xl text-text-secondary">
-      Research papers and academic work.
+  <header class="page-head">
+    <h1>Research</h1>
+    <p class="sub">
+      Peer-reviewed publications, granted patents, and academic work. Google
+      Scholar lists 1,200+ citations and an h-index of 16; ~20 granted US
+      patents as named inventor. A subset is shown below; the most up-to-date
+      list is on <a
+        href="https://scholar.google.com/citations?user=mwWbhAUAAAAJ"
+        >Google Scholar</a
+      >.
     </p>
+  </header>
 
-    {years.map((year) => (
-      <section class="mb-12">
-        <h2 class="mb-6 text-xl font-bold text-accent-light">{year}</h2>
-        <div class="space-y-4">
-          {byYear[year].map((pub) => (
-            <PublicationCard
-              title={pub.data.title}
-              authors={pub.data.authors}
-              venue={pub.data.venue}
-              year={pub.data.year}
-              url={pub.data.url}
-              doi={pub.data.doi}
-              abstract={pub.data.abstract}
-            />
-          ))}
-        </div>
-      </section>
-    ))}
+  <ol class="rows">
+    {
+      publications.map((p) => (
+        <li class="row">
+          <div class="row-period">{p.data.year}</div>
+          <div class="row-body">
+            <div class="row-head">
+              <span class="row-org">{p.data.title}</span>
+            </div>
+            <p class="row-desc">
+              <span set:html={formatAuthors(p.data.authors)} />
+              <span class="venue">
+                <em> · {p.data.venue}</em>
+              </span>
+            </p>
+            {p.data.abstract && (
+              <p class="row-desc abstract">{p.data.abstract}</p>
+            )}
+            {(p.data.url || p.data.doi) && (
+              <p class="row-links">
+                {p.data.url && <a href={p.data.url}>Link</a>}
+                {p.data.url && p.data.doi && <span class="sep">·</span>}
+                {p.data.doi && (
+                  <a href={`https://doi.org/${p.data.doi}`}>DOI: {p.data.doi}</a>
+                )}
+              </p>
+            )}
+          </div>
+        </li>
+      ))
+    }
+  </ol>
 
-    {publications.length === 0 && (
-      <p class="text-text-muted">No publications yet. Check back soon!</p>
-    )}
-  </div>
-</PageLayout>
+  <style is:global>
+    .abstract {
+      margin-top: 6px;
+      color: var(--mute);
+      font-size: 15px;
+      line-height: 1.5;
+    }
+  </style>
+</SiteLayout>

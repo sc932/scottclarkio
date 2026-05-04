@@ -1,6 +1,11 @@
-title: "Left Handed Beta Helix Models for Mammalian Prion Fibrils"
+title: "Left-Handed Beta Helix Models for Mammalian Prion Fibrils"
 authors:
+  - K. Kunes
   - Scott C. Clark
-venue: "Prion"
+  - Daniel L. Cox
+  - Rajiv R. P. Singh
+venue: "Prion 2(2):81–90"
 year: 2008
-abstract: "Statistical analysis of left-handed beta helix structural models for mammalian prion protein fibrils, applying computational biophysics methods to study protein misfolding."
+doi: "10.4161/pri.2.2.7059"
+url: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC2634523/"
+abstract: "Statistical analysis of left-handed beta helix structural models for mammalian prion protein fibrils, applying computational biophysics methods to study protein misfolding. Output of an NSF REU at UC Davis under Prof. Daniel Cox."

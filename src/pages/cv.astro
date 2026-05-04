@@ -1,0 +1,329 @@
+---
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/ibm-plex-sans";
+import SiteLayout from "../components/SiteLayout.astro";
+import { v2Theme } from "../lib/site-theme";
+import { experience, education } from "../lib/site-content";
+
+const awards = [
+  {
+    period: "2016",
+    title: "Forbes 30 Under 30",
+    body: "Enterprise Technology category. Recognized as co-founder &amp; CEO of SigOpt.",
+  },
+  {
+    period: "2016",
+    title: "Young Alumni Award",
+    body: "Oregon State University, College of Science.",
+  },
+  {
+    period: "2010",
+    title: "DOE CSGF Communicating Science Award (Honorable Mention)",
+    body: 'For the essay "Solving Genomic Jigsaws," <em>DEIXIS Magazine</em>.',
+  },
+  {
+    period: "2008 — 2012",
+    title: "DOE Computational Science Graduate Fellowship",
+    body: "Full four-year PhD scholarship (~$300,000), Department of Energy. Contract DE-FG02-97ER25308.",
+  },
+  {
+    period: "2008",
+    title: "Cornell University Sage Fellowship",
+    body: "$55,000, declined in favor of DOE CSGF.",
+  },
+  {
+    period: "2010 — 2012",
+    title: "NERSC Production + Startup Allocations",
+    body: "Principal Investigator, Cray XT4 (DOE Contract DE-AC02-05CH11231), 100,000 production hours plus startup renewals.",
+  },
+];
+
+const advisory = [
+  {
+    period: "2022 — 2025",
+    title: "Oregon Museum of Science and Industry",
+    role: "Board of Trustees · Treasurer · Finance Committee Chair",
+    body: "Executive Committee member; chaired the Finance Committee through OMSI's post-COVID financial recovery.",
+  },
+  {
+    period: "2019 — 2025",
+    title: "Oregon State University, College of Science",
+    role: "Board of Advisors",
+    body: "Advised the Dean's office on industry partnerships and research-to-product translation.",
+  },
+  {
+    period: "2018 — 2025",
+    title: "Oregon State University, College of Science",
+    role: "Industry and Innovation Council",
+    body: "Industry-side member supporting the College's translational research initiatives.",
+  },
+];
+
+const focusAreas = [
+  "Bayesian optimization",
+  "Gaussian processes",
+  "Optimal learning",
+  "Multi-armed bandits",
+  "Hyperparameter tuning",
+  "AI reliability",
+  "AI testing & evaluation",
+  "Production ML observability",
+  "LLM and agent evaluation",
+  "Experiment design",
+  "A/B testing",
+  "Monte Carlo methods",
+  "Numerical analysis",
+  "High-performance computing",
+  "Parallel algorithms",
+  "Distributed systems",
+  "CUDA / GPU computing",
+  "Bioinformatics",
+  "Genome assembly",
+  "Computational biophysics",
+];
+
+const selectedPubs = [
+  {
+    period: "2020",
+    title:
+      "Parallel Bayesian Global Optimization of Expensive Functions",
+    venue: "Operations Research",
+    body: "Wang, Clark, Liu, Frazier. 263+ citations. Theoretical and practical algorithms for parallel evaluation in BO.",
+  },
+  {
+    period: "2013",
+    title:
+      "ALE: A Generic Assembly Likelihood Evaluation Framework",
+    venue: "Bioinformatics",
+    body: "Clark, Egan, Frazier, Wang. 208+ citations. Reference-free quality metric for genome assemblies. Output of the JGI 2010 DOE practicum.",
+  },
+  {
+    period: "2016",
+    title: "Bayesian Optimization for Machine Learning: A Practical Guidebook",
+    venue: "arXiv:1612.04858",
+    body: "Dewancker, McCourt, Clark. 142+ citations. Widely-cited practitioner guide; the most-read public artifact from the SigOpt research program.",
+  },
+  {
+    period: "2025",
+    title: "Anomaly Detection in Deployed Artificial Intelligence Applications",
+    venue: "U.S. Patent 12,505,027",
+    body: "Distributional's first granted patent. McCourt, Bourassa-Denis, Laban, Kim, Dewancker, Cheng, Clark.",
+  },
+];
+
+const selectedTalks = [
+  {
+    period: "Mar 2026",
+    title: "AI Reliability for the Enterprise",
+    venue: "SAIR Podcast",
+  },
+  {
+    period: "May 2025",
+    title: "Behavioral Analytics for Production AI",
+    venue: "AI + a16z Podcast (with Matt Bornstein)",
+  },
+  {
+    period: "Nov 2022",
+    title: "oneAPI and the Future of Accelerated Computing",
+    venue: "SC22 theCUBE Panel (with David Schmidt of Dell)",
+  },
+  {
+    period: "Mar 2019",
+    title: "Tuning the Untunable",
+    venue: "NVIDIA GTC Silicon Valley",
+  },
+  {
+    period: "Dec 2019",
+    title: "From argmax f(x) to an International Business",
+    venue: "Cornell CAM Notable Alumni Speaker Series",
+  },
+];
+---
+
+<SiteLayout
+  {...v2Theme}
+  pageTitle="CV — Scott Clark"
+  pageDescription="Long-form CV for Scott Clark: complete career history, education, awards, advisory, research areas, and selected publications and talks."
+>
+  <header class="page-head">
+    <h1>CV</h1>
+    <p class="sub">
+      Long-form curriculum vitae. The short version lives on <a href="/preview/v2"
+        >the home page</a
+      >. The PDF export is available at <a
+        href="/resume/scott-clark-resume.pdf">scott-clark-resume.pdf</a
+      >; full LaTeX source and a structured markdown profile are in <a
+        href="https://github.com/sc932/resume">github.com/sc932/resume</a
+      >.
+    </p>
+  </header>
+
+  <section class="block">
+    <h2 class="block-label">Experience</h2>
+    <ol class="rows">
+      {
+        experience.map((row) => (
+          <li class="row">
+            <div class="row-period">{row.period}</div>
+            <div class="row-body">
+              <div class="row-head">
+                <span class="row-org">{row.org}</span>
+                <span class="row-title">{row.title}</span>
+              </div>
+              <p class="row-desc" set:html={row.body} />
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2 class="block-label">Education</h2>
+    <ol class="rows">
+      {
+        education.map((row) => (
+          <li class="row">
+            <div class="row-period">{row.period}</div>
+            <div class="row-body">
+              <div class="row-head">
+                <span class="row-org">{row.org}</span>
+                <span class="row-title">{row.title}</span>
+              </div>
+              <p class="row-desc" set:html={row.body} />
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2 class="block-label">Awards &amp; Honors</h2>
+    <ol class="rows">
+      {
+        awards.map((a) => (
+          <li class="row">
+            <div class="row-period">{a.period}</div>
+            <div class="row-body">
+              <div class="row-head">
+                <span class="row-org">{a.title}</span>
+              </div>
+              <p class="row-desc" set:html={a.body} />
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2 class="block-label">Board &amp; Advisory</h2>
+    <ol class="rows">
+      {
+        advisory.map((a) => (
+          <li class="row">
+            <div class="row-period">{a.period}</div>
+            <div class="row-body">
+              <div class="row-head">
+                <span class="row-org">{a.title}</span>
+                <span class="row-title">{a.role}</span>
+              </div>
+              <p class="row-desc" set:html={a.body} />
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2 class="block-label">Research Areas</h2>
+    <p class="focus-list">
+      {
+        focusAreas.map((area, i) => (
+          <>
+            {i > 0 && <span class="focus-sep"> · </span>}
+            <span>{area}</span>
+          </>
+        ))
+      }
+    </p>
+  </section>
+
+  <section class="block">
+    <h2 class="block-label">Selected Publications</h2>
+    <ol class="rows">
+      {
+        selectedPubs.map((p) => (
+          <li class="row">
+            <div class="row-period">{p.period}</div>
+            <div class="row-body">
+              <div class="row-head">
+                <span class="row-org">{p.title}</span>
+                <span class="row-title">{p.venue}</span>
+              </div>
+              <p class="row-desc">{p.body}</p>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="block-pointer">
+      Full publication list and abstracts on the <a href="/preview/publications"
+        >Research</a
+      > page; the most up-to-date list is on <a
+        href="https://scholar.google.com/citations?user=mwWbhAUAAAAJ"
+        >Google Scholar</a
+      > (1,200+ citations, h-index 16).
+    </p>
+  </section>
+
+  <section class="block">
+    <h2 class="block-label">Selected Talks &amp; Podcasts</h2>
+    <ol class="rows">
+      {
+        selectedTalks.map((t) => (
+          <li class="row">
+            <div class="row-period">{t.period}</div>
+            <div class="row-body">
+              <div class="row-head">
+                <span class="row-org">{t.title}</span>
+                <span class="row-title">{t.venue}</span>
+              </div>
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+    <p class="block-pointer">
+      40+ documented appearances since 2013. Full list on the <a
+        href="/preview/talks">Talks</a
+      > page.
+    </p>
+  </section>
+
+  <style is:global>
+    .focus-list {
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.85;
+      color: var(--ink);
+    }
+    .focus-sep {
+      color: var(--soft);
+    }
+    .block-pointer {
+      margin: 18px 0 0;
+      font-size: 14.5px;
+      color: var(--mute);
+      line-height: 1.5;
+    }
+    .block-pointer a {
+      color: var(--mute);
+    }
+    .block-pointer a:hover {
+      color: var(--accent);
+    }
+  </style>
+</SiteLayout>

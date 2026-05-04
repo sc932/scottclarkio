@@ -1,0 +1,207 @@
+---
+import {
+  lede,
+  byline,
+  bullets,
+  experience,
+  education,
+  pageTitle,
+  pageDescription,
+} from "../lib/site-content";
+import SiteLayout from "./SiteLayout.astro";
+
+interface Props {
+  bg: string;
+  ink: string;
+  mute: string;
+  soft: string;
+  accent: string;
+  rule: string;
+  ruleSoft: string;
+  serif: string;
+  sans: string;
+  variant?: string;
+}
+
+const props = Astro.props;
+---
+
+<SiteLayout
+  pageTitle={pageTitle}
+  pageDescription={pageDescription}
+  bg={props.bg}
+  ink={props.ink}
+  mute={props.mute}
+  soft={props.soft}
+  accent={props.accent}
+  rule={props.rule}
+  ruleSoft={props.ruleSoft}
+  serif={props.serif}
+  sans={props.sans}
+>
+  <section class="intro">
+    <aside class="meta-col">
+      <div class="portrait-wrap">
+        <img
+          src="/images/scott-clark.jpg"
+          alt="Scott Clark"
+          class="portrait"
+          width="220"
+          height="220"
+        />
+      </div>
+
+      <ul class="socials">
+        <li>
+          <a href="https://github.com/sc932">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"
+              ></path>
+            </svg>
+            <span>sc932</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://www.linkedin.com/in/sc932">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"
+              ></path>
+            </svg>
+            <span>sc932</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://scholar.google.com/citations?user=mwWbhAUAAAAJ">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                d="M5.242 13.769L0 9.5 12 0l12 9.5-5.242 4.269C17.548 11.249 14.978 9.5 12 9.5c-2.977 0-5.548 1.749-6.758 4.269zM12 10a7 7 0 1 0 0 14 7 7 0 0 0 0-14z"
+              ></path>
+            </svg>
+            <span>Google Scholar</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://orcid.org/0009-0007-0478-7129">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                d="M12 0C5.372 0 0 5.372 0 12s5.372 12 12 12 12-5.372 12-12S18.628 0 12 0zM7.369 4.378c.525 0 .947.431.947.947s-.422.947-.947.947a.95.95 0 0 1-.947-.947c0-.525.422-.947.947-.947zm-.722 3.038h1.444v10.041H6.647V7.416zm3.562 0h3.9c3.712 0 5.344 2.653 5.344 5.025 0 2.578-2.016 5.025-5.325 5.025h-3.919V7.416zm1.444 1.303v7.444h2.297c3.272 0 4.022-2.484 4.022-3.722 0-2.016-1.284-3.722-4.097-3.722h-2.222z"
+              ></path>
+            </svg>
+            <span>0009-0007-0478-7129</span>
+          </a>
+        </li>
+        <li>
+          <a href="https://twitter.com/DrScottClark">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="currentColor"
+              aria-hidden="true"
+            >
+              <path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"
+              ></path>
+            </svg>
+            <span>@DrScottClark</span>
+          </a>
+        </li>
+        <li>
+          <a href="mailto:scott@scottclark.io">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="2.5" y="4.5" width="19" height="15" rx="1.5"></rect>
+              <path d="M3 6l9 7 9-7"></path>
+            </svg>
+            <span>scott@scottclark.io</span>
+          </a>
+        </li>
+      </ul>
+    </aside>
+
+    <div class="intro-text">
+      <h1>Scott Clark</h1>
+      <p class="byline" set:html={byline} />
+      <p class="lede" set:html={lede} />
+
+      <ul class="bullets">
+        {
+          bullets.map((b) => (
+            <li>
+              <strong>{b.label}.</strong> <span set:html={b.html} />
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </section>
+
+  <section class="block">
+    <h2 class="block-label">Experience</h2>
+    <ol class="rows">
+      {
+        experience.map((row) => (
+          <li class="row">
+            <div class="row-period">{row.period}</div>
+            <div class="row-body">
+              <div class="row-head">
+                <span class="row-org">{row.org}</span>
+                <span class="row-title">{row.title}</span>
+              </div>
+              <p class="row-desc" set:html={row.body} />
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2 class="block-label">Education</h2>
+    <ol class="rows">
+      {
+        education.map((row) => (
+          <li class="row">
+            <div class="row-period">{row.period}</div>
+            <div class="row-body">
+              <div class="row-head">
+                <span class="row-org">{row.org}</span>
+                <span class="row-title">{row.title}</span>
+              </div>
+              <p class="row-desc" set:html={row.body} />
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+</SiteLayout>

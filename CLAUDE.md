@@ -1,86 +1,335 @@
 # CLAUDE.md — scottclark.io
 
-Project conventions and best practices for AI-assisted development.
+Project conventions and collaboration context for AI-assisted development of Scott Clark's personal website.
+
+## How to read and maintain this file
+
+This CLAUDE.md is optimized for *Claude's effectiveness in this repo*, not for Scott to skim — same delegation principle Scott applies to `~/dev/vault/CLAUDE.md`. **Verbose is fine; heavy is fine.** What matters is that a fresh Claude session in this repo can:
+
+1. Know who Scott is and how he wants to collaborate.
+2. Know where to look (vault, dossier, resume) for context not duplicated here.
+3. Know the strategic role this site plays in Scott's broader work, so site decisions stay coherent with what's happening in the vault.
+4. Avoid the failure modes that would burn trust (hallucinating facts about Scott, auto-publishing without interview, drifting bio across artifacts).
+
+When a new convention or pattern emerges in this repo's work, document it here in the same turn — undocumented conventions silently rot.
+
+---
 
 ## Project Overview
 
-Personal website for Scott Clark hosted at scottclark.io. Static site built with Astro 5, styled with Tailwind CSS v4, deployed to AWS S3 + CloudFront.
+Personal website for Scott Clark hosted at scottclark.io. Static site built with **Astro 5**, served as plain HTML+CSS, deployed to **AWS S3 + CloudFront**.
+
+Phases:
+- **Phase 1A — done (2026-05-01).** Plugins and skills installed: `frontend-design` and `playwright` MCP from the Anthropic marketplaces, plus the project-specific `scottclark-site` skill at `~/.claude/skills/scottclark-site/SKILL.md`.
+- **Phase 1B — done (2026-05-01).** Full visual redesign promoted to canonical paths. All six pages (`/`, `/cv`, `/talks`, `/projects`, `/publications`, `/press`) ship in the v2 design language (warm-cream + Source Serif 4 + IBM Plex Sans, photo-and-paragraph hero on home, dense chronological strips with bolded signal terms, monochrome social row). `/about` 301-redirects to `/`. Old layouts/components/styles all deleted in the same pass. Iteration history (v1, v1b, v1c, fonts specimens, screenshots 01–20) is in `screenshots/refs/` for reference.
+- **Phase 1C — next.** AIO infrastructure: JSON-LD `Person` schema in every `<head>`, `/llms.txt` summary, `/llms-full.txt` corpus, per-page `.md` twins, `<link rel="alternate" type="text/markdown">` discovery hint, `/robots.txt` with explicit allow stance for AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended, etc.), `/sitemap-index.xml`, RSS shell (will fill once blog activates). Earlier prototype scaffolding from 2026-04-30 lives in `~/.claude/plans/typed-hopping-iverson.md` — useful for shape, not as canonical code.
+- **Phase 1D — after 1C.** AWS deploy: S3 bucket, ACM cert in us-east-1, CloudFront distribution, Route 53 record, GitHub OIDC role, GH Actions workflow.
+- **Phase 2 — gated on `[[content_speedrun]]` ≥6 posts queued.** Reactivate blog. Re-add `@astrojs/mdx`, restore `src/pages/blog/`, `src/content/blog/`, a blog post layout, a blog card component, `scripts/new-post.sh`, the `blog` collection in `content.config.ts`, and the Blog nav link in `site-content.ts`'s `navLinks`.
+
+See `~/dev/vault/Projects/scottclark.io.md` for the full project state, decisions, and active task list.
+
+---
+
+## Working with Scott
+
+Excerpts from the vault collaboration protocol that are load-bearing for website work. **Full bio + cognitive style + communication preferences live in `~/dev/vault/Meta/user-bio.md`** — read it before any substantive design or content session.
+
+### Who Scott is (one-paragraph version)
+PhD Applied Math (Cornell, 2012); founded SigOpt (acquired by Intel 2020); VP & GM at Intel for ~3 years leading a 200-person AI/HPC org; now CEO/cofounder of Distributional (enterprise AI testing + behavioral analytics; $30M raised; Palo Alto). Forbes 30 Under 30 (2016), 1,200+ citations + h-index 16, ~20 patents, OMSI board (Treasurer 2022–2025). The full bio at `~/dev/vault/Meta/user-bio.md` is comprehensive and citation-backed.
+
+### Communication style
+- **Extremely technical** — no need to dumb things down. He'll ask if something is rusty.
+- **Sequential questions, not numbered lists.** Have a conversation; don't dump 7 questions at once. Use judgment for trivial tasks; interview for structural/ambiguous decisions.
+- **Tradeoffs explicit.** When proposing options, name the costs of each.
+- **Verbose when nuance is at stake; concise otherwise.** Don't over-pad simple answers; don't compress structural conversations into bullet points.
+- **No passive hedges.** When pushing back, stand behind it. Don't trail off with "but it's your site, up to you" after a substantive disagreement.
+
+### Cognitive style
+- **Applied-math/geometry native.** Geometric/spatial reasoning (basis, manifold, attractor, drift, trajectory). Math metaphors are first-class in conversation. **Push back if a math term over-claims** what the underlying idea supports.
+- **Everything-is-an-optimization-problem lens.** Natural frame for tradeoffs.
+- **Debate-as-content-generation.** Scott explicitly *likes* being pushed back on — refines thinking and surfaces content. Don't validate; engage.
+- **Continuity is a core goal.** Treats Claude as a collaborator who deepens over sessions. Worth investing in infra (CLAUDE.md, hooks, skills) that closes "I forgot" gaps.
+
+### How to operate in this repo
+- **Always interview before publishing user-facing content.** About-page rewrites, hero copy, blog post drafts — Claude drafts first, then *interviews Scott* before changes go live. Drafts are starting points for conversation, not finished products.
+- **Steelman + push back.** Especially on content/design choices. Strong opinions, loosely held, with receipts.
+- **Research before structural changes.** Don't just execute; check best practices, prior art, and tradeoffs first. The user's idea is the starting point, not the final design.
+- **Fix root causes; don't route around obstacles.** If a tool won't work or state is unexpected, pause and ask *why* before reaching for a workaround. Hacks signal something real is broken.
+- **Don't outsource periodic chores to Scott's memory.** If a process improvement creates a recurring task, fold it into automation (a hook, a scheduled agent, a CI check). Anything that depends on Scott remembering will rot.
+
+### Discipline: don't drift facts about Scott
+Three artifacts hold canonical facts about Scott:
+
+| Artifact | Path | Role |
+|---|---|---|
+| Vault bio | `~/dev/vault/Meta/user-bio.md` | Durable distillation Claude loads each vault session — best for collaboration context. |
+| Resume markdown profile | `~/dev/resume/ScottClark.md` | Comprehensive, citation-friendly. Source of truth for resume + CV per `~/dev/resume/AGENTS.md`. |
+| content_finder dossier | `~/dev/content_finder/dossier/` | Cite-backed crawl with raw artifacts. The receipts. |
+
+When updating bio facts on this site (about page, project descriptions, press entries), **cross-check against these sources first**, especially the dossier. Never hallucinate publications, citations, awards, or affiliations. The site already had one hallucinated entry (a fake BMC Bioinformatics paper for Velvetrope) caught and removed on 2026-04-30 — keep the watchful eye.
+
+If a fact changes (Distributional team size grows, new patent grants, new title), the propagation order is: **dossier → resume markdown → resume CV/PDF → vault bio → site.** Updates flowing the wrong way risk silent drift.
+
+---
+
+## Strategic context
+
+This site doesn't live in a vacuum. It's one node in a connected set of projects:
+
+| Vault project | What it is | This site's relationship |
+|---|---|---|
+| `~/dev/vault/Projects/scottclark.io.md` | Strategic project state for this site | Authoritative for *what* + *when*. Site implementation lives here. |
+| `~/dev/vault/Projects/content_speedrun.md` | 8-week content sprint to build a publishing buffer | **Drives blog activation.** Phase 2 unlocks when content_speedrun queues ≥6 ready posts. |
+| `~/dev/vault/Projects/dossier_ingest_queue.md` | 36 podcast/talk transcripts prioritized for mining | Source pipeline for blog content (and for the about/talks/press pages here). |
+| `~/dev/vault/Projects/content_engine.md` | Original "publishing shim" idea | Possibly subsumed by a one-off vault → site import script. Decide when first migration happens. |
+| `~/dev/vault/Projects/Books/Optimal Orgs/` | Org management book in progress | Major source of derivative blog content per content_speedrun pillar mix. |
+| `~/dev/vault/Resources/Writing MOC.md` | Pillar taxonomy + writing infrastructure | Defines the 5 audience-facing pillars (see below). |
+| `~/dev/vault/Meta/Style Guide.md` | Voice DNA for everything written in Scott's name | **Open this alongside any blog drafting work.** |
+
+### The 5 content pillars (from Writing MOC)
+- `pillar/ai-reliability` — Distributional-relevant; the demo→prod gap.
+- `pillar/optimization-thinking` — book spine; optimization as a lens for everything.
+- `pillar/research-to-product` — turning academic work into things people use.
+- `pillar/startup-leadership` — founding, scaling, M&A, doing it again.
+- `pillar/technical-explainers` — math behind the magic; ML/BO/HPC accessible.
+
+When the blog activates in Phase 2, posts should declare a pillar in frontmatter.
+
+---
+
+## Cross-repo bridge — what to read when
+
+Read these on demand; don't pre-load. Pattern: open the file when the task touches its surface.
+
+| Need | Open |
+|---|---|
+| Bio facts, collaboration style, current Distributional state | `~/dev/vault/Meta/user-bio.md` |
+| Voice for prose (about copy, blog drafts) | `~/dev/vault/Meta/Style Guide.md` |
+| Pillar definitions + writing infrastructure | `~/dev/vault/Resources/Writing MOC.md` |
+| Strategic project state + what's done/pending | `~/dev/vault/Projects/scottclark.io.md` |
+| Blog activation cadence + post backlog | `~/dev/vault/Projects/content_speedrun.md` |
+| Source material for talks/press/blog content | `~/dev/content_finder/dossier/{bio,timeline,papers,articles,talks,podcasts,social}.md` |
+| Comprehensive bio facts with citations | `~/dev/resume/ScottClark.md` |
+| Resume artifact propagation rules | `~/dev/resume/AGENTS.md` |
+| Blog draft staging area (vault-side) | `~/dev/vault/Writing/` |
+
+Note: this repo can read from those paths but should not write into the vault or other repos. Vault-side authoring belongs to vault sessions. If a site change implies a vault update (e.g., a new fact about Scott surfaces), surface it conversationally and let Scott handle the vault edit in his next vault session.
+
+---
+
+## Content discipline
+
+### Voice
+- **Site copy (about, hero, page descriptions):** Direct, confident, builder-not-commentator. Avoid corporate jargon, throat-clearing, false humility. Lead with the insight; don't bury the lede.
+- **Tagline test:** "Smart friend explaining over coffee, not a keynote speech." If a draft sounds like a press release, rewrite.
+
+Full voice guide: `~/dev/vault/Meta/Style Guide.md` (open it during any prose work).
+
+(Blog post sourcing/voice rules deferred until Phase 2 reactivates the blog.)
+
+### Bio fact propagation (when Scott's facts change)
+The single source of truth for the home page's editorial copy (lede, byline, three bullets, experience array, education array) is `src/lib/site-content.ts`. The CV page's awards / advisory / focus / selected-pubs / selected-talks arrays are inline in `src/pages/cv.astro`. Listing pages (talks, projects, publications, press) draw from YAML in `src/content/`.
+
+Order when a fact changes:
+1. Confirm the new fact against the dossier (`~/dev/content_finder/dossier/`) or Scott directly.
+2. Update `~/dev/vault/Meta/user-bio.md` (vault session) AND `~/dev/resume/ScottClark.md` (resume session) FIRST.
+3. Then update `src/lib/site-content.ts` (or `src/pages/cv.astro` for CV-only fields, or `src/content/<type>/<slug>.yaml` for collection items).
+4. Rebuild (`npm run build`) before claiming done.
+
+### Things that look like drift but are intentional
+- Site has a `30-person team` for Distributional (per 2025); vault bio says the same. If Scott confirms a new team size, all three sites + vault bio + resume update together.
+- Citation count is intentionally rounded as `1,200+` (not the exact `1,221+` from the resume markdown). The exact number reads try-hard and goes stale instantly. Don't "correct" it back.
+- The hero byline (one line under the name) packs five anchors — multi-time founder, a16z, YC, Intel exit, PhD — by Scott's explicit request. Don't trim it for "elegance" without an interview; the density is doing load-bearing "this person isn't just a kid hacking with friends" work.
+- Velvetrope project description was edited 2026-05-01 to drop a hallucinated "Published in BMC Bioinformatics" claim caught the day before; the project is real (LANL DOE CSGF practicum output), the BMC paper isn't.
+
+---
+
+## Design discipline
+
+The single biggest quality lever for this repo is naming what *good* looks like before generating code. Read this section before any UI/copy work; if a request would violate it, push back rather than execute.
+
+### Audience model — three readers
+
+Every page is read by three audiences. If a design choice serves none of them, cut it.
+
+1. **Recruiter / founder / investor evaluating Scott.** Skim first, scroll patience low. Wants proof (titles, citations, exits, raise amounts) up top, with receipts they can click into.
+2. **Podcast or conference booker.** Wants a fast "what does Scott talk about + does he have a reel?" The talks/press pages are *their* landing pages, not the home.
+3. **An LLM summarizing Scott** because someone asked an agent who he is. Needs structured data, markdown twins of every page, `/llms.txt`, and explicit `sameAs` links to GitHub/LinkedIn/Scholar/Distributional/podcasts. **This is the load-bearing audience** — it's why the site exists at all (own SEO/AIO as LinkedIn etc. close off to agents). Endpoints to serve this audience are *not yet wired* (Phase 1C); design choices made for the visual layer have intentionally preserved this — every page reads cleanly when stripped to plain markdown, content lives in `src/content/` YAML collections or `src/lib/site-content.ts` rather than hand-written HTML, and the design uses HTML semantics (`<article>`, `<header>`, `<ol>`, `<time>` analogues) cleanly.
+
+When in doubt, optimize for reader 3. Readers 1 and 2 benefit from the same structured clarity.
+
+### Anti-patterns — never do these
+
+These are the things Claude Code converges on by default. Naming them kills the gravity.
+
+- **Fonts:** No Inter, Roboto, Arial, Helvetica, Space Grotesk, Geist, or generic system-font stacks as the headline choice. Avoid the "default startup landing page" font feel.
+- **Gradients/backgrounds:** No purple-on-white gradient heroes. No animated mesh / aurora / blob backgrounds. No floating geometric shapes that rotate or pulse. No grid + radial-glow combos.
+- **CTAs:** No "Get Started →" / "Try it free" hero CTA on a *personal* site. This is not a SaaS landing page.
+- **Footer flexes:** No "Built with Astro + Tailwind + ❤️". No tech-stack badges.
+- **Toggles:** No dark-mode toggle in v1. Pick one mode and execute. (Half-finished theme switching is the exact thing that makes minimalist sites feel try-hard.)
+- **Prose:** No emoji in body copy. No throat-clearing intros ("In today's fast-paced world..."). No corporate jargon ("synergistic", "leverage", "transform", "unlock"). No false humility.
+- **Effects:** No parallax scrolling, no scroll-jacking, no cursor trails, no animated number counters in stat blocks.
+- **Stock-image energy:** No abstract geometric SVG illustrations of "AI" or "data". Real screenshots, real photos, or no image.
+
+### Reference sites — study, do not copy
+
+These hit the band Scott wants ("clean, minimal, modern, not too-cool-for-this, not try-hard"). Open them when designing, study what they choose to *not* do.
+
+- **maggieappleton.com** — editorial warmth, hand-drawn touches; serif body, distinctive but not loud.
+- **brianlovin.com** — calm, dense, typography-forward; great link/list density.
+- **simonwillison.net** — utilitarian-with-personality; near-zero ornamentation, infinite signal.
+- **leerob.io** — clean tech-founder; modern minimal that still feels human.
+- **joshwcomeau.com** — instructive on *restrained* motion (use for one-off transitions, not the whole site).
+
+### Type system — committed (2026-05-01)
+
+- **Display / headlines / wordmark / org names:** *Source Serif 4* (variable). Fraunces was prototyped first but rejected on the curvy capital-S — Source Serif 4's even, conventional cap-S reads more "newspaper of record / the typeface a New Yorker piece on you would be set in," which is the band Scott wants. Specimens for both, plus Newsreader / EB Garamond / Crimson Pro, were generated and reviewed at `screenshots/refs/12-fonts-specimen.png`.
+- **Body / nav / labels / row metadata:** *IBM Plex Sans* (variable).
+- **Mono:** none yet. Plex Mono variable wasn't on npm at install time. Add when there's a reason (code blocks, blog activation).
+
+Both faces are self-hosted via `@fontsource-variable/source-serif-4` and `@fontsource-variable/ibm-plex-sans`. No Google Fonts CDN. Fonts are imported per-page where used (currently every page), not globally. The font-family stacks are defined as constants in `src/lib/site-theme.ts`.
+
+**Never re-decide fonts at generation time.** If a future change is wanted, surface the question to Scott; do not auto-swap.
+
+### Motion
+
+Motion budget for v1 is **CSS-only** transitions on `transform` / `opacity` for hover/focus states. No animation libraries. Astro `<ClientRouter />` View Transitions are an option later if the page-to-page feel needs it, but they're off by default to keep client-side JS at zero.
+
+### Design feedback loop
+
+Two plugins are expected to be installed (see `Project Overview` → Phase 1A) before serious design work begins:
+
+- **`frontend-design`** plugin (Anthropic, from the `claude-code-plugins` marketplace) — invoked automatically for UI work. Forces a deliberate aesthetic commit before code.
+- **`playwright`** MCP plugin (from `claude-plugins-official`) — lets the agent open the dev server (`localhost:4321`), screenshot pages, and audit its own output against the anti-patterns list above.
+
+When generating or revising UI: start the dev server, screenshot the affected page, name the aesthetic direction in plain English, then iterate. "Looks fine on read" is not enough — the screenshot is the artifact.
+
+A custom **`scottclark-site`** skill at `~/.claude/skills/scottclark-site/SKILL.md` codifies the audience model, anti-patterns, reference sites, and design tokens so they're loaded automatically without needing to re-read this file every session.
+
+---
 
 ## Tech Stack
 
-- **Astro 5** — static site generator
-- **Tailwind CSS v4** — utility-first CSS (via @tailwindcss/vite plugin)
-- **MDX** — Markdown with embedded Astro components (blog posts)
-- **TypeScript** — strict mode
-- **AWS S3 + CloudFront** — static hosting and CDN
-- **GitHub Actions** — CI/CD on push to main
+- **Astro 5** — static site generator (zero client-side JS; no islands currently used).
+- **TypeScript** — strict mode.
+- **`@fontsource-variable/source-serif-4`** + **`@fontsource-variable/ibm-plex-sans`** — self-hosted variable fonts.
+- **Tailwind CSS v4** — *installed but currently unused.* The Vite plugin (`@tailwindcss/vite`) is registered in `astro.config.mjs` because it was the original styling approach; the canonical pages use vanilla CSS via `<style is:global define:vars={...}>` in `SiteLayout.astro`. Remove if a Phase 1C/1D pass wants to simplify.
+- **AWS S3 + CloudFront** — static hosting and CDN (Phase 1D; not yet provisioned).
+- **GitHub Actions** — CI/CD on push to main (wires up with AWS in Phase 1D).
+
+(MDX, RSS, sitemap deps were removed on 2026-04-30 with the blog strip. RSS and sitemap come back in Phase 1C; MDX returns with the blog in Phase 2.)
 
 ## Project Structure
 
 ```
 src/
-  components/     Reusable .astro components
-  content/        Content collections (blog/, publications/, talks/, articles/, projects/)
-  content.config.ts  Collection schemas (zod)
-  layouts/        Page layouts (BaseLayout, PageLayout, BlogPostLayout)
-  pages/          Route pages (file-based routing)
-  styles/         Global CSS (Tailwind imports + custom styles)
-public/           Static assets (images, resume PDF, favicon)
-scripts/          Shell scripts (deploy, new-post)
+  components/
+    SiteLayout.astro    Shell: <html>, sticky masthead with navLinks, slot for content,
+                        endnote/footer, AND all global CSS (palette + typography +
+                        masthead + intro grid + chrono rows + endnote). Takes palette
+                        and font-stack props via define:vars.
+    HomeContent.astro   Home page body (intro grid: photo + name + byline + lede +
+                        3 bullets, social row with inline monochrome SVG icons,
+                        experience block, education block). Wraps SiteLayout.
+  content/              Content collections — articles/ projects/ publications/ talks/
+  content.config.ts     Zod schemas for content collections.
+  lib/
+    site-content.ts     Editorial source of truth: navLinks, lede, byline, bullets[],
+                        experience[], education[], pageTitle, pageDescription.
+                        Edit here for home-page wordsmithing.
+    site-theme.ts       Palette + font stacks (v2Theme). Single export.
+  pages/
+    index.astro         Home. Imports HomeContent + v2Theme + the two fontsource pkgs.
+    cv.astro            Long-form CV. Inline content for awards/advisory/focus/
+                        selectedPubs/selectedTalks; pulls experience+education from
+                        site-content. Wraps SiteLayout.
+    talks.astro         Reads `talks` collection, sorted desc by date.
+    projects.astro      Reads `projects` collection, custom order.
+    publications.astro  Reads `publications` collection, sorted desc by year.
+    press.astro         Reads `articles` collection, sorted desc by date.
+public/
+  favicon.svg
+  images/scott-clark.jpg    Headshot used on the home page.
+  resume/scott-clark-resume.pdf  PDF export linked from the endnote on every page.
+scripts/deploy.sh       Phase 1D — not yet wired.
+screenshots/refs/       Iteration history and reference-site captures (01–20).
+                        Useful when revisiting design choices.
+.playwright-mcp/        Playwright MCP cache — not committed conceptually.
 ```
+
+`/about` exists only as a static redirect to `/`, configured via `redirects` in `astro.config.mjs`.
 
 ## Commands
 
 ```bash
-npm run dev        # Start dev server (localhost:4321)
-npm run build      # Build static site to dist/
-npm run preview    # Preview built site locally
-npm run deploy     # Build and deploy to AWS
-npm run new-post -- "Title"  # Create a new blog post
+nvm use            # Node 22 from .nvmrc — required first
+npm run dev        # localhost:4321
+npm run build      # static build to dist/
+npm run preview    # preview built output
+npm run deploy     # Phase 1D — not yet wired
 ```
 
 ## Content Conventions
 
-### Blog Posts
-- Location: `src/content/blog/<slug>.mdx`
-- Format: MDX with YAML frontmatter
-- Required frontmatter: title, description, date
-- Set `draft: true` to hide from production
-- Use `npm run new-post -- "Title"` to scaffold
+(Blog Post conventions deferred until Phase 2.)
+
+### Editorial copy (home + CV)
+- **Single source of truth for home copy:** `src/lib/site-content.ts` — `lede`, `byline`, `bullets[]`, `experience[]`, `education[]`. Edit there, not in pages.
+- **CV-only sections** (awards, advisory, focus areas, selected publications, selected talks) are inline at the top of `src/pages/cv.astro`.
+- **`pageTitle` / `pageDescription`** for the home page are also in `site-content.ts`. Subpage titles/descriptions live in their respective `.astro` files.
 
 ### Structured Content (publications, talks, articles, projects)
-- Location: `src/content/<type>/<name>.yaml`
-- One YAML file per entry
-- Schemas defined in `src/content.config.ts`
+- Location: `src/content/<type>/<name>.yaml`. One YAML file per entry.
+- Schemas defined in `src/content.config.ts` (zod) — update schema first when adding fields.
+- Source for facts: dossier first, then Scott. **Never invent publications/citations/dates.**
 
 ## Coding Standards
 
-- Use Astro components (.astro) for all UI — no React/Vue unless interactivity requires it
-- Keep pages thin: fetch data, pass to components
-- All content types have typed schemas in content.config.ts — update schema when adding fields
-- Use Tailwind utility classes directly in templates
-- Custom CSS goes in `src/styles/global.css` only when Tailwind utilities are insufficient
-- Follow the existing design system: use `--color-accent`, `--color-surface`, `--color-text-*` theme variables
-- Images go in `public/images/` for static assets or reference URLs for external images
+- Astro components (`.astro`) for all UI — no React/Vue unless interactivity genuinely requires it.
+- Keep pages thin: fetch data, pass to `SiteLayout` (for subpages) or `HomeContent` (for the home).
+- All CSS lives in `SiteLayout.astro`'s `<style is:global define:vars={...}>` block. Page-specific CSS (e.g., `.abstract` on publications, `.focus-list` on cv) goes in `<style is:global>` at the bottom of that page.
+- Theme tokens (`--bg`, `--ink`, `--mute`, `--soft`, `--accent`, `--rule`, `--ruleSoft`, `--serif`, `--sans`) are wired through CSS custom properties via Astro's `define:vars`. Source in `src/lib/site-theme.ts`.
+- Images go in `public/images/` for static assets, or external URLs for third-party media.
 
 ## Design System
 
-Theme colors (defined in `src/styles/global.css` via `@theme`):
-- `accent` / `accent-light` / `accent-dark` — primary brand color (sky blue)
-- `surface` / `surface-light` / `surface-lighter` — background layers (dark navy)
-- `text-primary` / `text-secondary` / `text-muted` — text hierarchy
+Live palette (defined in `src/lib/site-theme.ts` as `v2Theme`, threaded into CSS custom properties via `SiteLayout`'s `define:vars`):
 
-Typography: Inter font family, bold headings, generous spacing.
+| Token | Hex | Use |
+|---|---|---|
+| `bg` | `#fbf9f4` | Page background — warm near-white. |
+| `ink` | `#1c1916` | Primary text, links default state. |
+| `mute` | `#6c655d` | Dates, secondary text, byline, nav. |
+| `soft` | `#8a847a` | Section labels, copyright, very-tertiary text. |
+| `accent` | `#8a3f1f` | Hover state for links — restrained oxblood. Visible only on `:hover`. |
+| `rule` | `#ece5d9` | Hairline rules: section dividers, top of bullets, masthead bottom border. |
+| `ruleSoft` | `#f2ece1` | Softer between-row dividers in chronological strips. |
+
+Typography: Source Serif 4 for display + org names + wordmark; IBM Plex Sans for body, byline, labels, nav, dates. Self-hosted, no CDN. See "Type system" under Design discipline.
+
+Body font-size 17px, line-height 1.55. Max content width 880px. Sticky masthead with hairline bottom border.
 
 ## Deployment
 
-- **Auto**: Push to `main` triggers GitHub Actions → build → S3 sync → CloudFront invalidation
-- **Manual**: `npm run deploy` (requires AWS CLI configured + `.env` with S3_BUCKET and CLOUDFRONT_DISTRIBUTION_ID)
+- **Auto:** Push to `main` triggers GitHub Actions → build → S3 sync → CloudFront invalidation
+- **Manual:** `npm run deploy` (requires AWS CLI configured + `.env` with `S3_BUCKET` and `CLOUDFRONT_DISTRIBUTION_ID`)
+- **AWS infra not yet provisioned** as of 2026-04-30 — see `~/dev/vault/Projects/scottclark.io.md` for the deploy task list (S3 bucket, ACM cert in us-east-1, CloudFront distribution, Route 53, GitHub OIDC role).
 
 ## Do NOT
 
-- Add client-side JavaScript unless absolutely necessary (Astro islands only)
-- Use server-side rendering — this is a fully static site
-- Commit `.env` files or AWS credentials
-- Modify the LICENSE structure (dual MIT/copyright)
-- Remove the CHANGELOG.md tracking
+- **Do NOT invent facts about Scott** (publications, citations, awards, affiliations, dates, team sizes, raise amounts). Cross-check the dossier or ask. Caught one hallucination (fake BMC Velvetrope paper) on 2026-04-30 — the bar is zero.
+- **Do NOT drift bio facts** between this site, `~/dev/vault/Meta/user-bio.md`, and `~/dev/resume/ScottClark.md`. When facts change, propagate in order (dossier → resume md → vault bio → site).
+- **Do NOT edit `src/lib/site-content.ts` editorial copy without an explicit ask.** Scott is wordsmithing this himself (lede, byline, bullets, experience descriptions). Surface proposed changes conversationally; don't auto-improve.
+- **Do NOT round, expand, or "correct" the `1,200+` citation count** back to a precise number from the resume markdown. The rounding is intentional — exact numbers read try-hard and stale fast.
+- **Do NOT swap fonts or palette** without an explicit ask. Source Serif 4 + IBM Plex Sans + the warm-cream palette are committed; deviations should be a deliberate session, not a side-effect.
+- **Do NOT add features beyond the static-site vision.** No CMS, no comment systems, no analytics dashboards in the site itself, no user accounts. Keep it static, fast, cheap.
+- **Do NOT re-add the blog without an explicit Phase 2 unlock from Scott.** The blog (`pages/blog/`, `content/blog/`, blog layout, blog card, `scripts/new-post.sh`, MDX dep) was stripped on 2026-04-30 to keep design iteration uncluttered.
+- **Do NOT proactively wire up AIO endpoints** (JSON-LD, llms.txt, .md twins, robots.txt allow-stance, sitemap, RSS). These are Phase 1C — invoke deliberately, not as a side-effect of other work.
+- **Do NOT add client-side JavaScript** unless absolutely necessary (Astro islands only). Currently the site ships zero JS to the browser; preserve that.
+- **Do NOT use server-side rendering** — fully static.
+- **Do NOT commit `.env` files or AWS credentials.**
+- **Do NOT modify the LICENSE structure** (dual MIT/copyright).
+- **Do NOT remove the CHANGELOG.md** tracking.
+- **Do NOT push to main** unless Scott explicitly asks. (Once GitHub Actions is wired, every push to main deploys live.)
+- **Do NOT amend the resume PDF in place** — the canonical resume builds from `~/dev/resume/ScottClarkResume.tex`. To update the PDF served here, rebuild in `~/dev/resume/` and re-copy.
+- **Do NOT install packages without asking** (Scott is averse to surprise installs per `~/dev/resume/AGENTS.md`).

@@ -1,36 +1,49 @@
 ---
-import PageLayout from "../layouts/PageLayout.astro";
-import ArticleCard from "../components/ArticleCard.astro";
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/ibm-plex-sans";
 import { getCollection } from "astro:content";
+import SiteLayout from "../components/SiteLayout.astro";
+import { v2Theme } from "../lib/site-theme";
 
-const articles = (await getCollection("articles"))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const articles = (await getCollection("articles")).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+
+const fmtPeriod = (d: Date) => {
+  const month = d.toLocaleString("en-US", { month: "short" });
+  return `${month} ${d.getFullYear()}`;
+};
 ---
 
-<PageLayout
-  title="Press — Scott Clark"
-  description="Articles, press mentions, and media coverage of Scott Clark."
+<SiteLayout
+  {...v2Theme}
+  pageTitle="Press — Scott Clark"
+  pageDescription="External coverage and media features of Scott Clark's work — TechCrunch, Wall Street Journal, BusinessWire, Cornell Chronicle, Oregon State, and others."
 >
-  <div class="mx-auto max-w-4xl px-6 py-16">
-    <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">Press</h1>
-    <p class="mb-12 text-xl text-text-secondary">
-      Articles and media mentions.
+  <header class="page-head">
+    <h1>Press</h1>
+    <p class="sub">
+      External coverage and media features. Ordered most recent first.
     </p>
+  </header>
 
-    <div class="grid gap-6 md:grid-cols-2">
-      {articles.map((article) => (
-        <ArticleCard
-          title={article.data.title}
-          publication={article.data.publication}
-          date={article.data.date}
-          url={article.data.url}
-          excerpt={article.data.excerpt}
-        />
-      ))}
-    </div>
-
-    {articles.length === 0 && (
-      <p class="text-text-muted">No press mentions yet. Check back soon!</p>
-    )}
-  </div>
-</PageLayout>
+  <ol class="rows">
+    {
+      articles.map((a) => (
+        <li class="row">
+          <div class="row-period">{fmtPeriod(a.data.date)}</div>
+          <div class="row-body">
+            <div class="row-head">
+              <span class="row-org">{a.data.title}</span>
+              <span class="row-title">{a.data.publication}</span>
+            </div>
+            {a.data.excerpt && <p class="row-desc">{a.data.excerpt}</p>}
+            <p class="row-links">
+              <a href={a.data.url}>Read</a>
+            </p>
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+</SiteLayout>

@@ -1,4 +1,5 @@
-title: "From argmax f(x) to an International Business: Building a Startup with Applied Mathematics"
+title: "From argmax f(x) to an International Business"
 event: "Cornell CAM Notable Alumni Speaker Series"
-date: 2019-10-01
-description: "Invited talk at Cornell's Center for Applied Mathematics describing how applied mathematics research in Bayesian optimization led to founding SigOpt, an international optimization-as-a-service business."
+date: 2019-12-06
+videoUrl: "https://www.youtube.com/watch?v=EUXRJs4GVg4"
+description: "76-minute career-arc talk at Cornell's Center for Applied Mathematics on how applied mathematics research in Bayesian optimization led from a Cornell PhD through Yelp's MOE project to founding SigOpt as an international optimization-as-a-service business."

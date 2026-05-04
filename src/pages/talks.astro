@@ -1,37 +1,55 @@
 ---
-import PageLayout from "../layouts/PageLayout.astro";
-import TalkCard from "../components/TalkCard.astro";
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/ibm-plex-sans";
 import { getCollection } from "astro:content";
+import SiteLayout from "../components/SiteLayout.astro";
+import { v2Theme } from "../lib/site-theme";
 
-const talks = (await getCollection("talks"))
-  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf());
+const talks = (await getCollection("talks")).sort(
+  (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
+);
+
+const fmtPeriod = (d: Date) => {
+  const month = d.toLocaleString("en-US", { month: "short" });
+  return `${month} ${d.getFullYear()}`;
+};
 ---
 
-<PageLayout
-  title="Talks — Scott Clark"
-  description="Conference talks, presentations, and speaking engagements by Scott Clark."
+<SiteLayout
+  {...v2Theme}
+  pageTitle="Talks — Scott Clark"
+  pageDescription="Conference talks, podcast appearances, and fireside chats by Scott Clark on AI reliability, Bayesian optimization, and AI testing."
 >
-  <div class="mx-auto max-w-4xl px-6 py-16">
-    <h1 class="mb-4 text-4xl font-extrabold tracking-tight md:text-5xl">Talks</h1>
-    <p class="mb-12 text-xl text-text-secondary">
-      Conference talks and presentations.
+  <header class="page-head">
+    <h1>Talks</h1>
+    <p class="sub">
+      Conference talks, podcast appearances, and fireside chats. Ordered most recent first.
     </p>
+  </header>
 
-    <div class="space-y-8">
-      {talks.map((talk) => (
-        <TalkCard
-          title={talk.data.title}
-          event={talk.data.event}
-          date={talk.data.date}
-          videoUrl={talk.data.videoUrl}
-          slidesUrl={talk.data.slidesUrl}
-          description={talk.data.description}
-        />
-      ))}
-    </div>
-
-    {talks.length === 0 && (
-      <p class="text-text-muted">No talks yet. Check back soon!</p>
-    )}
-  </div>
-</PageLayout>
+  <ol class="rows">
+    {
+      talks.map((t) => (
+        <li class="row">
+          <div class="row-period">{fmtPeriod(t.data.date)}</div>
+          <div class="row-body">
+            <div class="row-head">
+              <span class="row-org">{t.data.title}</span>
+              <span class="row-title">{t.data.event}</span>
+            </div>
+            <p class="row-desc">{t.data.description}</p>
+            {(t.data.videoUrl || t.data.slidesUrl) && (
+              <p class="row-links">
+                {t.data.videoUrl && <a href={t.data.videoUrl}>Video</a>}
+                {t.data.videoUrl && t.data.slidesUrl && (
+                  <span class="sep">·</span>
+                )}
+                {t.data.slidesUrl && <a href={t.data.slidesUrl}>Slides</a>}
+              </p>
+            )}
+          </div>
+        </li>
+      ))
+    }
+  </ol>
+</SiteLayout>

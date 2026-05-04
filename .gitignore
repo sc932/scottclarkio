@@ -22,6 +22,7 @@ Thumbs.db
 
 # claude code
 .claude/
+.playwright-mcp/
 
 # misc
 *.log

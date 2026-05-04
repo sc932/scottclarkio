@@ -1,8 +1,9 @@
 title: "Distributional"
-description: "A modern platform for enterprise AI testing and evaluation. Distributional helps organizations make AI safe, reliable, and secure through automated testing, statistical analysis of data distributions, and continuous adaptive testing throughout the AI lifecycle."
+description: "A modern platform for enterprise AI testing and production behavioral analytics. Distributional turns raw LLM and agent trace data into actionable insights, helping organizations make AI safe, reliable, and secure through automated testing, statistical analysis of data distributions, and continuous adaptive testing throughout the AI lifecycle. Founded July 2023; $30M raised from Andreessen Horowitz, Two Sigma Ventures, and others; serving multiple Fortune 500 customers."
 url: "https://www.distributional.com"
 tags:
   - AI Testing
-  - Machine Learning
+  - Behavioral Analytics
+  - LLM Observability
   - Enterprise
   - Reliability

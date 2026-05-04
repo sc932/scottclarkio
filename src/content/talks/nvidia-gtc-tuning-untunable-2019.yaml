@@ -1,0 +1,5 @@
+title: "Tuning the Un-Tunable"
+event: "NVIDIA GTC Silicon Valley 2019"
+date: 2019-03-18
+videoUrl: "https://www.youtube.com/watch?v=G00fVTKbmZE"
+description: "Strategies for optimizing deep learning models with long training cycles using Bayesian optimization. Presented at NVIDIA GTC Silicon Valley 2019."

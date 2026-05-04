@@ -7,12 +7,16 @@
     "dev": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "deploy": "bash scripts/deploy.sh",
-    "new-post": "bash scripts/new-post.sh"
+    "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
-    "astro": "^5.5.0",
-    "@astrojs/mdx": "^4.2.0"
+    "@fontsource-variable/crimson-pro": "^5.2.8",
+    "@fontsource-variable/eb-garamond": "^5.2.7",
+    "@fontsource-variable/fraunces": "^5.2.9",
+    "@fontsource-variable/ibm-plex-sans": "^5.2.8",
+    "@fontsource-variable/newsreader": "^5.2.10",
+    "@fontsource-variable/source-serif-4": "^5.2.9",
+    "astro": "^5.5.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.0",
