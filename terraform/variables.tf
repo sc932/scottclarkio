@@ -1,5 +1,5 @@
 variable "domain" {
-  description = "Apex domain. Used for the ACM cert SAN (*.${var.domain}), the S3 bucket name, the CloudFront aliases, and the Route 53 zone lookup."
+  description = "Apex domain. Used for the ACM cert (apex + wildcard SAN), the S3 bucket name, the CloudFront aliases, and the Route 53 zone lookup."
   type        = string
   default     = "scottclark.io"
 }
