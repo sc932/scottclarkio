@@ -43,10 +43,10 @@ jobs:
             --exclude "*.json"
           aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }} \
             --cache-control "public, max-age=3600, must-revalidate" \
+            --exclude "*" \
             --include "*.html" \
             --include "*.xml" \
-            --include "*.json" \
-            --exclude "*"
+            --include "*.json"
 
       - name: Invalidate CloudFront
         run: |
