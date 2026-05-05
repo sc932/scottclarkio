@@ -1,0 +1,18 @@
+/* SITE */
+Site:           scottclark.io
+Description:    Personal website for Scott Clark — co-founder & CEO of Distributional, previously SigOpt + Intel, Cornell PhD applied math.
+Source:         https://github.com/sc932/scottclarkio
+Last update:    2026-05-04
+Standards:      HTML5, CSS3, JSON-LD, Microformats h-card, RSS 2.0
+Components:     Astro 5, Source Serif 4, IBM Plex Sans
+Software:       Astro static site generator, AWS S3 + CloudFront
+
+/* PERSON */
+Name:           Scott C. Clark, Ph.D.
+Site:           https://scottclark.io
+Email:          scott@scottclark.io
+GitHub:         @sc932
+LinkedIn:       in/sc932
+ORCID:          0009-0007-0478-7129
+Twitter:        @DrScottClark
+Location:       Palo Alto, California

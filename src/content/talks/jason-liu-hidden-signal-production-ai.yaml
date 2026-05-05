@@ -1,0 +1,5 @@
+title: "The Hidden Signal in Production AI Logs"
+event: "Jason Liu Podcast"
+date: 2025-01-01
+videoUrl: "https://www.youtube.com/watch?v=FKL918FgxAw"
+description: "Long-form conversation with Jason Liu on production AI observability, what behavioral signals to extract from production logs, and the testing thesis behind Distributional."

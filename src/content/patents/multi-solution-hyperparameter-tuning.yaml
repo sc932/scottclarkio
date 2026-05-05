@@ -1,0 +1,14 @@
+title: "Multi-Solution Hyperparameter Tuning"
+patents:
+  - number: "US 11,270,217"
+    year: 2022
+    url: "https://patents.google.com/patent/US11270217"
+  - number: "US 11,966,860"
+    year: 2024
+    url: "https://patents.google.com/patent/US11966860"
+inventors:
+  - Kelvin Tee
+  - Michael McCourt
+  - Patrick Hayes
+  - Scott C. Clark
+abstract: "Systems and methods for generating multiple solution sets during hyperparameter tuning to support diverse model selection criteria."

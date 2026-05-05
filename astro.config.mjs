@@ -1,13 +1,10 @@
 import { defineConfig } from "astro/config";
-import tailwindcss from "@tailwindcss/vite";
+import sitemap from "@astrojs/sitemap";
 
 export default defineConfig({
   site: "https://scottclark.io",
-  integrations: [],
+  integrations: [sitemap()],
   redirects: {
     "/about": "/",
-  },
-  vite: {
-    plugins: [tailwindcss()],
   },
 });

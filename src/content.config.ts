@@ -49,4 +49,22 @@ const projects = defineCollection({
   }),
 });
 
-export const collections = { publications, talks, articles, projects };
+const patents = defineCollection({
+  loader: glob({ pattern: "**/*.yaml", base: "./src/content/patents" }),
+  schema: z.object({
+    title: z.string(),
+    patents: z
+      .array(
+        z.object({
+          number: z.string(),
+          year: z.number(),
+          url: z.string().url().optional(),
+        })
+      )
+      .min(1),
+    inventors: z.array(z.string()),
+    abstract: z.string().optional(),
+  }),
+});
+
+export const collections = { publications, talks, articles, projects, patents };

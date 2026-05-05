@@ -1,0 +1,14 @@
+title: "Anomaly Detection in Deployed Artificial Intelligence Applications"
+patents:
+  - number: "US 12,505,027"
+    year: 2025
+    url: "https://patents.google.com/patent/US12505027"
+inventors:
+  - Michael McCourt
+  - Rachel Bourassa-Denis
+  - Kyle Laban
+  - Olivia Kim
+  - Ian Dewancker
+  - Bolong Cheng
+  - Scott C. Clark
+abstract: "Methods and systems for detecting anomalous behavior in production AI applications using statistical analysis of behavioral signals from inference traces."

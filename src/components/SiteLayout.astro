@@ -1,5 +1,11 @@
 ---
-import { navLinks } from "../lib/site-content";
+import {
+  navLinks,
+  personSchema,
+  websiteSchema,
+  buildBreadcrumbList,
+  siteUrl,
+} from "../lib/site-content";
 
 interface Props {
   /** <title> */
@@ -24,6 +30,12 @@ interface Props {
   serif: string;
   /** CSS font-family stack for body. */
   sans: string;
+  /** og:type override; defaults to "website" (use "profile" on /, "article" on blog posts). */
+  ogType?: string;
+  /** Optional page-specific JSON-LD entity (ProfilePage, CollectionPage, etc.) appended to the @graph. */
+  pageSchema?: object | null;
+  /** Optional path to preload as image (for above-the-fold LCP), e.g. "/images/scott-clark.jpg". */
+  preloadImage?: string | null;
 }
 
 const {
@@ -38,7 +50,40 @@ const {
   ruleSoft,
   serif,
   sans,
+  ogType = "website",
+  pageSchema = null,
+  preloadImage = null,
 } = Astro.props;
+
+// Canonical URL + .md twin for AIO discovery hint.
+// Path is normalized: strip trailing slash; root maps to /index.md.
+const normalizedPath = Astro.url.pathname.replace(/\/$/, "");
+const canonicalPath = normalizedPath === "" ? "/" : normalizedPath;
+const mdTwinPath =
+  normalizedPath === "" ? "/index.md" : `${normalizedPath}.md`;
+const canonicalUrl = `${siteUrl}${canonicalPath}`;
+const ogImageUrl = `${siteUrl}/images/scott-clark.jpg`;
+
+// Build a single JSON-LD @graph: Person + WebSite + BreadcrumbList + (optional)
+// page-specific entity. Strip @context from inner nodes since the outer wrapper
+// declares it once.
+const stripContext = <T extends { "@context"?: unknown }>(node: T) => {
+  const { "@context": _ctx, ...rest } = node;
+  return rest;
+};
+const breadcrumbList = buildBreadcrumbList(canonicalPath);
+const jsonLdGraph = {
+  "@context": "https://schema.org",
+  "@graph": [
+    stripContext(personSchema),
+    stripContext(websiteSchema),
+    stripContext(breadcrumbList),
+    ...(pageSchema ? [stripContext(pageSchema as { "@context"?: unknown })] : []),
+  ],
+};
+
+// rel="me" identity claims: link to every profile in personSchema.sameAs plus mailto.
+const relMeLinks = [...personSchema.sameAs, `mailto:${personSchema.email}`];
 ---
 
 <!doctype html>
@@ -46,9 +91,90 @@ const {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
     <title>{pageTitle}</title>
     <meta name="description" content={pageDescription} />
+
+    {/* Indexing signals */}
+    <meta
+      name="robots"
+      content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"
+    />
+    <meta name="googlebot" content="index, follow" />
+    <meta name="author" content="Scott Clark" />
+    <meta name="application-name" content="Scott Clark" />
+
+    {/* Theming */}
+    <meta name="theme-color" content="#fbf9f4" />
+    <meta name="color-scheme" content="light" />
+
+    {/* Favicon variants */}
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="alternate icon" href="/favicon.svg" />
+    <link rel="mask-icon" href="/favicon.svg" color="#1c1916" />
+    <link rel="apple-touch-icon" href="/favicon.svg" />
+
+    {/* Canonical + alternate representations */}
+    <link rel="canonical" href={canonicalUrl} />
+    <link
+      rel="alternate"
+      type="text/markdown"
+      href={mdTwinPath}
+      title="Plain markdown version (for LLM ingestion)"
+    />
+    <link
+      rel="alternate"
+      type="application/rss+xml"
+      title="Scott Clark — RSS"
+      href="/rss.xml"
+    />
+    <link
+      rel="sitemap"
+      type="application/xml"
+      title="Sitemap"
+      href="/sitemap-index.xml"
+    />
+
+    {/* IndieWeb identity claims (rel=me) */}
+    {relMeLinks.map((href) => <link rel="me" href={href} />)}
+    <link rel="author" href={`${siteUrl}/`} />
+
+    {/* Above-the-fold image preload (per-page opt-in) */}
+    {preloadImage && (
+      <link rel="preload" as="image" href={preloadImage} fetchpriority="high" />
+    )}
+
+    {/* Open Graph */}
+    <meta property="og:type" content={ogType} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={pageDescription} />
+    <meta property="og:url" content={canonicalUrl} />
+    <meta property="og:site_name" content="Scott Clark" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:image" content={ogImageUrl} />
+    <meta property="og:image:alt" content="Scott Clark" />
+    {ogType === "profile" && (
+      <>
+        <meta property="profile:first_name" content="Scott" />
+        <meta property="profile:last_name" content="Clark" />
+        <meta property="profile:username" content="DrScottClark" />
+      </>
+    )}
+
+    {/* Twitter Card */}
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={pageDescription} />
+    <meta name="twitter:image" content={ogImageUrl} />
+    <meta name="twitter:image:alt" content="Scott Clark" />
+    <meta name="twitter:creator" content="@DrScottClark" />
+    <meta name="twitter:site" content="@DrScottClark" />
+
+    {/* Structured data: Person + WebSite + BreadcrumbList + (optional) page entity, all in one @graph. */}
+    <script
+      type="application/ld+json"
+      set:html={JSON.stringify(jsonLdGraph)}
+    />
   </head>
 
   <body>
@@ -311,6 +437,26 @@ const {
         font-size: 16px;
         line-height: 1.55;
         color: var(--ink);
+      }
+      .row-bullets {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        font-size: 16px;
+        line-height: 1.55;
+        color: var(--ink);
+      }
+      .row-bullets li {
+        position: relative;
+        padding-left: 18px;
+        margin-bottom: 4px;
+      }
+      .row-bullets li:last-child { margin-bottom: 0; }
+      .row-bullets li::before {
+        content: "—";
+        position: absolute;
+        left: 0;
+        color: var(--soft);
       }
       .row-links {
         margin: 8px 0 0;

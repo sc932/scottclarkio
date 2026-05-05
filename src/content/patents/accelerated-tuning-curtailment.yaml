@@ -1,0 +1,27 @@
+title: "Accelerated Tuning / Advanced Curtailment"
+patents:
+  - number: "US 11,157,812"
+    year: 2021
+    url: "https://patents.google.com/patent/US11157812"
+  - number: "US 11,704,567"
+    year: 2023
+    url: "https://patents.google.com/patent/US11704567"
+  - number: "US 12,159,209"
+    year: 2024
+    url: "https://patents.google.com/patent/US12159209"
+  - number: "US 12,373,699"
+    year: 2025
+    url: "https://patents.google.com/patent/US12373699"
+  - number: "US 12,450,479"
+    year: 2025
+    url: "https://patents.google.com/patent/US12450479"
+inventors:
+  - Michael McCourt
+  - Jackle-Spriggs
+  - Ben-Cheng Hsu
+  - Howey
+  - Vance
+  - Jim Blomo
+  - Patrick Hayes
+  - Scott C. Clark
+abstract: "Systems and methods for accelerating hyperparameter tuning through early curtailment of unpromising trials in a machine learning optimization service."

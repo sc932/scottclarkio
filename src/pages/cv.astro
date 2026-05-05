@@ -3,156 +3,40 @@ import "@fontsource-variable/source-serif-4";
 import "@fontsource-variable/ibm-plex-sans";
 import SiteLayout from "../components/SiteLayout.astro";
 import { v2Theme } from "../lib/site-theme";
-import { experience, education } from "../lib/site-content";
+import { education, buildProfilePageSchema } from "../lib/site-content";
+import {
+  cvExperience,
+  researchPracticums,
+  awards,
+  advisory,
+  focusAreas,
+  selectedPubs,
+  selectedTalks,
+} from "../lib/cv-content";
 
-const awards = [
-  {
-    period: "2016",
-    title: "Forbes 30 Under 30",
-    body: "Enterprise Technology category. Recognized as co-founder &amp; CEO of SigOpt.",
-  },
-  {
-    period: "2016",
-    title: "Young Alumni Award",
-    body: "Oregon State University, College of Science.",
-  },
-  {
-    period: "2010",
-    title: "DOE CSGF Communicating Science Award (Honorable Mention)",
-    body: 'For the essay "Solving Genomic Jigsaws," <em>DEIXIS Magazine</em>.',
-  },
-  {
-    period: "2008 — 2012",
-    title: "DOE Computational Science Graduate Fellowship",
-    body: "Full four-year PhD scholarship (~$300,000), Department of Energy. Contract DE-FG02-97ER25308.",
-  },
-  {
-    period: "2008",
-    title: "Cornell University Sage Fellowship",
-    body: "$55,000, declined in favor of DOE CSGF.",
-  },
-  {
-    period: "2010 — 2012",
-    title: "NERSC Production + Startup Allocations",
-    body: "Principal Investigator, Cray XT4 (DOE Contract DE-AC02-05CH11231), 100,000 production hours plus startup renewals.",
-  },
-];
-
-const advisory = [
-  {
-    period: "2022 — 2025",
-    title: "Oregon Museum of Science and Industry",
-    role: "Board of Trustees · Treasurer · Finance Committee Chair",
-    body: "Executive Committee member; chaired the Finance Committee through OMSI's post-COVID financial recovery.",
-  },
-  {
-    period: "2019 — 2025",
-    title: "Oregon State University, College of Science",
-    role: "Board of Advisors",
-    body: "Advised the Dean's office on industry partnerships and research-to-product translation.",
-  },
-  {
-    period: "2018 — 2025",
-    title: "Oregon State University, College of Science",
-    role: "Industry and Innovation Council",
-    body: "Industry-side member supporting the College's translational research initiatives.",
-  },
-];
-
-const focusAreas = [
-  "Bayesian optimization",
-  "Gaussian processes",
-  "Optimal learning",
-  "Multi-armed bandits",
-  "Hyperparameter tuning",
-  "AI reliability",
-  "AI testing & evaluation",
-  "Production ML observability",
-  "LLM and agent evaluation",
-  "Experiment design",
-  "A/B testing",
-  "Monte Carlo methods",
-  "Numerical analysis",
-  "High-performance computing",
-  "Parallel algorithms",
-  "Distributed systems",
-  "CUDA / GPU computing",
-  "Bioinformatics",
-  "Genome assembly",
-  "Computational biophysics",
-];
-
-const selectedPubs = [
-  {
-    period: "2020",
-    title:
-      "Parallel Bayesian Global Optimization of Expensive Functions",
-    venue: "Operations Research",
-    body: "Wang, Clark, Liu, Frazier. 263+ citations. Theoretical and practical algorithms for parallel evaluation in BO.",
-  },
-  {
-    period: "2013",
-    title:
-      "ALE: A Generic Assembly Likelihood Evaluation Framework",
-    venue: "Bioinformatics",
-    body: "Clark, Egan, Frazier, Wang. 208+ citations. Reference-free quality metric for genome assemblies. Output of the JGI 2010 DOE practicum.",
-  },
-  {
-    period: "2016",
-    title: "Bayesian Optimization for Machine Learning: A Practical Guidebook",
-    venue: "arXiv:1612.04858",
-    body: "Dewancker, McCourt, Clark. 142+ citations. Widely-cited practitioner guide; the most-read public artifact from the SigOpt research program.",
-  },
-  {
-    period: "2025",
-    title: "Anomaly Detection in Deployed Artificial Intelligence Applications",
-    venue: "U.S. Patent 12,505,027",
-    body: "Distributional's first granted patent. McCourt, Bourassa-Denis, Laban, Kim, Dewancker, Cheng, Clark.",
-  },
-];
-
-const selectedTalks = [
-  {
-    period: "Mar 2026",
-    title: "AI Reliability for the Enterprise",
-    venue: "SAIR Podcast",
-  },
-  {
-    period: "May 2025",
-    title: "Behavioral Analytics for Production AI",
-    venue: "AI + a16z Podcast (with Matt Bornstein)",
-  },
-  {
-    period: "Nov 2022",
-    title: "oneAPI and the Future of Accelerated Computing",
-    venue: "SC22 theCUBE Panel (with David Schmidt of Dell)",
-  },
-  {
-    period: "Mar 2019",
-    title: "Tuning the Untunable",
-    venue: "NVIDIA GTC Silicon Valley",
-  },
-  {
-    period: "Dec 2019",
-    title: "From argmax f(x) to an International Business",
-    venue: "Cornell CAM Notable Alumni Speaker Series",
-  },
-];
+const cvPageSchema = buildProfilePageSchema({
+  pathname: "/cv",
+  name: "CV — Scott Clark",
+  description:
+    "Long-form CV for Scott Clark: complete career history, education, awards, advisory, research areas, and selected publications and talks.",
+});
 ---
 
 <SiteLayout
   {...v2Theme}
   pageTitle="CV — Scott Clark"
   pageDescription="Long-form CV for Scott Clark: complete career history, education, awards, advisory, research areas, and selected publications and talks."
+  pageSchema={cvPageSchema}
 >
   <header class="page-head">
     <h1>CV</h1>
     <p class="sub">
-      Long-form curriculum vitae. The short version lives on <a href="/preview/v2"
+      Long-form curriculum vitae. The short version lives on <a href="/"
         >the home page</a
-      >. The PDF export is available at <a
-        href="/resume/scott-clark-resume.pdf">scott-clark-resume.pdf</a
-      >; full LaTeX source and a structured markdown profile are in <a
+      >. Downloadable PDFs: <a href="/resume/scott-clark-resume.pdf"
+        >two-page resume</a
+      > and the longer <a href="/resume/scott-clark-cv.pdf">academic CV</a>. Full
+      LaTeX source and a structured markdown profile are in <a
         href="https://github.com/sc932/resume">github.com/sc932/resume</a
       >.
     </p>
@@ -162,18 +46,30 @@ const selectedTalks = [
     <h2 class="block-label">Experience</h2>
     <ol class="rows">
       {
-        experience.map((row) => (
-          <li class="row">
-            <div class="row-period">{row.period}</div>
-            <div class="row-body">
-              <div class="row-head">
-                <span class="row-org">{row.org}</span>
-                <span class="row-title">{row.title}</span>
+        cvExperience.map((row) => {
+          const list = row.cvBullets ?? row.bullets;
+          return (
+            <li class="row">
+              <div class="row-period">{row.period}</div>
+              <div class="row-body">
+                <div class="row-head">
+                  <span class="row-org">{row.org}</span>
+                  <span class="row-title">{row.title}</span>
+                </div>
+                {list && (
+                  <ul class="row-bullets">
+                    {list.map((b) => (
+                      <li set:html={b} />
+                    ))}
+                  </ul>
+                )}
+                {row.body && !list && (
+                  <p class="row-desc" set:html={row.body} />
+                )}
               </div>
-              <p class="row-desc" set:html={row.body} />
-            </div>
-          </li>
-        ))
+            </li>
+          );
+        })
       }
     </ol>
   </section>
@@ -191,6 +87,30 @@ const selectedTalks = [
                 <span class="row-title">{row.title}</span>
               </div>
               <p class="row-desc" set:html={row.body} />
+            </div>
+          </li>
+        ))
+      }
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2 class="block-label">Research Experience</h2>
+    <ol class="rows">
+      {
+        researchPracticums.map((row) => (
+          <li class="row">
+            <div class="row-period">{row.period}</div>
+            <div class="row-body">
+              <div class="row-head">
+                <span class="row-org">{row.org}</span>
+                <span class="row-title">{row.title}</span>
+              </div>
+              <ul class="row-bullets">
+                {row.cvBullets!.map((b) => (
+                  <li set:html={b} />
+                ))}
+              </ul>
             </div>
           </li>
         ))
@@ -270,7 +190,7 @@ const selectedTalks = [
       }
     </ol>
     <p class="block-pointer">
-      Full publication list and abstracts on the <a href="/preview/publications"
+      Full publication list and abstracts on the <a href="/publications"
         >Research</a
       > page; the most up-to-date list is on <a
         href="https://scholar.google.com/citations?user=mwWbhAUAAAAJ"
@@ -298,7 +218,7 @@ const selectedTalks = [
     </ol>
     <p class="block-pointer">
       40+ documented appearances since 2013. Full list on the <a
-        href="/preview/talks">Talks</a
+        href="/talks">Talks</a
       > page.
     </p>
   </section>

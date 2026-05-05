@@ -4,6 +4,7 @@ import "@fontsource-variable/ibm-plex-sans";
 import { getCollection } from "astro:content";
 import SiteLayout from "../components/SiteLayout.astro";
 import { v2Theme } from "../lib/site-theme";
+import { siteUrl, buildCollectionPageSchema } from "../lib/site-content";
 
 const publications = (await getCollection("publications")).sort(
   (a, b) => b.data.year - a.data.year
@@ -13,12 +14,38 @@ const formatAuthors = (authors: string[]) =>
   authors.map((a) =>
     a === "Scott C. Clark" ? `<strong>${a}</strong>` : a
   ).join(", ");
+
+const authorEntity = (a: string) =>
+  a === "Scott C. Clark"
+    ? { "@id": `${siteUrl}/#person` }
+    : { "@type": "Person", name: a };
+
+const publicationsPageSchema = buildCollectionPageSchema({
+  pathname: "/publications",
+  name: "Research — Scott Clark",
+  description:
+    "Peer-reviewed publications, granted patents, and academic work by Scott Clark across Bayesian optimization, machine learning, applied mathematics, and bioinformatics.",
+  items: publications.map((p) => ({
+    "@type": "ScholarlyArticle",
+    name: p.data.title,
+    author: p.data.authors.map(authorEntity),
+    isPartOf: { "@type": "Periodical", name: p.data.venue },
+    datePublished: String(p.data.year),
+    ...(p.data.abstract && { abstract: p.data.abstract }),
+    ...(p.data.url && { url: p.data.url }),
+    ...(p.data.doi && {
+      sameAs: `https://doi.org/${p.data.doi}`,
+      identifier: { "@type": "PropertyValue", propertyID: "doi", value: p.data.doi },
+    }),
+  })),
+});
 ---
 
 <SiteLayout
   {...v2Theme}
   pageTitle="Research — Scott Clark"
   pageDescription="Peer-reviewed publications, granted patents, and academic work by Scott Clark across Bayesian optimization, machine learning, applied mathematics, and bioinformatics."
+  pageSchema={publicationsPageSchema}
 >
   <header class="page-head">
     <h1>Research</h1>

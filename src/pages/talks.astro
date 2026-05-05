@@ -4,6 +4,7 @@ import "@fontsource-variable/ibm-plex-sans";
 import { getCollection } from "astro:content";
 import SiteLayout from "../components/SiteLayout.astro";
 import { v2Theme } from "../lib/site-theme";
+import { siteUrl, buildCollectionPageSchema } from "../lib/site-content";
 
 const talks = (await getCollection("talks")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
@@ -13,12 +14,29 @@ const fmtPeriod = (d: Date) => {
   const month = d.toLocaleString("en-US", { month: "short" });
   return `${month} ${d.getFullYear()}`;
 };
+
+const talksPageSchema = buildCollectionPageSchema({
+  pathname: "/talks",
+  name: "Talks — Scott Clark",
+  description:
+    "Conference talks, podcast appearances, and fireside chats by Scott Clark on AI reliability, Bayesian optimization, and AI testing.",
+  items: talks.map((t) => ({
+    "@type": "PresentationDigitalDocument",
+    name: t.data.title,
+    creator: { "@id": `${siteUrl}/#person` },
+    datePublished: t.data.date.toISOString().slice(0, 10),
+    description: t.data.description,
+    publisher: { "@type": "Organization", name: t.data.event },
+    ...(t.data.videoUrl && { url: t.data.videoUrl }),
+  })),
+});
 ---
 
 <SiteLayout
   {...v2Theme}
   pageTitle="Talks — Scott Clark"
   pageDescription="Conference talks, podcast appearances, and fireside chats by Scott Clark on AI reliability, Bayesian optimization, and AI testing."
+  pageSchema={talksPageSchema}
 >
   <header class="page-head">
     <h1>Talks</h1>

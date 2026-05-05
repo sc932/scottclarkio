@@ -1,9 +1,0 @@
-title: "Systems and Methods for an Accelerated Tuning of Hyperparameters of a Model Using a Machine Learning-Based Tuning Service"
-authors:
-  - Michael McCourt
-  - Ben-Cheng Hsu
-  - Patrick Hayes
-  - Scott C. Clark
-venue: "Patent / Technical Report"
-year: 2019
-abstract: "A system and method for accelerating hyperparameter tuning through a machine learning-based optimization service, enabling faster and more efficient model development."

@@ -1,0 +1,10 @@
+# Security disclosure for scottclark.io (RFC 9116).
+# This is a static personal site with no user data, no backend, and no
+# authentication — most "vulnerabilities" don't apply. But if you find
+# something genuinely concerning (defacement signal, supply-chain compromise
+# in deps, cert misissue, etc.), please reach out:
+
+Contact: mailto:scott@scottclark.io
+Expires: 2027-12-31T23:59:59.000Z
+Preferred-Languages: en
+Canonical: https://scottclark.io/.well-known/security.txt

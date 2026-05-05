@@ -1,0 +1,31 @@
+title: "Multiple Tuning Criteria Optimization"
+patents:
+  - number: "US 10,528,891"
+    year: 2020
+    url: "https://patents.google.com/patent/US10528891"
+  - number: "US 10,558,934"
+    year: 2020
+    url: "https://patents.google.com/patent/US10558934"
+  - number: "US 10,621,514"
+    year: 2020
+    url: "https://patents.google.com/patent/US10621514"
+  - number: "US 10,740,695"
+    year: 2020
+    url: "https://patents.google.com/patent/US10740695"
+  - number: "US 11,699,098"
+    year: 2023
+    url: "https://patents.google.com/patent/US11699098"
+  - number: "US 12,033,036"
+    year: 2024
+    url: "https://patents.google.com/patent/US12033036"
+inventors:
+  - Bolong Cheng
+  - Olivia Kim
+  - Michael McCourt
+  - Patrick Hayes
+  - Scott C. Clark
+  - Jackle-Spriggs
+  - Vance
+  - Ben-Cheng Hsu
+  - Frey
+abstract: "Systems and methods for hyperparameter optimization across multiple competing objectives or constraints simultaneously."

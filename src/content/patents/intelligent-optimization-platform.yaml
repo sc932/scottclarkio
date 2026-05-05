@@ -1,0 +1,42 @@
+title: "Intelligent Optimization Platform"
+patents:
+  - number: "US 10,217,061"
+    year: 2019
+    url: "https://patents.google.com/patent/US10217061"
+  - number: "US 10,282,237"
+    year: 2019
+    url: "https://patents.google.com/patent/US10282237"
+  - number: "US 10,379,913"
+    year: 2019
+    url: "https://patents.google.com/patent/US10379913"
+  - number: "US 10,445,150"
+    year: 2019
+    url: "https://patents.google.com/patent/US10445150"
+  - number: "US 10,565,025"
+    year: 2020
+    url: "https://patents.google.com/patent/US10565025"
+  - number: "US 10,607,159"
+    year: 2020
+    url: "https://patents.google.com/patent/US10607159"
+  - number: "US 11,163,615"
+    year: 2021
+    url: "https://patents.google.com/patent/US11163615"
+  - number: "US 11,301,781"
+    year: 2022
+    url: "https://patents.google.com/patent/US11301781"
+  - number: "US 11,709,719"
+    year: 2023
+    url: "https://patents.google.com/patent/US11709719"
+  - number: "US 12,141,667"
+    year: 2024
+    url: "https://patents.google.com/patent/US12141667"
+  - number: "US 12,236,287"
+    year: 2025
+    url: "https://patents.google.com/patent/US12236287"
+inventors:
+  - Patrick Hayes
+  - Michael McCourt
+  - Alexandra Johnson
+  - George Ke
+  - Scott C. Clark
+abstract: "Systems and methods for an intelligent experimentation and optimization platform that efficiently tunes parameters of expensive black-box models."

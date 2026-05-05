@@ -1,0 +1,62 @@
+---
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/ibm-plex-sans";
+import SiteLayout from "../components/SiteLayout.astro";
+import { v2Theme } from "../lib/site-theme";
+import { navLinks } from "../lib/site-content";
+---
+
+<SiteLayout
+  {...v2Theme}
+  pageTitle="404 — Scott Clark"
+  pageDescription="That page doesn't exist on scottclark.io. Try the home page or one of the listed sections."
+>
+  <header class="page-head">
+    <h1>404</h1>
+    <p class="sub">
+      That page doesn't exist on this site. Try the <a href="/">home page</a>,
+      or jump to one of these:
+    </p>
+  </header>
+
+  <ul class="not-found-links">
+    {
+      navLinks.map((l) => (
+        <li>
+          <a href={l.href}>{l.label}</a>
+        </li>
+      ))
+    }
+    <li>
+      <a href="/llms.txt">llms.txt</a> &nbsp;<span class="hint"
+        >(LLM ingestion index)</span
+      >
+    </li>
+    <li>
+      <a href="/sitemap-index.xml">sitemap</a>
+    </li>
+  </ul>
+
+  <style is:global>
+    .not-found-links {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 17px;
+    }
+    .not-found-links li {
+      padding: 6px 0;
+      border-bottom: 1px solid var(--ruleSoft);
+    }
+    .not-found-links li:last-child {
+      border-bottom: none;
+    }
+    .not-found-links .hint {
+      color: var(--soft);
+      font-size: 14px;
+    }
+  </style>
+</SiteLayout>

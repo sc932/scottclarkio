@@ -1,6 +1,6 @@
 # scottclark.io
 
-Personal website for Scott Clark. Built with [Astro](https://astro.build), styled with [Tailwind CSS](https://tailwindcss.com), hosted on AWS (S3 + CloudFront).
+Personal website for Scott Clark. Built with [Astro](https://astro.build), hosted on AWS (S3 + CloudFront).
 
 ## Prerequisites
 
@@ -58,76 +58,123 @@ Content is organized into typed collections in `src/content/`:
 | `talks/` | `.yaml` | Conference talks and presentations |
 | `articles/` | `.yaml` | Press mentions and articles about you |
 | `projects/` | `.yaml` | Projects and open source work |
+| `patents/` | `.yaml` | Granted US patents as named inventor |
 
 See example files in each directory for the required schema.
 
 ## Deployment
 
-### Automatic (GitHub Actions)
+All AWS infrastructure is provisioned by `terraform/`. Once that's applied, every push to `main` auto-deploys via `.github/workflows/` (build → S3 sync → CloudFront invalidate).
 
-Push to `main` → GitHub Actions builds and deploys to S3 + CloudFront.
+**The ACM cert, S3 bucket, CloudFront distribution, Route 53 alias records, and GitHub OIDC IAM role are all created by Terraform — no separate aws CLI commands.** See `terraform/README.md` for the per-resource breakdown.
 
-**Required GitHub Secrets:**
+### First-time AWS provisioning (one-time, ~30 minutes)
 
-| Secret | Description |
-|--------|-------------|
-| `AWS_ROLE_ARN` | IAM role ARN for GitHub OIDC (recommended over access keys) |
-| `S3_BUCKET` | S3 bucket name (e.g., `scottclark.io`) |
-| `CLOUDFRONT_DISTRIBUTION_ID` | CloudFront distribution ID |
+This assumes the Route 53 hosted zone for `scottclark.io` already exists with MX/TXT/CNAME records mirrored from the previous registrar, and the registrar's nameservers point at Route 53.
 
-### Manual
+**1. Confirm the new nameservers have propagated.** Don't run Terraform until at least one major resolver shows the AWS nameservers (otherwise ACM cert validation will sit and retry):
 
 ```bash
-# Copy .env.example and fill in your values
-cp .env.example .env
+dig +short scottclark.io NS @8.8.8.8
+dig +short scottclark.io NS @1.1.1.1
+# Expect 4 × ns-XXXX.awsdns-XX.{com,net,org,co.uk}; not iwantmyname.net
+```
 
-# Deploy (builds + syncs to S3 + invalidates CloudFront)
+**2. Install Terraform** (≥ 1.7) if not present:
+
+```bash
+wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install terraform
+terraform version
+```
+
+**3. Apply.** From the repo root:
+
+```bash
+cd terraform/
+terraform init      # downloads providers, generates .terraform.lock.hcl (commit it)
+terraform plan      # ~20 resources to add, review the diff
+terraform apply
+```
+
+Wall-clock 15–30 minutes. The slow steps:
+- `aws_acm_certificate_validation`: waits for ACM to validate the DNS-01 challenge against Route 53 (5–15 min after NS propagation).
+- `aws_cloudfront_distribution`: waits for the distribution to deploy globally (10–20 min).
+
+If you see `aws_iam_openid_connect_provider.github: already exists` because another project already added the GitHub OIDC provider in this AWS account, import it instead:
+
+```bash
+terraform import aws_iam_openid_connect_provider.github \
+  arn:aws:iam::$(aws sts get-caller-identity --query Account --output text):oidc-provider/token.actions.githubusercontent.com
+terraform apply
+```
+
+**4. Push the three Terraform outputs into GitHub Actions secrets.** Still inside `terraform/`:
+
+```bash
+gh secret set AWS_ROLE_ARN -b "$(terraform output -raw github_secret_AWS_ROLE_ARN)"
+gh secret set S3_BUCKET    -b "$(terraform output -raw github_secret_S3_BUCKET)"
+gh secret set CLOUDFRONT_DISTRIBUTION_ID -b "$(terraform output -raw github_secret_CLOUDFRONT_DISTRIBUTION_ID)"
+```
+
+(Or paste them via the UI at `https://github.com/sc932/scottclarkio/settings/secrets/actions`.)
+
+**5. Trigger the first deploy.** Either commit + push to `main`, or kick the workflow directly:
+
+```bash
+cd ..
+gh workflow run "Build & Deploy"
+gh run watch
+```
+
+**6. Verify.** When the workflow shows green:
+
+```bash
+curl -sI https://scottclark.io                # 200, TLS via ACM, HSTS header
+curl -sI https://www.scottclark.io            # 301 → https://scottclark.io/
+curl -sI https://scottclark.io/about          # 301 → https://scottclark.io/
+curl -s  https://scottclark.io/llms.txt | head
+curl -s  https://scottclark.io/sitemap-index.xml
+```
+
+Optional — confirm structured data + cards:
+- [Google Rich Results Test](https://search.google.com/test/rich-results) on `https://scottclark.io/`
+- [LinkedIn Post Inspector](https://www.linkedin.com/post-inspector/) for OG cards
+- [Twitter Card validator](https://cards-dev.twitter.com/validator) (if still up) or just paste in a tweet
+
+### Ongoing deploys
+
+Push to `main`. The workflow builds (`npm run build`), syncs `dist/` to S3 with the right Cache-Control headers, and invalidates `/*` on CloudFront. Done.
+
+### Manual deploy (fallback)
+
+If GitHub Actions is unavailable, you can deploy from a local AWS-CLI-authed shell:
+
+```bash
+cp .env.example .env
+# Set S3_BUCKET=scottclark.io and CLOUDFRONT_DISTRIBUTION_ID=<from `terraform output`>
 npm run deploy
 ```
 
-## AWS Setup
+### Tearing down
 
-One-time infrastructure setup:
-
-### 1. S3 Bucket
+`terraform destroy` from `terraform/`. Bucket versioning blocks delete until you empty the versioned objects:
 
 ```bash
-aws s3 mb s3://scottclark.io --region us-east-1
+cd terraform/
+aws s3api delete-objects --bucket scottclark.io --delete "$(aws s3api list-object-versions \
+  --bucket scottclark.io --query '{Objects: Versions[].{Key:Key,VersionId:VersionId}}')"
+aws s3api delete-objects --bucket scottclark.io --delete "$(aws s3api list-object-versions \
+  --bucket scottclark.io --query '{Objects: DeleteMarkers[].{Key:Key,VersionId:VersionId}}')"
+terraform destroy
 ```
 
-Enable static website hosting (or use CloudFront origin access control).
+CloudFront distribution disable + delete takes ~30 minutes; that's the long pole.
 
-### 2. CloudFront Distribution
+### Cost expectations
 
-- Origin: S3 bucket
-- Alternate domain: `scottclark.io`, `www.scottclark.io`
-- SSL: ACM certificate (must be in us-east-1)
-- Default root object: `index.html`
-- Custom error responses: 404 → `/404.html`
-
-### 3. Route 53
-
-- Create hosted zone for `scottclark.io`
-- A record → alias to CloudFront distribution
-- AAAA record → alias to CloudFront distribution (IPv6)
-
-### 4. ACM Certificate
-
-```bash
-aws acm request-certificate \
-  --domain-name scottclark.io \
-  --subject-alternative-names "*.scottclark.io" \
-  --validation-method DNS \
-  --region us-east-1
-```
-
-Validate via DNS (add CNAME records to Route 53).
-
-### 5. GitHub OIDC (for Actions)
-
-Create an IAM role with:
-- Trust policy: GitHub OIDC provider for your repo
-- Permissions: `s3:PutObject`, `s3:DeleteObject`, `s3:ListBucket`, `cloudfront:CreateInvalidation`
+~$0.50–$2/month. Route 53 hosted zone $0.50; CloudFront free tier covers 1TB egress; S3 pennies; ACM free; IAM/OIDC free.
 
 ## Project Structure
 
@@ -143,390 +190,100 @@ public/           Static assets (images, resume, favicon)
 scripts/          Shell scripts (deploy, new-post)
 ```
 
-Here's the full content map.                                                            
-                                                                                       
-  Single source of truth: src/lib/site-content.ts                                         
-  
-  This is where most of the home-page editorial copy lives. Open it first.                
-          
-  ┌───────────────────────────────┬───────────────────────────────────────────────────┐   
-  │             What              │                       Field                       │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │                               │ navLinks array — five items: CV / Talks /         │
-  │ Top nav links                 │ Projects / Research / Press. Wordmark "Scott      │
-  │                               │ Clark" links to / separately.                     │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤
-  │ Editorial intro paragraph     │ lede template literal                             │   
-  │ (right column under the name) │                                                   │
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ One-line tight byline (under  │ byline template literal                           │
-  │ the H1, above the lede)       │                                                   │
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ Three bullets — Researcher /  │ bullets array of {label, html}                    │
-  │ Founder / Operator            │                                                   │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤
-  │ Experience rows               │                                                   │   
-  │ (Distributional, Intel,       │ experience array of {period, org, title, body}    │
-  │ SigOpt, Yelp)                 │                                                   │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ Education rows (Cornell, OSU) │ education array of same shape                     │
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ Home <title> and <meta        │ pageTitle, pageDescription                        │
-  │ description>                  │                                                   │   
-  └───────────────────────────────┴───────────────────────────────────────────────────┘
-                                                                                          
-  These fields use HTML inside template-literal strings — <strong> for bolded signals     
-  (a16z, Two Sigma, paper counts), <em> for venue/deal names, <a href="..."> for inline
-  links. Use &amp; instead of & and ' is fine inside backticks.                           
-          
-  Per-page map                           
+## Editing Guide
 
-  / — src/pages/index.astro                                                               
-  
-  - Tiny file. Just imports fonts + HomeContent + v2Theme.                                
-  - All visible copy comes from site-content.ts (above) except the social-row handles
-  (GitHub sc932, LinkedIn sc932, Scholar label, ORCID 0009-0007-0478-7129, X              
-  @DrScottClark, email).
-  - Social row markup lives in src/components/HomeContent.astro — search for <ul          
-  class="socials">. Each row has the SVG icon + <span>handle</span>. Edit the <span> text 
-  and href= to change handles or platforms.
-  - Photo: public/images/scott-clark.jpg. Path referenced in HomeContent.astro as         
-  /images/scott-clark.jpg.                                                                
-                                         
-  /cv — src/pages/cv.astro                                                                
-          
-  The CV-only sections are inline at the top of the file (lines ~9–145). Six arrays:      
-  - awards — Forbes, Young Alumni, DOE CSGF, Sage Fellowship, NERSC, etc.
-  - advisory — OMSI Board, OSU Board of Advisors, OSU Industry & Innovation Council       
-  - focusAreas — flat dot-separated chip list (currently 20 entries)               
-  - selectedPubs — 4 highlight publications                                               
-  - selectedTalks — 5 highlight talks/podcasts                                            
-                                                                                          
-  The Experience and Education blocks on /cv reuse the same arrays from site-content.ts — 
-  change there, both home and CV update. CV-only fields are inline so you can curate      
-  independently. Page title and description are in the frontmatter at the very top.
-                                                                                          
-  /talks — src/pages/talks.astro
-                                         
-  - Page only contains the layout + sort. Talk content is one YAML file per talk in       
-  src/content/talks/.
-  - Schema (in src/content.config.ts): title, event, date, videoUrl?, slidesUrl?,         
-  description. All strings except date (yaml date) and the optional URLs.                 
-  - To add a talk: create a new .yaml in src/content/talks/. To remove: delete the file.
-  To edit: edit the file. Sort order is automatic (newest first by date).                 
-  - Page title / description are in the <PreviewBase> props at the top of talks.astro.
-                                                                                          
-  /projects — src/pages/projects.astro                                                    
-                                         
-  - One YAML per project in src/content/projects/. Currently: distributional.yaml,        
-  sigopt.yaml, ale.yaml, velvetrope.yaml, moe.yaml.
-  - Schema: title, description, url?, repo?, image?, tags[].                              
-  - Sort order is manual — defined in projects.astro line 9 as const order =              
-  ["distributional", "sigopt", "ale", "velvetrope"]. Anything not in that list goes       
-  alphabetically at the end (currently MOE). Edit the array to reorder.                   
-                                                                                          
-  /publications — src/pages/publications.astro
-                                         
-  - One YAML per publication in src/content/publications/.
-  - Schema: title, authors[], venue, year, url?, doi?, abstract?.
-  - The authors[] array auto-bolds your name when it sees "Scott C. Clark" exactly — see  
-  formatAuthors in publications.astro line 13. Variant spellings won't be bolded.         
-  - Sort: descending by year, automatic.                       Here's the full content map.                                                            
-                                                                                       
-  Single source of truth: src/lib/site-content.ts                                         
-  
-  This is where most of the home-page editorial copy lives. Open it first.                
-          
-  ┌───────────────────────────────┬───────────────────────────────────────────────────┐   
-  │             What              │                       Field                       │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │                               │ navLinks array — five items: CV / Talks /         │
-  │ Top nav links                 │ Projects / Research / Press. Wordmark "Scott      │
-  │                               │ Clark" links to / separately.                     │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤
-  │ Editorial intro paragraph     │ lede template literal                             │   
-  │ (right column under the name) │                                                   │
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ One-line tight byline (under  │ byline template literal                           │
-  │ the H1, above the lede)       │                                                   │
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ Three bullets — Researcher /  │ bullets array of {label, html}                    │
-  │ Founder / Operator            │                                                   │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤
-  │ Experience rows               │                                                   │   
-  │ (Distributional, Intel,       │ experience array of {period, org, title, body}    │
-  │ SigOpt, Yelp)                 │                                                   │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ Education rows (Cornell, OSU) │ education array of same shape                     │
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ Home <title> and <meta        │ pageTitle, pageDescription                        │
-  │ description>                  │                                                   │   
-  └───────────────────────────────┴───────────────────────────────────────────────────┘
-                                                                                          
-  These fields use HTML inside template-literal strings — <strong> for bolded signals     
-  (a16z, Two Sigma, paper counts), <em> for venue/deal names, <a href="..."> for inline
-  links. Use &amp; instead of & and ' is fine inside backticks.                           
-          
-  Per-page map                           
+This is where most of the home-page editorial copy lives. Open `src/lib/site-content.ts` first.
 
-  / — src/pages/index.astro                                                               
-  
-  - Tiny file. Just imports fonts + HomeContent + v2Theme.                                
-  - All visible copy comes from site-content.ts (above) except the social-row handles
-  (GitHub sc932, LinkedIn sc932, Scholar label, ORCID 0009-0007-0478-7129, X              
-  @DrScottClark, email).
-  - Social row markup lives in src/components/HomeContent.astro — search for <ul          
-  class="socials">. Each row has the SVG icon + <span>handle</span>. Edit the <span> text 
-  and href= to change handles or platforms.
-  - Photo: public/images/scott-clark.jpg. Path referenced in HomeContent.astro as         
-  /images/scott-clark.jpg.                                                                
-                                         
-  /cv — src/pages/cv.astro                                                                
-          
-  The CV-only sections are inline at the top of the file (lines ~9–145). Six arrays:      
-  - awards — Forbes, Young Alumni, DOE CSGF, Sage Fellowship, NERSC, etc.
-  - advisory — OMSI Board, OSU Board of Advisors, OSU Industry & Innovation Council       
-  - focusAreas — flat dot-separated chip list (currently 20 entries)               
-  - selectedPubs — 4 highlight publications                                               
-  - selectedTalks — 5 highlight talks/podcasts                                            
-                                                                                          
-  The Experience and Education blocks on /cv reuse the same arrays from site-content.ts — 
-  change there, both home and CV update. CV-only fields are inline so you can curate      
-  independently. Page title and description are in the frontmatter at the very top.
-                                                                                          
-  /talks — src/pages/talks.astro
-                                         
-  - Page only contains the layout + sort. Talk content is one YAML file per talk in       
-  src/content/talks/.
-  - Schema (in src/content.config.ts): title, event, date, viHere's the full content map.                                                            
-                                                                                       
-  Single source of truth: src/lib/site-content.ts                                         
-  
-  This is where most of the home-page editorial copy lives. Open it first.                
-          
-  ┌───────────────────────────────┬───────────────────────────────────────────────────┐   
-  │             What              │                       Field                       │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │                               │ navLinks array — five items: CV / Talks /         │
-  │ Top nav links                 │ Projects / Research / Press. Wordmark "Scott      │
-  │                               │ Clark" links to / separately.                     │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤
-  │ Editorial intro paragraph     │ lede template literal                             │   
-  │ (right column under the name) │                                                   │
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ One-line tight byline (under  │ byline template literal                           │
-  │ the H1, above the lede)       │                                                   │
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ Three bullets — Researcher /  │ bullets array of {label, html}                    │
-  │ Founder / Operator            │                                                   │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤
-  │ Experience rows               │                                                   │   
-  │ (Distributional, Intel,       │ experience array of {period, org, title, body}    │
-  │ SigOpt, Yelp)                 │                                                   │   
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ Education rows (Cornell, OSU) │ education array of same shape                     │
-  ├───────────────────────────────┼───────────────────────────────────────────────────┤   
-  │ Home <title> and <meta        │ pageTitle, pageDescription                        │
-  │ description>                  │                                                   │   
-  └───────────────────────────────┴───────────────────────────────────────────────────┘
-                                                                                          
-  These fields use HTML inside template-literal strings — <strong> for bolded signals     
-  (a16z, Two Sigma, paper counts), <em> for venue/deal names, <a href="..."> for inline
-  links. Use &amp; instead of & and ' is fine inside backticks.                           
-          
-  Per-page map                           
+### Single source of truth: `src/lib/site-content.ts`
 
-  / — src/pages/index.astro                                                               
-  
-  - Tiny file. Just imports fonts + HomeContent + v2Theme.                                
-  - All visible copy comes from site-content.ts (above) except the social-row handles
-  (GitHub sc932, LinkedIn sc932, Scholar label, ORCID 0009-0007-0478-7129, X              
-  @DrScottClark, email).
-  - Social row markup lives in src/components/HomeContent.astro — search for <ul          
-  class="socials">. Each row has the SVG icon + <span>handle</span>. Edit the <span> text 
-  and href= to change handles or platforms.
-  - Photo: public/images/scott-clark.jpg. Path referenced in HomeContent.astro as         
-  /images/scott-clark.jpg.                                                                
-                                         
-  /cv — src/pages/cv.astro                                                                
-          
-  The CV-only sections are inline at the top of the file (lines ~9–145). Six arrays:      
-  - awards — Forbes, Young Alumni, DOE CSGF, Sage Fellowship, NERSC, etc.
-  - advisory — OMSI Board, OSU Board of Advisors, OSU Industry & Innovation Council       
-  - focusAreas — flat dot-separated chip list (currently 20 entries)               
-  - selectedPubs — 4 highlight publications                                               
-  - selectedTalks — 5 highlight talks/podcasts                                            
-                                                                                          
-  The Experience and Education blocks on /cv reuse the same arrays from site-content.ts — 
-  change there, both home and CV update. CV-only fields are inline so you can curate      
-  independently. Page title and description are in the frontmatter at the very top.
-                                                                                          
-  /talks — src/pages/talks.astro
-                                         
-  - Page only contains the layout + sort. Talk content is one YAML file per talk in       
-  src/content/talks/.
-  - Schema (in src/content.config.ts): title, event, date, videoUrl?, slidesUrl?,         
-  description. All strings except date (yaml date) and the optional URLs.                 
-  - To add a talk: create a new .yaml in src/content/talks/. To remove: delete the file.
-  To edit: edit the file. Sort order is automatic (newest first by date).                 
-  - Page title / description are in the <PreviewBase> props at the top of talks.astro.
-                                                                                          
-  /projects — src/pages/projects.astro                                                    
-                                         
-  - One YAML per project in src/content/projects/. Currently: distributional.yaml,        
-  sigopt.yaml, ale.yaml, velvetrope.yaml, moe.yaml.
-  - Schema: title, description, url?, repo?, image?, tags[].                              
-  - Sort order is manual — defined in projects.astro line 9 as const order =              
-  ["distributional", "sigopt", "ale", "velvetrope"]. Anything not in that list goes       
-  alphabetically at the end (currently MOE). Edit the array to reorder.                   
-                                                                                          
-  /publications — src/pages/publications.astro
-                                         
-  - One YAML per publication in src/content/publications/.
-  - Schema: title, authors[], venue, year, url?, doi?, abstract?.
-  - The authors[] array auto-bolds your name when it sees "Scott C. Clark" exactly — see  
-  formatAuthors in publications.astro line 13. Variant spellings won't be bolded.         
-  - Sort: descending by year, automatic.                                                  
-  - Top-of-page note (the "1,200+ citations / h-index 16" line) is in the .page-head      
-  markup of publications.astro.                                                           
-                                                                                          
-  /press — src/pages/press.astro                                                          
-                                         
-  - One YAML per article in src/content/articles/.                                        
-  - Schema: title, publication, date, url, excerpt?.
-  - Sort: descending by date, automatic.                                                  
-          
-  Shared chrome (every page)                                                              
-          
-  Masthead — wordmark "Scott Clark" + nav                                                 
-  
-  src/components/SiteLayout.astro. Wordmark is hardcoded; nav links come from navLinks in 
-  site-content.ts.
-                                                                                          
-  Endnote / footer                                                                        
-                                         
-  Bottom of src/components/SiteLayout.astro — search for <footer class="endnotes">.       
-  Currently:
-  Bottom of src/components/SiteLayout.astro — search for <footer class="endnotes">.
-  Currently:
+| What | Field |
+|---|---|
+| Top nav links | `navLinks` array — five items: CV / Talks / Projects / Research / Press. The "Scott Clark" wordmark links to `/` separately. |
+| One-line tight byline (under the H1, above the lede) | `byline` template literal |
+| Editorial intro paragraph (right column under the name) | `lede` template literal |
+| Three bullets — Researcher / Founder / Operator | `bullets` array of `{label, html}` |
+| Experience rows (Distributional, Intel, SigOpt, Yelp) | `experience` array of `{period, org, title, body}` |
+| Education rows (Cornell, OSU) | `education` array of same shape |
+| Home `<title>` and `<meta description>` | `pageTitle`, `pageDescription` |
 
-  ▎ Resume: PDF · Source: github.com/sc932/resume
-  ▎ © 2026 Scott Clark
+These fields use HTML inside template-literal strings — `<strong>` for bolded signals (a16z, Two Sigma, paper counts), `<em>` for venue/deal names, `<a href="...">` for inline links. Use `&amp;` instead of `&`; `'` is fine inside backticks.
 
-  Edit text or links directly here.
+### Per-page map
 
-  Resume PDF
+#### `/` — `src/pages/index.astro`
 
-  Lives at public/resume/scott-clark-resume.pdf. Drop in a new file with the same name to
-  update — no code change needed. (Per CLAUDE.md, don't edit the PDF in place; rebuild
-  from ~/dev/resume/ScottClarkResume.tex and re-copy.)
+- Tiny file. Just imports fonts + `HomeContent` + `v2Theme`.
+- All visible copy comes from `site-content.ts` (above) except the social-row handles (GitHub `sc932`, LinkedIn `sc932`, Scholar label, ORCID `0009-0007-0478-7129`, X `@DrScottClark`, email).
+- Social row markup lives in `src/components/HomeContent.astro` — search for `<ul class="socials">`. Each row has the SVG icon + `<span>handle</span>`. Edit the `<span>` text and `href=` to change handles or platforms.
+- Photo: `public/images/scott-clark.jpg`. Path referenced in `HomeContent.astro` as `/images/scott-clark.jpg`.
 
-  Theme colors and fonts
+#### `/cv` — `src/pages/cv.astro`
 
-  src/lib/site-theme.ts exports v2Theme. Edit hex values to shift the palette site-wide.
+The CV-only sections are inline at the top of the file (lines ~9–145). Six arrays:
 
-  VSCode-specific tips
+- `awards` — Forbes, Young Alumni, DOE CSGF, Sage Fellowship, NERSC, etc.
+- `advisory` — OMSI Board, OSU Board of Advisors, OSU Industry & Innovation Council
+- `focusAreas` — flat dot-separated chip list (currently 20 entries)
+- `selectedPubs` — 4 highlight publications
+- `selectedTalks` — 5 highlight talks/podcasts
 
-  - Open the workspace at ~/dev/scottclarkio/ so paths resolve.
-  - TypeScript will autocomplete the content schemas if you hover/Cmd+click into
-  content.config.ts.
-  - After editing YAML or .ts, the dev server hot-reloads at localhost:4321; you usually
-  don't need to restart it.
-  - If you add a YAML file with a malformed date or missing required field, Astro will
-  throw at the dev URL with a clear error message — useful as a fast schema check.
- reorder.                   
-                                                                                          
-  /publications — src/pages/publications.astro
-                                         
-  - One YAML per publication in src/content/publications/.
-  - Schema: title, authors[], venue, year, url?, doi?, abstract?.
-  - The authors[] array auto-bolds your name when it sees "Scott C. Clark" exactly — see  
-  formatAuthors in publications.astro line 13. Variant spellings won't be bolded.         
-  - Sort: descending by year, automatic.                                                  
-  - Top-of-page note (the "1,200+ citations / h-index 16" line) is in the .page-head      
-  markup of publications.astro.                                                           
-                                                                                          
-  /press — src/pages/press.astro                                                          
-                                         
-  - One YAML per article in src/content/articles/.                                        
-  - Schema: title, publication, date, url, excerpt?.
-  - Sort: descending by date, automatic.                                                  
-          
-  Shared chrome (every page)                                                              
-          
-  Masthead — wordmark "Scott Clark" + nav                                                 
-  
-  src/components/SiteLayout.astro. Wordmark is hardcoded; nav links come from navLinks in 
-  site-content.ts.
-                                                                                          
-  Endnote / footer                                                                        
-                                         
-  Bottom of src/components/SiteLayout.astro — search for <footer class="endnotes">.       
-  Currently:
-  Bottom of src/components/SiteLayout.astro — search for <footer class="endnotes">.
-  Currently:
+The Experience and Education blocks on `/cv` reuse the same arrays from `site-content.ts` — change there, both home and CV update. CV-only fields are inline so you can curate independently. Page title and description are in the frontmatter at the very top.
 
-  ▎ Resume: PDF · Source: github.com/sc932/resume
-  ▎ © 2026 Scott Clark
+#### `/talks` — `src/pages/talks.astro`
 
-  Edit text or links directly here.
+- Page only contains the layout + sort. Talk content is one YAML file per talk in `src/content/talks/`.
+- Schema (in `src/content.config.ts`): `title`, `event`, `date`, `videoUrl?`, `slidesUrl?`, `description`. All strings except `date` (yaml date) and the optional URLs.
+- To add a talk: create a new `.yaml` in `src/content/talks/`. To remove: delete the file. To edit: edit the file. Sort order is automatic (newest first by date).
+- Page title / description are in the `<PreviewBase>` props at the top of `talks.astro`.
 
-  Resume PDF
+#### `/projects` — `src/pages/projects.astro`
 
-  Lives at public/resume/scott-clark-resume.pdf. Drop in a new file with the same name to
-  update — no code change needed. (Per CLAUDE.md, don't edit the PDF in place; rebuild
-  from ~/dev/resume/ScottClarkResume.tex and re-copy.)
+This page renders two sections: **Projects** and **Patents**.
 
-  Theme colors and fonts
+**Projects.** One YAML per project in `src/content/projects/`. Currently: `distributional.yaml`, `sigopt.yaml`, `ale.yaml`, `moe.yaml`, `yelp-dataset-challenge.yaml`, `resume.yaml`.
+- Schema: `title`, `description`, `url?`, `repo?`, `image?`, `tags[]`.
+- Sort order is manual — defined in `projects.astro` near the top as a `const order` array. Anything not in that list goes alphabetically at the end. Edit the array to reorder.
 
-  src/lib/site-theme.ts exports v2Theme. Edit hex values to shift the palette site-wide.
+**Patents.** One YAML per granted US patent in `src/content/patents/`. ~20+ entries; filenames follow `us-<number>-<short-name>.yaml`.
+- Schema: `title`, `patentNumber` (e.g., `"US 12,505,027"`), `date` (yaml date), `inventors[]`, `url?`, `abstract?`.
+- Sort: descending by date, automatic.
+- Most patents in the dossier are catalogued at year-level granularity only — entries currently use Jan 1 of the issuance year as a placeholder date. Update `date` to the actual issuance date when verified against patents.google.com.
 
-  VSCode-specific tips
+#### `/publications` — `src/pages/publications.astro`
 
-  - Open the workspace at ~/dev/scottclarkio/ so paths resolve.
-  - TypeScript will autocomplete the content schemas if you hover/Cmd+click into
-  content.config.ts.
-  - After editing YAML or .ts, the dev server hot-reloads at localhost:4321; you usually
-  don't need to restart it.
-  - If you add a YAML file with a malformed date or missing required field, Astro will
-  throw at the dev URL with a clear error message — useful as a fast schema check.
-                        
-  
-  src/components/SiteLayout.astro. Wordmark is hardcoded; nav links come from navLinks in 
-  site-content.ts.
-                                                                                          
-  Endnote / footer                                                                        
-                                         
-  Bottom of src/components/SiteLayout.astro — search for <footer class="endnotes">.       
-  Currently:
-  Bottom of src/components/SiteLayout.astro — search for <footer class="endnotes">.
-  Currently:
+- One YAML per publication in `src/content/publications/`.
+- Schema: `title`, `authors[]`, `venue`, `year`, `url?`, `doi?`, `abstract?`.
+- The `authors[]` array auto-bolds your name when it sees `Scott C. Clark` exactly — see `formatAuthors` in `publications.astro` line 13. Variant spellings won't be bolded.
+- Sort: descending by year, automatic.
+- Top-of-page note (the "1,200+ citations / h-index 16" line) is in the `.page-head` markup of `publications.astro`.
 
-  ▎ Resume: PDF · Source: github.com/sc932/resume
-  ▎ © 2026 Scott Clark
+#### `/press` — `src/pages/press.astro`
 
-  Edit text or links directly here.
+- One YAML per article in `src/content/articles/`.
+- Schema: `title`, `publication`, `date`, `url`, `excerpt?`.
+- Sort: descending by date, automatic.
 
-  Resume PDF
+### Shared chrome (every page)
 
-  Lives at public/resume/scott-clark-resume.pdf. Drop in a new file with the same name to
-  update — no code change needed. (Per CLAUDE.md, don't edit the PDF in place; rebuild
-  from ~/dev/resume/ScottClarkResume.tex and re-copy.)
+**Masthead** — wordmark "Scott Clark" + nav. `src/components/SiteLayout.astro`. Wordmark is hardcoded; nav links come from `navLinks` in `site-content.ts`.
 
-  Theme colors and fonts
+**Endnote / footer** — bottom of `src/components/SiteLayout.astro`, search for `<footer class="endnotes">`. Currently:
 
-  src/lib/site-theme.ts exports v2Theme. Edit hex values to shift the palette site-wide.
+> Resume: PDF · Source: github.com/sc932/resume
+> © 2026 Scott Clark
 
-  VSCode-specific tips
+Edit text or links directly here.
 
-  - Open the workspace at ~/dev/scottclarkio/ so paths resolve.
-  - TypeScript will autocomplete the content schemas if you hover/Cmd+click into
-  content.config.ts.
-  - After editing YAML or .ts, the dev server hot-reloads at localhost:4321; you usually
-  don't need to restart it.
-  - If you add a YAML file with a malformed date or missing required field, Astro will
-  throw at the dev URL with a clear error message — useful as a fast schema check.
+**Resume PDF** — lives at `public/resume/scott-clark-resume.pdf`. Drop in a new file with the same name to update — no code change needed. (Per `CLAUDE.md`, don't edit the PDF in place; rebuild from `~/dev/resume/ScottClarkResume.tex` and re-copy.)
 
+**Theme colors and fonts** — `src/lib/site-theme.ts` exports `v2Theme`. Edit hex values to shift the palette site-wide.
+
+### VSCode-specific tips
+
+- Open the workspace at `~/dev/scottclarkio/` so paths resolve.
+- TypeScript will autocomplete the content schemas if you hover/Cmd+click into `content.config.ts`.
+- After editing YAML or `.ts`, the dev server hot-reloads at `localhost:4321`; you usually don't need to restart it.
+- If you add a YAML file with a malformed date or missing required field, Astro will throw at the dev URL with a clear error message — useful as a fast schema check.
 
 ## License
 

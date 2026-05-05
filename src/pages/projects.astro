@@ -4,9 +4,17 @@ import "@fontsource-variable/ibm-plex-sans";
 import { getCollection } from "astro:content";
 import SiteLayout from "../components/SiteLayout.astro";
 import { v2Theme } from "../lib/site-theme";
+import { siteUrl, buildCollectionPageSchema } from "../lib/site-content";
 
-// Order of meaningful priority (current → former → research / teaching).
-const order = ["distributional", "sigopt", "ale", "velvetrope"];
+// Order of meaningful priority (current → former → research / teaching / templates).
+const order = [
+  "distributional",
+  "sigopt",
+  "ale",
+  "moe",
+  "yelp-dataset-challenge",
+  "resume",
+];
 const projects = (await getCollection("projects")).sort((a, b) => {
   const ai = order.indexOf(a.id);
   const bi = order.indexOf(b.id);
@@ -15,56 +23,191 @@ const projects = (await getCollection("projects")).sort((a, b) => {
   if (bi === -1) return -1;
   return ai - bi;
 });
+
+// Each family carries multiple patents; sort patents within a family
+// chronologically (timeline reads left→right) and sort families by their
+// most-recent patent year descending.
+const patentFamilies = (await getCollection("patents"))
+  .map((fam) => ({
+    ...fam,
+    data: {
+      ...fam.data,
+      patents: [...fam.data.patents].sort((a, b) => a.year - b.year),
+    },
+  }))
+  .sort((a, b) => {
+    const aMax = Math.max(...a.data.patents.map((p) => p.year));
+    const bMax = Math.max(...b.data.patents.map((p) => p.year));
+    return bMax - aMax;
+  });
+
+const inventorEntity = (name: string) =>
+  name === "Scott C. Clark"
+    ? { "@id": `${siteUrl}/#person` }
+    : { "@type": "Person", name };
+
+const projectsPageSchema = buildCollectionPageSchema({
+  pathname: "/projects",
+  name: "Projects & Patents — Scott Clark",
+  description:
+    "Projects, companies, and open-source software Scott Clark has built or led — Distributional, SigOpt, MOE, ALE, Yelp Dataset Challenge, sc932/resume — alongside ~20 granted US patents as named inventor.",
+  items: [
+    ...projects.map((p) => ({
+      "@type": "CreativeWork",
+      name: p.data.title,
+      description: p.data.description,
+      creator: { "@id": `${siteUrl}/#person` },
+      ...(p.data.url && { url: p.data.url }),
+      ...(p.data.repo && { codeRepository: p.data.repo }),
+      ...(p.data.tags?.length && { keywords: p.data.tags.join(", ") }),
+    })),
+    ...patentFamilies.map((fam) => ({
+      "@type": "CreativeWork",
+      additionalType: "https://schema.org/Patent",
+      name: fam.data.title,
+      author: fam.data.inventors.map(inventorEntity),
+      ...(fam.data.abstract && { description: fam.data.abstract }),
+      datePublished: String(
+        Math.min(...fam.data.patents.map((p) => p.year))
+      ),
+      identifier: fam.data.patents.map((p) => ({
+        "@type": "PropertyValue",
+        propertyID: "USPTO",
+        value: p.number,
+      })),
+      hasPart: fam.data.patents
+        .filter((p) => !!p.url)
+        .map((p) => ({ "@type": "WebPage", url: p.url, name: p.number })),
+    })),
+  ],
+});
 ---
 
 <SiteLayout
   {...v2Theme}
-  pageTitle="Projects — Scott Clark"
-  pageDescription="Projects, companies, and open-source software Scott Clark has built or led: Distributional, SigOpt, MOE, ALE, Velvetrope."
+  pageTitle="Projects & Patents — Scott Clark"
+  pageDescription="Projects, companies, and open-source software Scott Clark has built or led — Distributional, SigOpt, MOE, ALE, Yelp Dataset Challenge, sc932/resume — alongside ~20 granted US patents as named inventor."
+  pageSchema={projectsPageSchema}
 >
   <header class="page-head">
-    <h1>Projects</h1>
+    <h1>Projects & Patents</h1>
     <p class="sub">
-      Companies and open-source software Scott has built or led.
+      Companies and open-source software Scott has built or led, plus granted
+      US patents as named inventor.
     </p>
   </header>
 
-  <ol class="project-rows">
-    {
-      projects.map((p) => {
-        const links: { href: string; label: string }[] = [];
-        if (p.data.url) links.push({ href: p.data.url, label: "Website" });
-        if (p.data.repo) links.push({ href: p.data.repo, label: "Source" });
+  <section class="block">
+    <h2 class="block-label">Projects</h2>
+    <ol class="project-rows">
+      {
+        projects.map((p) => {
+          const links: { href: string; label: string }[] = [];
+          if (p.data.url) links.push({ href: p.data.url, label: "Website" });
+          if (p.data.repo) links.push({ href: p.data.repo, label: "Source" });
 
-        return (
+          return (
+            <li class="project-row">
+              <div class="row-head">
+                <span class="row-org">{p.data.title}</span>
+                {p.data.tags?.length > 0 && (
+                  <ul class="project-tags">
+                    {p.data.tags.map((t, i) => (
+                      <li>
+                        {i > 0 && "· "}
+                        {t}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+              <p class="row-desc">{p.data.description}</p>
+              {links.length > 0 && (
+                <p class="row-links">
+                  {links.map((l, i) => (
+                    <>
+                      {i > 0 && <span class="sep">·</span>}
+                      <a href={l.href}>{l.label}</a>
+                    </>
+                  ))}
+                </p>
+              )}
+            </li>
+          );
+        })
+      }
+    </ol>
+  </section>
+
+  <section class="block">
+    <h2 class="block-label">Patents</h2>
+    <ol class="project-rows">
+      {
+        patentFamilies.map((fam) => (
           <li class="project-row">
             <div class="row-head">
-              <span class="row-org">{p.data.title}</span>
-              {p.data.tags?.length > 0 && (
-                <ul class="project-tags">
-                  {p.data.tags.map((t, i) => (
-                    <li>
-                      {i > 0 && "· "}
-                      {t}
-                    </li>
-                  ))}
-                </ul>
-              )}
+              <span class="row-org">{fam.data.title}</span>
+              <span class="patent-count">
+                {fam.data.patents.length} patent{fam.data.patents.length === 1 ? "" : "s"}
+              </span>
             </div>
-            <p class="row-desc">{p.data.description}</p>
-            {links.length > 0 && (
-              <p class="row-links">
-                {links.map((l, i) => (
-                  <>
-                    {i > 0 && <span class="sep">·</span>}
-                    <a href={l.href}>{l.label}</a>
-                  </>
-                ))}
-              </p>
+            {fam.data.abstract && (
+              <p class="row-desc">{fam.data.abstract}</p>
             )}
+            <ul class="patent-chips">
+              {fam.data.patents.map((pat) => (
+                <li class="patent-chip">
+                  {pat.url ? (
+                    <a href={pat.url}>
+                      {pat.number} ({pat.year})
+                    </a>
+                  ) : (
+                    <span>
+                      {pat.number} ({pat.year})
+                    </span>
+                  )}
+                </li>
+              ))}
+            </ul>
+            <p class="row-desc">
+              <span class="inventors">{fam.data.inventors.join(", ")}</span>
+            </p>
           </li>
-        );
-      })
+        ))
+      }
+    </ol>
+  </section>
+
+  <style is:global>
+    .block + .block {
+      margin-top: 48px;
     }
-  </ol>
+    .inventors {
+      color: var(--mute);
+      font-size: 15px;
+    }
+    .patent-count {
+      color: var(--mute);
+      font-size: 14px;
+    }
+    .patent-chips {
+      list-style: none;
+      padding: 0;
+      margin: 8px 0;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .patent-chip {
+      font-size: 13px;
+      line-height: 1.2;
+      padding: 3px 8px;
+      border: 1px solid var(--rule, rgba(0, 0, 0, 0.15));
+      border-radius: 4px;
+      background: var(--chip-bg, rgba(0, 0, 0, 0.02));
+    }
+    .patent-chip a {
+      text-decoration: none;
+    }
+  </style>
 </SiteLayout>

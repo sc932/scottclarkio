@@ -4,6 +4,7 @@ import "@fontsource-variable/ibm-plex-sans";
 import { getCollection } from "astro:content";
 import SiteLayout from "../components/SiteLayout.astro";
 import { v2Theme } from "../lib/site-theme";
+import { siteUrl, buildCollectionPageSchema } from "../lib/site-content";
 
 const articles = (await getCollection("articles")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
@@ -13,12 +14,29 @@ const fmtPeriod = (d: Date) => {
   const month = d.toLocaleString("en-US", { month: "short" });
   return `${month} ${d.getFullYear()}`;
 };
+
+const pressPageSchema = buildCollectionPageSchema({
+  pathname: "/press",
+  name: "Press — Scott Clark",
+  description:
+    "External coverage and media features of Scott Clark's work — TechCrunch, Wall Street Journal, BusinessWire, Cornell Chronicle, Oregon State, and others.",
+  items: articles.map((a) => ({
+    "@type": "NewsArticle",
+    headline: a.data.title,
+    publisher: { "@type": "Organization", name: a.data.publication },
+    datePublished: a.data.date.toISOString().slice(0, 10),
+    url: a.data.url,
+    about: { "@id": `${siteUrl}/#person` },
+    ...(a.data.excerpt && { description: a.data.excerpt }),
+  })),
+});
 ---
 
 <SiteLayout
   {...v2Theme}
   pageTitle="Press — Scott Clark"
   pageDescription="External coverage and media features of Scott Clark's work — TechCrunch, Wall Street Journal, BusinessWire, Cornell Chronicle, Oregon State, and others."
+  pageSchema={pressPageSchema}
 >
   <header class="page-head">
     <h1>Press</h1>
