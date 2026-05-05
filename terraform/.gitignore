@@ -1,0 +1,16 @@
+# Local state — never commit. AWS account state lives in the AWS account itself.
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.tfstate.lock.info
+
+# Crash logs
+crash.log
+crash.*.log
+
+# Per-environment overrides — gitignore the .tfvars but allow .tfvars.example.
+*.tfvars
+*.tfvars.json
+!terraform.tfvars.example
+
+# .terraform.lock.hcl IS committed — it pins provider versions, like package-lock.json.

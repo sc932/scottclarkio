@@ -1,0 +1,8 @@
+# Copy to terraform.tfvars (gitignored) and edit if you need to override the
+# defaults set in variables.tf. For the canonical scottclark.io setup all
+# defaults are correct; this file exists mainly for forks / staging environments.
+
+# domain           = "scottclark.io"
+# github_repo      = "sc932/scottclarkio"
+# aws_region       = "us-east-1"
+# deploy_role_name = "scottclarkio-deploy"
