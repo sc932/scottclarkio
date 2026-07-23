@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrowDown" markerWidth="8" markerHeight="8" refX="4" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0,0 L 4,7 L 8,0" fill="none" stroke="#8a8a8a" stroke-width="1.6"/>
+    </marker>
+    <marker id="arrowUp" markerWidth="8" markerHeight="8" refX="4" refY="1" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0,7 L 4,0 L 8,7" fill="none" stroke="#777777" stroke-width="1.6"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="700" fill="#ffffff"/>
+
+  <!-- ghost range: the map as first surveyed -->
+  <path d="M 0,555 L 90,468 L 150,498 L 230,298 L 300,420 L 360,392 L 430,478 L 520,508 L 585,468 L 645,488 L 700,428 L 745,378 L 810,232 L 862,338 L 898,318 L 958,448 L 1040,478 L 1100,428 L 1200,468 L 1200,640 L 0,640 Z"
+        fill="#ececec" fill-opacity="0.85" stroke="#ababab" stroke-width="2" stroke-dasharray="7,6" stroke-linejoin="round"/>
+
+  <!-- current range -->
+  <path d="M 0,638 L 75,590 L 130,612 L 210,365 L 245,400 L 290,255 L 350,370 L 390,345 L 450,480 L 490,505 L 540,420 L 575,445 L 645,185 L 700,300 L 735,280 L 795,470 L 825,485 L 870,410 L 905,430 L 975,315 L 1030,405 L 1065,385 L 1120,300 L 1200,210 L 1200,640 L 0,640 Z"
+        fill="#f8f6f1" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>
+
+  <!-- ground line -->
+  <line x1="0" y1="640" x2="1200" y2="640" stroke="#2b2b2b" stroke-width="1.5"/>
+
+  <!-- altitude axis -->
+  <line x1="38" y1="595" x2="38" y2="145" stroke="#777777" stroke-width="1.5" marker-end="url(#arrowUp)"/>
+  <text x="52" y="158" font-size="17" fill="#666666">altitude: what you currently count as up</text>
+
+  <!-- cold path (from base camp 1 toward the vanished summit's base) -->
+  <polyline points="490,507 560,542" fill="none" stroke="#c0c0c0" stroke-width="2.2" stroke-dasharray="2,7" stroke-linecap="round" opacity="0.9"/>
+  <polyline points="560,542 635,566" fill="none" stroke="#c0c0c0" stroke-width="2.2" stroke-dasharray="2,7" stroke-linecap="round" opacity="0.6"/>
+  <polyline points="635,566 712,586 785,602" fill="none" stroke="#c0c0c0" stroke-width="2.2" stroke-dasharray="2,7" stroke-linecap="round" opacity="0.35"/>
+  <text x="800" y="614" font-size="17" fill="#9a9a9a">gone cold</text>
+
+  <!-- warm path A: from base camp 1 toward the research peak -->
+  <polyline points="490,505 452,470 415,435 380,398 352,368 334,344" fill="none" stroke="#4a4a4a" stroke-width="2.5" stroke-dasharray="2,6" stroke-linecap="round"/>
+  <circle cx="334" cy="344" r="5" fill="#ffffff" stroke="#4a4a4a" stroke-width="2"/>
+  <text x="398" y="336" font-size="17" fill="#555555">kept warm</text>
+
+  <!-- warm path C: from base camp 2 traversing toward the scaled-org peak -->
+  <polyline points="585,415 650,345 700,362 748,425 800,480 838,462 868,448" fill="none" stroke="#4a4a4a" stroke-width="2.5" stroke-dasharray="2,6" stroke-linecap="round"/>
+  <circle cx="868" cy="448" r="5" fill="#ffffff" stroke="#4a4a4a" stroke-width="2"/>
+  <text x="884" y="470" font-size="17" fill="#555555">kept warm:</text>
+  <text x="884" y="490" font-size="17" fill="#555555">small, regular deposits</text>
+
+  <!-- the walked path: start -> base camp 1 -> base camp 2 -> now -->
+  <polyline points="60,600 105,604 150,588 250,560 350,535 430,520 490,505 523,462 552,432 585,415 600,364 615,320 628,270 637,226"
+            fill="none" stroke="#d9480f" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="60" cy="600" r="5" fill="#2b2b2b"/>
+  <text x="48" y="630" font-size="17" fill="#555555">where you started</text>
+  <circle cx="637" cy="226" r="7" fill="#d9480f" stroke="#ffffff" stroke-width="2"/>
+  <text x="655" y="215" font-size="18" font-weight="bold" fill="#d9480f">you, now</text>
+  <text x="180" y="528" font-size="18" fill="#d9480f">the path you're walking</text>
+
+  <!-- base camps -->
+  <path d="M 478,514 L 490,496 L 502,514 Z" fill="#ffffff" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/>
+  <line x1="486" y1="513" x2="458" y2="540" stroke="#8a8a8a" stroke-width="1.2"/>
+  <text x="400" y="556" font-size="18" fill="#1f1f1f" text-anchor="middle">base camp: the skills that transfer</text>
+
+  <path d="M 574,421 L 585,404 L 596,421 Z" fill="#ffffff" stroke="#2b2b2b" stroke-width="2" stroke-linejoin="round"/>
+  <line x1="585" y1="392" x2="585" y2="302" stroke="#8a8a8a" stroke-width="1.2"/>
+  <text x="595" y="274" font-size="18" fill="#1f1f1f" text-anchor="end">base camp: the people who'd climb</text>
+  <text x="595" y="296" font-size="18" fill="#1f1f1f" text-anchor="end">with you again</text>
+
+  <!-- peak labels -->
+  <text x="290" y="240" font-size="20" fill="#1f1f1f" text-anchor="middle">research</text>
+  <text x="645" y="150" font-size="20" fill="#1f1f1f" text-anchor="middle">founding</text>
+  <text x="645" y="172" font-size="15" fill="#6b6b6b" text-anchor="middle">(wasn't on the old map)</text>
+  <text x="975" y="292" font-size="20" fill="#1f1f1f" text-anchor="middle">a scaled org</text>
+  <text x="1150" y="222" font-size="17" fill="#444444" text-anchor="end">the peaks you only see</text>
+  <text x="1150" y="244" font-size="17" fill="#444444" text-anchor="end">from a summit</text>
+
+  <!-- ghost identification -->
+  <text x="742" y="330" font-size="16" fill="#8a8a8a" text-anchor="end">the old map</text>
+  <line x1="748" y1="324" x2="773" y2="312" stroke="#ababab" stroke-width="1.2"/>
+
+  <!-- displacement arrow: the range moved -->
+  <line x1="812" y1="252" x2="812" y2="455" stroke="#8a8a8a" stroke-width="1.8" marker-end="url(#arrowDown)"/>
+  <text x="824" y="330" font-size="16" fill="#6b6b6b">it moved</text>
+  <text x="824" y="352" font-size="16" fill="#6b6b6b">while you climbed</text>
+
+  <!-- verdict -->
+  <text x="852" y="100" font-size="23" font-style="italic" fill="#1a1a1a">The summit you planned for</text>
+  <text x="852" y="130" font-size="23" font-style="italic" fill="#1a1a1a">no longer exists.</text>
+  <line x1="900" y1="142" x2="818" y2="228" stroke="#8a8a8a" stroke-width="1.2"/>
+</svg>

@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="780" viewBox="0 0 1240 780">
+  <defs>
+    <marker id="arrowNavy" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#1F3A5F"/>
+    </marker>
+    <marker id="arrowInk" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#4a4a55"/>
+    </marker>
+    <marker id="arrowGray" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b6b75"/>
+    </marker>
+  </defs>
+
+  <!-- background -->
+  <rect x="0" y="0" width="1240" height="780" fill="#FFFFFF"/>
+
+  <!-- title block -->
+  <text x="90" y="52" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="27" font-weight="bold" fill="#1a1a24">Resonance is not pull</text>
+
+  <!-- VMF quadrant tint (top-left of main plot) -->
+  <rect x="90" y="110" width="350" height="290" fill="#F9E9DC" opacity="0.6"/>
+
+  <!-- quadrant midlines -->
+  <line x1="440" y1="110" x2="440" y2="690" stroke="#c5c5cf" stroke-width="1.5" stroke-dasharray="6,6"/>
+  <line x1="90" y1="400" x2="790" y2="400" stroke="#c5c5cf" stroke-width="1.5" stroke-dasharray="6,6"/>
+
+  <!-- axes -->
+  <line x1="90" y1="690" x2="784" y2="690" stroke="#4a4a55" stroke-width="2" marker-end="url(#arrowInk)"/>
+  <line x1="90" y1="690" x2="90" y2="116" stroke="#4a4a55" stroke-width="2" marker-end="url(#arrowInk)"/>
+  <text x="440" y="732" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#1a1a24" text-anchor="middle">organic market pull</text>
+  <text x="97" y="712" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="12" fill="#8f8f99">low</text>
+  <text x="782" y="712" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="12" fill="#8f8f99" text-anchor="end">high</text>
+  <text x="48" y="400" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#1a1a24" text-anchor="middle" transform="rotate(-90 48 400)">vision resonance</text>
+  <text x="80" y="128" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="12" fill="#8f8f99" text-anchor="end">high</text>
+  <text x="80" y="682" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="12" fill="#8f8f99" text-anchor="end">low</text>
+
+  <!-- quadrant labels -->
+  <!-- VMF: the one hot label on the figure (the lesson) -->
+  <text x="108" y="146" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" fill="#C2410C">VISION-MARKET FIT</text>
+  <text x="108" y="168" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" fill="#6b6b75">the trap: interest that never</text>
+  <text x="108" y="186" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" fill="#6b6b75">becomes organic pull</text>
+  <text x="108" y="208" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" font-style="italic" fill="#C2410C">opens doors; doesn't compound</text>
+
+  <text x="470" y="146" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="20" font-weight="bold" fill="#1a1a24">PRODUCT-MARKET FIT</text>
+  <text x="470" y="168" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" fill="#6b6b75">pull does the work: they put you in</text>
+  <text x="470" y="186" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" fill="#6b6b75">their architecture diagram unasked</text>
+
+  <text x="108" y="646" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#8f8f99">NOTHING YET</text>
+  <text x="108" y="666" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="13" fill="#8f8f99">nobody leans in</text>
+
+  <text x="470" y="646" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="16" font-weight="bold" fill="#8f8f99">COMMODITY PULL</text>
+  <text x="470" y="666" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="13" fill="#8f8f99">they buy it; they don't care whose</text>
+
+  <!-- pull-line annotation -->
+  <line x1="443" y1="348" x2="452" y2="348" stroke="#6b6b75" stroke-width="1.2" marker-start="url(#arrowGray)"/>
+  <text x="458" y="352" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="13" font-style="italic" fill="#6b6b75">the pull line: never crossed</text>
+
+  <!-- trajectory -->
+  <path d="M 150,560 C 165,470 198,355 235,288 C 258,247 295,242 340,232" fill="none" stroke="#1F3A5F" stroke-width="2.5"/>
+  <circle cx="150" cy="560" r="7" fill="#1F3A5F" stroke="#FFFFFF" stroke-width="2"/>
+  <circle cx="235" cy="288" r="7" fill="#1F3A5F" stroke="#FFFFFF" stroke-width="2"/>
+  <circle cx="340" cy="232" r="7" fill="#1F3A5F" stroke="#FFFFFF" stroke-width="2"/>
+  <text x="166" y="566" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" fill="#1F3A5F">founding</text>
+  <text x="251" y="294" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" fill="#1F3A5F">the testing era</text>
+  <text x="356" y="238" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" fill="#1F3A5F">the analytics era</text>
+
+  <!-- exit vector: deliberate, leaves the map (never transits PMF) -->
+  <path d="M 340,232 C 345,140 400,58 560,44 C 760,27 950,30 1006,88" fill="none" stroke="#1F3A5F" stroke-width="3" marker-end="url(#arrowNavy)"/>
+  <text x="520" y="92" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="14" font-style="italic" fill="#1F3A5F">the hard pivot: chosen against real alternatives</text>
+
+  <!-- inset: the new map -->
+  <rect x="830" y="100" width="360" height="280" fill="#FCFCFD" stroke="#d8d8de" stroke-width="1.5"/>
+  <line x1="1010" y1="100" x2="1010" y2="380" stroke="#dcdce2" stroke-width="1" stroke-dasharray="5,5"/>
+  <line x1="830" y1="240" x2="1190" y2="240" stroke="#dcdce2" stroke-width="1" stroke-dasharray="5,5"/>
+  <text x="1010" y="406" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="15" font-weight="bold" fill="#1a1a24" text-anchor="middle">the new mountain: same axes, new map</text>
+
+  <!-- the named trap on the new map -->
+  <rect x="836" y="106" width="168" height="128" fill="#F9E9DC" opacity="0.4"/>
+  <rect x="836" y="106" width="168" height="128" fill="none" stroke="#C2410C" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="844" y="128" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#C2410C">vision-market fit</text>
+  <text x="844" y="146" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="12" font-style="italic" fill="#C2410C">named this time</text>
+
+  <!-- day zero -->
+  <circle cx="862" cy="352" r="6" fill="#1F3A5F" stroke="#FFFFFF" stroke-width="2"/>
+  <text x="876" y="357" font-family="DejaVu Sans, Helvetica, Arial, sans-serif" font-size="13" fill="#1F3A5F">day zero</text>
+</svg>

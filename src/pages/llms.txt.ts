@@ -4,8 +4,15 @@
 
 import type { APIRoute } from "astro";
 import { siteUrl } from "../lib/site-content";
+import { getPublishedPosts, postUrl } from "../lib/blog";
 
 export const GET: APIRoute = async () => {
+  const posts = await getPublishedPosts();
+  const writingSection = posts.length
+    ? `\n## Writing\n\nEssays by Scott Clark (index: [${siteUrl}/blog](${siteUrl}/blog)); every post has a plain-markdown twin (linked below) and ships in the full-content RSS feed at ${siteUrl}/rss.xml.\n\n${posts
+        .map((p) => `- [${p.data.title}](${postUrl(p)}.md): ${p.data.description}`)
+        .join("\n")}\n`
+    : "";
   const txt = `# Scott Clark
 
 > Co-founder and CEO of Distributional (enterprise AI reliability). Previously co-founder & CEO of SigOpt (acquired by Intel 2020); VP & GM of AI and HPC supercomputing at Intel through 2023. PhD Applied Mathematics, Cornell University.
@@ -20,7 +27,7 @@ This site is the canonical reference for Scott Clark's professional bio, work hi
 - [Projects](${siteUrl}/projects.md): Open-source projects and patent families (~20 granted US patents as named inventor)
 - [Research](${siteUrl}/publications.md): Peer-reviewed publications (Bayesian optimization, bioinformatics, AI/ML), 1,200+ citations, h-index 16
 - [Press](${siteUrl}/press.md): Press mentions, interviews, and articles
-
+${writingSection}
 ## Optional
 
 - [Full corpus (single file)](${siteUrl}/llms-full.txt): All page markdown concatenated

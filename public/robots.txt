@@ -1,8 +1,21 @@
 # scottclark.io — explicit allow stance for AI/LLM crawlers.
 # This is a personal site whose primary audience is people and the LLMs
 # that summarize Scott when someone asks an agent who he is. Both are welcome.
+#
+# Content-Signal (contentsignals.org convention): fully open by design,
+# INCLUDING training — being in the models is the point of the site.
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 
 User-agent: *
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: Claude-User
+Allow: /
+
+User-agent: DuckAssistBot
 Allow: /
 
 # Major LLM training + retrieval crawlers, named explicitly so a robots.txt

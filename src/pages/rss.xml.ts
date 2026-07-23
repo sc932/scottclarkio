@@ -1,15 +1,56 @@
-// /rss.xml — RSS feed shell. Currently empty (no items). Will fill when the
-// blog reactivates in Phase 2 (gated on content_speedrun queueing >=6 posts).
-
+// /rss.xml — FULL-CONTENT feed of the blog (Phase 2 reactivation, 2026-07).
+// Full bodies ship via the `content` key: agents and readers consume feeds
+// directly, and full-content is the 2026 recommendation. MDX renders through
+// the Container API; figure SVGs are swapped for their PNG twins and
+// root-relative URLs absolutized for feed context.
 import type { APIRoute } from "astro";
 import rss from "@astrojs/rss";
-import { pageDescription, siteUrl } from "../lib/site-content";
+import { experimental_AstroContainer as AstroContainer } from "astro/container";
+import { loadRenderers } from "astro:container";
+import { getContainerRenderer as getMDXRenderer } from "@astrojs/mdx/container-renderer";
+import { render } from "astro:content";
+import { siteUrl, blogDescription } from "../lib/site-content";
+import { getPublishedPosts, postPath, pillarLabel } from "../lib/blog";
+
+function feedifyHtml(html: string): string {
+  return html
+    .replace(
+      /<figure class="post-figure" data-png="([^"]+)">[\s\S]*?<figcaption>([\s\S]*?)<\/figcaption>\s*<\/figure>/g,
+      (_m, png, caption) => {
+        const alt = String(caption).replace(/<[^>]+>/g, "");
+        return `<figure><img src="${siteUrl}${png}" alt="${alt}" /><figcaption>${caption}</figcaption></figure>`;
+      },
+    )
+    .replace(/(href|src)="\//g, `$1="${siteUrl}/`);
+}
 
 export const GET: APIRoute = async (context) => {
+  const posts = await getPublishedPosts();
+  const renderers = await loadRenderers([getMDXRenderer()]);
+  const container = await AstroContainer.create({ renderers });
+
+  const items = [];
+  for (const post of posts) {
+    const { Content } = await render(post);
+    const html = await container.renderToString(Content);
+    items.push({
+      title: post.data.title,
+      link: postPath(post),
+      pubDate: post.data.date,
+      description: post.data.description,
+      content: feedifyHtml(html),
+      categories: [
+        post.data.pillar ? pillarLabel(post.data.pillar) : undefined,
+        post.data.kind,
+      ].filter((c): c is string => Boolean(c)),
+    });
+  }
+
   return rss({
     title: "Scott Clark",
-    description: pageDescription,
+    description: blogDescription,
     site: context.site?.toString() ?? siteUrl,
-    items: [],
+    items,
+    trailingSlash: false,
   });
 };

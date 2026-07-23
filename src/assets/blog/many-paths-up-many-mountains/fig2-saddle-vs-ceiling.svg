@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="650" viewBox="0 0 1200 650" font-family="Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="gapUp" markerWidth="8" markerHeight="8" refX="4" refY="1" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0,7 L 4,0 L 8,7" fill="none" stroke="#6b6b6b" stroke-width="1.4"/>
+    </marker>
+    <marker id="gapDown" markerWidth="8" markerHeight="8" refX="4" refY="6" orient="auto" markerUnits="userSpaceOnUse">
+      <path d="M 0,0 L 4,7 L 8,0" fill="none" stroke="#6b6b6b" stroke-width="1.4"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="650" fill="#ffffff"/>
+
+  <!-- subtitle -->
+  <text x="600" y="34" font-size="15" fill="#8a8a8a" text-anchor="middle">a conceptual sketch</text>
+
+  <!-- panel divider -->
+  <line x1="600" y1="56" x2="600" y2="600" stroke="#e0e0e0" stroke-width="1"/>
+
+  <!-- ===== LEFT PANEL: the saddle ===== -->
+  <text x="40" y="84" font-size="22" font-weight="bold" fill="#1a1a1a">a saddle</text>
+  <text x="40" y="112" font-size="18" font-style="italic" fill="#1a1a1a">the dip is transit: keep going.</text>
+
+  <!-- the height you want -->
+  <line x1="35" y1="230" x2="575" y2="230" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="7,6"/>
+  <text x="42" y="220" font-size="15" fill="#6b6b6b">the height you want</text>
+
+  <!-- terrain -->
+  <path d="M 35,590 L 35,505 L 100,455 L 190,270 L 240,340 L 280,385 L 325,415 L 370,382 L 415,350 L 450,330 L 480,308 L 510,268 L 535,228 L 565,168 L 578,152 L 578,590 Z"
+        fill="#f8f6f1" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>
+  <line x1="20" y1="590" x2="580" y2="590" stroke="#2b2b2b" stroke-width="1.5"/>
+
+  <!-- walked path -->
+  <polyline points="100,455 190,270 240,340 280,385 325,415" fill="none" stroke="#d9480f" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="190" y="250" font-size="16" fill="#555555" text-anchor="middle">where you were</text>
+  <circle cx="325" cy="415" r="7" fill="#d9480f" stroke="#ffffff" stroke-width="2"/>
+  <text x="338" y="448" font-size="17" font-weight="bold" fill="#d9480f">you, in the dip</text>
+
+  <!-- what you can see -->
+  <circle cx="325" cy="415" r="125" fill="none" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5,6"/>
+  <text x="325" y="572" font-size="16" fill="#6b6b6b" text-anchor="middle">what you can see from the col</text>
+
+  <!-- beyond the view -->
+  <text x="570" y="118" font-size="16" fill="#444444" text-anchor="end">higher ground,</text>
+  <text x="570" y="138" font-size="16" fill="#444444" text-anchor="end">beyond the view</text>
+
+  <!-- ===== RIGHT PANEL: the ceiling ===== -->
+  <text x="640" y="84" font-size="22" font-weight="bold" fill="#1a1a1a">a ceiling</text>
+  <text x="640" y="112" font-size="18" font-style="italic" fill="#1a1a1a">the dip is a verdict: switch mountains.</text>
+
+  <!-- the height you want (same line, same height) -->
+  <line x1="635" y1="230" x2="1175" y2="230" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="7,6"/>
+
+  <!-- terrain: identical inside the view, tops out low beyond it -->
+  <path d="M 635,590 L 635,505 L 700,455 L 790,270 L 840,340 L 880,385 L 925,415 L 970,382 L 1015,350 L 1050,330 L 1075,320 L 1100,312 L 1125,320 L 1150,342 L 1176,388 L 1180,398 L 1180,590 Z"
+        fill="#f8f6f1" stroke="#2b2b2b" stroke-width="2.5" stroke-linejoin="round"/>
+  <line x1="620" y1="590" x2="1180" y2="590" stroke="#2b2b2b" stroke-width="1.5"/>
+
+  <!-- walked path (identical) -->
+  <polyline points="700,455 790,270 840,340 880,385 925,415" fill="none" stroke="#d9480f" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="790" y="250" font-size="16" fill="#555555" text-anchor="middle">where you were</text>
+  <circle cx="925" cy="415" r="7" fill="#d9480f" stroke="#ffffff" stroke-width="2"/>
+  <text x="938" y="448" font-size="17" font-weight="bold" fill="#d9480f">you, in the dip</text>
+
+  <!-- what you can see (identical) -->
+  <circle cx="925" cy="415" r="125" fill="none" stroke="#8a8a8a" stroke-width="1.5" stroke-dasharray="5,6"/>
+  <text x="925" y="572" font-size="16" fill="#6b6b6b" text-anchor="middle">the same view</text>
+
+  <!-- the gap -->
+  <line x1="1100" y1="238" x2="1100" y2="304" stroke="#6b6b6b" stroke-width="1.5" marker-start="url(#gapUp)" marker-end="url(#gapDown)"/>
+  <text x="1088" y="262" font-size="15" fill="#6b6b6b" text-anchor="end">no route from here</text>
+  <text x="1088" y="282" font-size="15" fill="#6b6b6b" text-anchor="end">reaches the height you want</text>
+</svg>

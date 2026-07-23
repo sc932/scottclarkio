@@ -11,8 +11,10 @@ import {
   renderPublicationsMd,
   renderPressMd,
 } from "../lib/md-pages";
+import { getPublishedPosts, renderPostMd } from "../lib/blog";
 
 export const GET: APIRoute = async () => {
+  const posts = await getPublishedPosts();
   const sections = await Promise.all([
     renderHomeMd(),
     renderCvMd(),
@@ -20,6 +22,7 @@ export const GET: APIRoute = async () => {
     renderProjectsMd(),
     renderPublicationsMd(),
     renderPressMd(),
+    ...posts.map((p) => Promise.resolve(renderPostMd(p))),
   ]);
   const txt = `# Scott Clark — Full Site Corpus
 

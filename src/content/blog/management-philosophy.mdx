@@ -1,0 +1,90 @@
+---
+title: "Management Philosophy"
+description: >-
+  A manager's job is three jobs on three timescales: set a clear strategy, resource and unblock, and improve the team. The layer in the middle, commitments, is the one my list was silent about and the one that cost the most to learn.
+date: 2026-04-17
+updated: 2026-07-15
+format: post
+pillar: startup-leadership
+kind: how
+---
+
+import Figure from "../../components/Figure.astro";
+
+{/* GENERATED from vault Writing/management-philosophy.md v2.2 (2026-07-15, jam-ready) by the factory port (SPEC-blog-surfaces). The VAULT file is canonical:
+   do not hand-edit prose here; re-port at Scott's LOCK. `date` is the
+   drafting date until the reveal sets the real publish date (phase 5). */}
+
+On a podcast last year the host asked me how often I reprioritize. Is it subconscious? A Monday ritual with the team? Or just triage, always? My honest answer was that it's a multi-scale problem. We lay down quarterly goals and OKRs, but things shift week over week, hour over hour. And sometimes, in a sales call, it's minute over minute: this path didn't work, we've got to try that one, salvage what you can.
+
+A multi-scale problem is one where behavior at different scales needs different tools. Climate models and weather forecasts describe the same atmosphere, but nobody runs a century-scale climate model to decide whether to carry an umbrella, and nobody plans a coastline around this afternoon's wind. Management is like that. The mistake I kept making myself, and the one I see most in new managers, is carrying one instrument up and down the whole ladder: running the quarter like a standup, or running a sales call like a strategy review. By instrument I just mean the tool or ritual you actually run at that scale: the strategy offsite, the commitment list, the standup, the call itself.
+
+I've been leading technical teams for over a decade, first building SigOpt and then running a roughly 200-person org at Intel after the acquisition, and for most of that time I've described a manager's job as three jobs: help the team set a clear strategy, resource and unblock the team, and improve the team as a group and as individuals. I still stand behind that list. I'm revisiting it now as I start building a company again ([Talaria Scientific](https://talariasci.com)), and the upgrade isn't a fourth job. It's noticing which timescale each job runs on, and naming the layer in the middle that my list was silent about. That layer cost me the most to learn, so it gets the longest section.
+
+<Figure slug="management-philosophy" name="management-philosophy" caption="Figure: the management ladder. Each timescale gets its own instrument: mission and strategy at the year scale, commitments at the week scale, standups and unblocking at the day scale, plain presence at the minute scale. The orange rung is the one I had to learn the hard way: a commitment is an owner, a date, and a decision. Without it, the strategy above stays philosophy and the activity below stays motion." />
+
+## The slow rung: strategy
+
+A team works together far better when it shares a purpose. Strategy is what connects what each person does today to the team and the organization around them. The framework I've found useful for this mission-to-metrics alignment comes from working closely with everyone on the team to define five ingredients:
+
+1. Vision: How are we going to change the world for the better?
+   *Ex. Empower computational scientists to better understand the world.*
+2. Mission: What are we going to build to achieve the vision?
+   *Ex. Build optimized computational science applications and workload solutions for current and future Intel supercomputing customers, so they get more out of their compute.*
+3. Strategic initiatives: Why does this team exist within the broader organization?
+   *Ex. Help Intel better understand scientific computing users, workloads, and solution needs; combine Intel software products into full customer solutions; help the business units above us hit their revenue goals with a complete software experience.*
+4. KPIs (Key Performance Indicators): How do we measure the success of the mission and the strategic initiatives?
+   *Ex. Users, public design wins, sales attach rate.*
+5. OKRs: What are we doing quarter by quarter to advance the KPIs and strategic initiatives?
+   *Ex. Ours lived in Workboard at Intel; the point is the quarterly rhythm connecting the work to the KPIs, not the tool.*
+
+Some of these examples carry their corporate vintage; the ingredients haven't changed. That being said, the deliverable isn't the deck. If people can't connect this week's work back to the mission without looking anything up, the strategy hasn't landed yet.
+
+For going deeper: *Good Strategy, Bad Strategy* ([Rumelt](http://goodbadstrategy.com/)), the mission-to-metrics section of YC's ["What's the Second Job of a Startup CEO"](https://www.ycombinator.com/library/3k-what-s-the-second-job-of-a-startup-ceo), and a real example in the [SigOpt strategy deck](https://docs.google.com/presentation/d/1BVPvaQipXtW9q2dnhz2dQWMvLDlJKmHGtAh0x02rskQ/edit#slide=id.g508fa69ff2_2_0).
+
+## The rung I was missing: commitments
+
+For a long time I was fluent at the top of the ladder and at the bottom of it. I could write vision and strategy all day, and I could go arbitrarily deep on product detail. And I still managed to write a strategy document that the team received as too high level and too pedantic at the same time. That feedback confused me for a while: how can one document be both? But they were right. The strategy sections were belief prose with placeholder measures. The detailed sections were granular in the product dimension, not the execution dimension: exhaustive about what we might build, silent about who was doing what, by when, and which decisions were now closed. Every priority list was still labeled "proposed." I could never find the middle that makes a team move, because I kept looking for it at some intermediate level of detail.
+
+The middle isn't a detail level. It's a commitment layer: **an owner, a date, and a decision**, written where everyone can see it. The decision closes ("we are doing X, we are not doing Y"), a name goes on the follow-through, and a date makes it due. That's the whole data model.
+
+<Figure slug="management-philosophy" name="fig2-commitment-rung" caption="A commitment is three fields: an owner, a date, and a decision. Anything missing one of the three is a proposal, whatever its formatting." />
+
+A commitment isn't real just because it's written down, either. I've produced the perfectly structured version, owners bolded next to every deliverable, and watched it move nothing. Assigning ownership is not the same as ownership being taken. What makes a commitment real is the mechanism around it: someone checks it, on a date, and silence has a consequence. If nothing happens when nothing happens, it wasn't a commitment. It was a hope with formatting.
+
+None of this is an argument for micromanagement, and the commitment layer is not a task tracker. The unit isn't a ticket; it's a decision with a name and a date attached, and a team might only need a handful of them a quarter. But once that layer exists, the rungs above and below it start working. The strategy stops being philosophy, because every quarter it gets converted into work someone can act on this week. The standups stop being readouts about activity, because there's something concrete to check them against. Vision points the team. Activity occupies the team. Commitments move the team.
+
+## The fast rungs: clearing the path
+
+Below the week, the job changes character. I believe one of a manager's main purposes is to get obstacles out of the way so people can spend their time doing what they love and do best, pointed at the team strategy. In practice that means finding resources, making connections inside and outside the team, and generally making sure everyone has what they need to do their job well. It's not about directing the work, it's about clearing the path for it.
+
+At the day scale the instruments are boring on purpose: standups, quick unblocks, reprioritizing as new information lands. At the minute scale the only instrument left is presence. In a sales call that's going sideways there is no framework to reach for; it's minute over minute, and you're trying to salvage whatever you can. The slower rungs are what buy you the right to improvise there. If the strategy has landed and the commitments are clear, a bad minute stays a bad minute instead of quietly becoming a bad quarter.
+
+## The instrument that works at every timescale: the team
+
+The third job has two halves: the culture of the team as a whole, and the growth of each person on it.
+
+Culture is how we treat each other internally and how we interact with everyone externally. I used to say culture is like a plant; I've upgraded that to a tree. It needs to be actively tended and occasionally pruned, it grows in whatever direction it wants if you don't, and it's much easier to grow from a sapling than from a seed, which is one reason I care so much about the first people on a team. Culture explicitly sets out the values we'll recruit for, reward for, and potentially release for. It's the social contract that keeps the environment safe and productive: disagree hard without retaliation, ask for help before a problem becomes a crisis.
+
+The clearest example I have is the #kudos program we started at SigOpt: any team member could publicly, and with almost no friction, give a small spot bonus to another team member for going above and beyond to help each other. It was designed to be the equivalent of buying someone a cup of coffee or a beer for lending a hand. Kudos were read out each week at the team meeting, with a quarterly drawing for a larger prize, and hundreds went out every quarter. The whole point was solidarity, one of our key cultural values.
+
+A team is also made up of distinct individuals, each with their own experiences and goals. The aim is to accomplish the team strategy in a way that also furthers each person's goals and career whenever we can: getting better as an engineer, a manager, or a public speaker, or laying the groundwork to go back to academia or start a company someday.
+
+Culture is the one instrument that works at every rung of the ladder, because it sets expectations about change itself. We tried to make constant reprioritization an expectation instead of a surprise: transparency, so we tell you when we learn something, and experimentation, so nobody is shocked when Tuesday's plan isn't Thursday's plan. A team with that foundation can absorb a minute-scale shift without reading it as chaos.
+
+## The job under the jobs
+
+At the end of the day, all three jobs, at every timescale, are versions of the same job. We have a lot of really smart people. Figuring out how I can get out of the way is literally every minute of the day, and every day I try to do it a little bit better. A 1% gain there compounds: string together 70 of them and you've doubled. If I can pull one out a week, I'm happy.
+
+That's also why I don't flinch at the stereotype of the CEO on the golf course. If the team can execute without them, that's not neglect; that's the endpoint of getting out of the way. The one working 100 hours a week to stay in the middle of everything has made themselves indispensable, and indispensable is a bad sign in a manager.
+
+None of these three jobs ever finishes: strategy drifts, new blockers show up every week, and an unpruned culture grows in whatever direction it wants. I've underinvested in each of them at one point or another, and the commitment layer is the tuition I remember best. If you manage people, the useful question isn't which of these ideas you agree with. It's which rung your team is getting the least of right now.
+
+*Adapted from a book I'm slowly writing on org design.*
+
+## Connections
+
+- **Source:** [[Optimal Orgs]], extracted 2026-04-17 from the *Optimized Organizations* book draft (the "Management Philosophy" section); voice-refresh pass 2026-07-13; diagram-centered redraft 2026-07-14.
+- **v2 sources (2026-07-14):** BAM 2025 "Coffee with a Founder" transcript (the multi-scale answer, values-as-foundation) + CEO.com 2025 transcript (get-out-of-the-way, the 1% compounding line, culture tree, golf-course CEO) via the content_finder appearances corpus; [[Meta/Exemplars]] 2026-07-14 entries (the commitment-layer and ownership-taken lessons, sanitized here to first-person learning).
+- **Deliberate light touches:** golf-course CEO and culture-as-a-tree are banked in [[Resources/Writing MOC]] as standalone pieces; each gets exactly one beat here, not its full argument.
+- [[Factory vs Ecosystem Orgs]] formalizes the strategy / execution / culture pillars above through an optimization lens.

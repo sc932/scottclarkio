@@ -1,0 +1,39 @@
+---
+// Inline-SVG figure with caption + a11y. SVG sources are the hand-authored
+// clean-technical diagrams (Style Guide § Diagram grammar MEDIUM DOCTRINE),
+// committed under src/assets/blog/<slug>/; a PNG twin of every figure ships
+// under public/images/blog/<slug>/ for the .md twins, feeds, and social.
+// Usage in MDX (single-line, self-closing — the .md twin rewrite depends on
+// this exact shape): <Figure slug="..." name="..." caption="..." />
+interface Props {
+  slug: string;
+  name: string;
+  caption: string;
+  /** Accessible description; defaults to the caption. */
+  alt?: string;
+}
+const { slug, name, caption, alt } = Astro.props;
+
+const svgs = import.meta.glob("/src/assets/blog/**/*.svg", {
+  query: "?raw",
+  import: "default",
+  eager: true,
+}) as Record<string, string>;
+const key = `/src/assets/blog/${slug}/${name}.svg`;
+const raw = svgs[key];
+if (!raw) throw new Error(`Figure SVG not found: ${key}`);
+
+// a11y: mark the root element as an image with an accessible name.
+const label = (alt ?? caption).replace(/"/g, "&quot;");
+const svg = raw.replace(/<svg\s/, `<svg role="img" aria-label="${label}" `);
+---
+
+<figure class="post-figure" data-png={`/images/blog/${slug}/${name}.png`}>
+  {/* White panel + hairline border: figures stay white (asset-portable) and
+      read as plates on the warm page. Border over shadow — hairline rules are
+      this design system's only depth vocabulary (Scott, 2026-07-23). */}
+  <div class="fig-panel">
+    <Fragment set:html={svg} />
+  </div>
+  <figcaption>{caption}</figcaption>
+</figure>

@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1220 740" width="1220" height="740" font-family="Helvetica, Arial, 'DejaVu Sans', sans-serif">
+  <!-- FIG 2: the commitment rung, opened up.
+       Claim: A commitment is three fields: an owner, a date, and a decision.
+       Anything missing one of the three is a proposal, whatever its formatting.
+       One frame reused: the orange rung is reproduced from the ladder figure
+       (same fills/strokes), then zoomed into its three fields. The PROPOSED
+       watermark sits OUTSIDE the rung: a proposal is not a commitment.
+       Artifact-scoped colors (stable with fig 1): orange = the commitment layer;
+       navy = structure; gray italic = the honest annotation. -->
+  <rect x="0" y="0" width="1220" height="740" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="70" y="82" font-size="31" font-weight="bold" fill="#223a55">Inside the commitment rung</text>
+
+  <!-- The rung, reproduced from the ladder figure -->
+  <text x="70" y="118" font-size="13" font-style="italic" fill="#939dab">the rung, from the ladder</text>
+  <rect x="70" y="128" width="380" height="74" rx="9" fill="#c4600f" stroke="#94480a" stroke-width="3"/>
+  <text x="260" y="160" font-size="20" font-weight="bold" fill="#ffffff" text-anchor="middle">Commitments</text>
+  <text x="260" y="186" font-size="14" fill="#ffe9d8" text-anchor="middle">(owner + date + decision)</text>
+
+  <!-- zoom lines -->
+  <line x1="70" y1="202" x2="110" y2="290" stroke="#94480a" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.7"/>
+  <line x1="450" y1="202" x2="1010" y2="290" stroke="#94480a" stroke-width="1.5" stroke-dasharray="6 5" opacity="0.7"/>
+
+  <!-- The rung opened up -->
+  <rect x="110" y="290" width="900" height="330" rx="14" fill="#fffaf4" stroke="#94480a" stroke-width="3"/>
+  <text x="560" y="324" font-size="16" font-style="italic" fill="#6d7885" text-anchor="middle">the whole data model:</text>
+
+  <!-- field: owner -->
+  <rect x="155" y="346" width="250" height="150" rx="10" fill="#eef2f6" stroke="#223a55" stroke-width="2"/>
+  <text x="280" y="410" font-size="24" font-weight="bold" fill="#223a55" text-anchor="middle">OWNER</text>
+  <text x="280" y="442" font-size="15" fill="#4a586a" text-anchor="middle">(a name, not a team)</text>
+  <line x1="280" y1="496" x2="280" y2="512" stroke="#c4600f" stroke-width="2"/>
+  <text x="280" y="531" font-size="13" font-style="italic" fill="#6d7885" text-anchor="middle">closes</text>
+  <text x="280" y="556" font-size="19" font-weight="bold" fill="#c4600f" text-anchor="middle">who moves</text>
+
+  <!-- field: date -->
+  <rect x="435" y="346" width="250" height="150" rx="10" fill="#eef2f6" stroke="#223a55" stroke-width="2"/>
+  <text x="560" y="410" font-size="24" font-weight="bold" fill="#223a55" text-anchor="middle">DATE</text>
+  <text x="560" y="442" font-size="15" fill="#4a586a" text-anchor="middle">(a date someone checks)</text>
+  <line x1="560" y1="496" x2="560" y2="512" stroke="#c4600f" stroke-width="2"/>
+  <text x="560" y="531" font-size="13" font-style="italic" fill="#6d7885" text-anchor="middle">closes</text>
+  <text x="560" y="556" font-size="19" font-weight="bold" fill="#c4600f" text-anchor="middle">when it's due</text>
+
+  <!-- field: decision -->
+  <rect x="715" y="346" width="250" height="150" rx="10" fill="#eef2f6" stroke="#223a55" stroke-width="2"/>
+  <text x="840" y="410" font-size="24" font-weight="bold" fill="#223a55" text-anchor="middle">DECISION</text>
+  <text x="840" y="442" font-size="15" fill="#4a586a" text-anchor="middle">(closed: doing X, not Y)</text>
+  <line x1="840" y1="496" x2="840" y2="512" stroke="#c4600f" stroke-width="2"/>
+  <text x="840" y="531" font-size="13" font-style="italic" fill="#6d7885" text-anchor="middle">closes</text>
+  <text x="840" y="556" font-size="19" font-weight="bold" fill="#c4600f" text-anchor="middle">what was chosen</text>
+
+  <!-- the mechanism footnote, inside the rung -->
+  <text x="560" y="598" font-size="15.5" font-style="italic" fill="#6d7885" text-anchor="middle">&#8230;and it's real only when someone checks it, on the date, and silence has a consequence.</text>
+
+  <!-- OUTSIDE the rung: the proposal ghost -->
+  <text x="1125" y="328" font-size="13" font-style="italic" fill="#6d7885" text-anchor="middle">take any field away:</text>
+  <rect x="1045" y="340" width="160" height="215" rx="10" fill="#fbfcfd" stroke="#939dab" stroke-width="2" stroke-dasharray="8 6"/>
+  <text x="1125" y="445" font-size="23" font-weight="bold" fill="#b9c2cc" text-anchor="middle" transform="rotate(-20 1125 445)">PROPOSED</text>
+  <text x="1125" y="505" font-size="13" font-style="italic" fill="#6d7885" text-anchor="middle">a hope with</text>
+  <text x="1125" y="523" font-size="13" font-style="italic" fill="#6d7885" text-anchor="middle">formatting</text>
+
+  <!-- Honest annotation -->
+  <text x="610" y="690" font-size="18" font-style="italic" fill="#6d7885" text-anchor="middle">Vision points the team. Activity occupies the team. Commitments move the team.</text>
+</svg>

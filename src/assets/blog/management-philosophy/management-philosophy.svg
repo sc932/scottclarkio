@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1220 850" width="1220" height="850" font-family="Helvetica, Arial, 'DejaVu Sans', sans-serif">
+  <rect x="0" y="0" width="1220" height="850" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="70" y="82" font-size="31" font-weight="bold" fill="#223a55">One instrument per timescale</text>
+
+  <!-- Timescale axis -->
+  <text x="277" y="152" font-size="15" font-style="italic" fill="#939dab" text-anchor="middle">slower</text>
+  <line x1="277" y1="168" x2="277" y2="706" stroke="#939dab" stroke-width="2.5"/>
+  <polygon points="277,722 269,704 285,704" fill="#939dab"/>
+  <text x="277" y="748" font-size="15" font-style="italic" fill="#939dab" text-anchor="middle">faster</text>
+
+  <!-- Ladder rails -->
+  <line x1="400" y1="200" x2="400" y2="665" stroke="#ccd4dc" stroke-width="3"/>
+  <line x1="880" y1="200" x2="880" y2="665" stroke="#ccd4dc" stroke-width="3"/>
+
+  <!-- Timescale labels -->
+  <text x="245" y="207" font-size="21" font-weight="bold" fill="#223a55" text-anchor="end" letter-spacing="0.5">YEAR / QUARTER</text>
+  <text x="245" y="362" font-size="21" font-weight="bold" fill="#223a55" text-anchor="end" letter-spacing="0.5">WEEK</text>
+  <text x="245" y="517" font-size="21" font-weight="bold" fill="#223a55" text-anchor="end" letter-spacing="0.5">DAY</text>
+  <text x="245" y="672" font-size="21" font-weight="bold" fill="#223a55" text-anchor="end" letter-spacing="0.5">MINUTE</text>
+
+  <!-- Rung 1: mission + strategy -->
+  <rect x="330" y="154" width="620" height="92" rx="10" fill="#eef2f6" stroke="#223a55" stroke-width="2"/>
+  <text x="640" y="193" font-size="25" font-weight="bold" fill="#223a55" text-anchor="middle">Mission + strategy</text>
+  <text x="640" y="226" font-size="18" fill="#4a586a" text-anchor="middle">(vision, strategic initiatives, KPIs, OKRs)</text>
+
+  <!-- Rung 2: commitments (the hot rung) -->
+  <rect x="318" y="301" width="644" height="108" rx="10" fill="#c4600f" stroke="#94480a" stroke-width="3"/>
+  <text x="640" y="347" font-size="27" font-weight="bold" fill="#ffffff" text-anchor="middle">Commitments</text>
+  <text x="640" y="382" font-size="19" fill="#ffe9d8" text-anchor="middle">(owner + date + decision)</text>
+
+  <!-- Stamp: teams move here -->
+  <line x1="1004" y1="355" x2="976" y2="355" stroke="#c4600f" stroke-width="2.5"/>
+  <polygon points="966,355 978,348 978,362" fill="#c4600f"/>
+  <text x="1012" y="362" font-size="20" font-weight="bold" fill="#c4600f" text-anchor="start">teams move here</text>
+
+  <!-- Rung 3: standups + unblocking -->
+  <rect x="330" y="464" width="620" height="92" rx="10" fill="#eef2f6" stroke="#223a55" stroke-width="2"/>
+  <text x="640" y="503" font-size="25" font-weight="bold" fill="#223a55" text-anchor="middle">Standups + unblocking</text>
+  <text x="640" y="536" font-size="18" fill="#4a586a" text-anchor="middle">(clear the path, find resources, reprioritize)</text>
+
+  <!-- Rung 4: presence -->
+  <rect x="330" y="619" width="620" height="92" rx="10" fill="#eef2f6" stroke="#223a55" stroke-width="2"/>
+  <text x="640" y="658" font-size="25" font-weight="bold" fill="#223a55" text-anchor="middle">Presence</text>
+  <text x="640" y="691" font-size="18" fill="#4a586a" text-anchor="middle">(the sales call, the demo, the incident)</text>
+
+  <!-- Honest annotation -->
+  <text x="640" y="795" font-size="18" font-style="italic" fill="#6d7885" text-anchor="middle">Without the middle rung, the strategy above it stays philosophy and the activity below it stays motion.</text>
+</svg>

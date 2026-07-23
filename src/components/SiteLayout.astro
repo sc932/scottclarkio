@@ -32,6 +32,11 @@ interface Props {
   sans: string;
   /** og:type override; defaults to "website" (use "profile" on /, "article" on blog posts). */
   ogType?: string;
+  /** og:image override (defaults to the headshot); post pages pass their generated card. */
+  ogImage?: string | null;
+  ogImageAlt?: string | null;
+  /** article:* metadata — pass together with ogType="article" on post pages. */
+  article?: { published: string; modified?: string; author: string } | null;
   /** Optional page-specific JSON-LD entity (ProfilePage, CollectionPage, etc.) appended to the @graph. */
   pageSchema?: object | null;
   /** Optional path to preload as image (for above-the-fold LCP), e.g. "/images/scott-clark.jpg". */
@@ -51,6 +56,9 @@ const {
   serif,
   sans,
   ogType = "website",
+  ogImage = null,
+  ogImageAlt = null,
+  article = null,
   pageSchema = null,
   preloadImage = null,
 } = Astro.props;
@@ -62,7 +70,11 @@ const canonicalPath = normalizedPath === "" ? "/" : normalizedPath;
 const mdTwinPath =
   normalizedPath === "" ? "/index.md" : `${normalizedPath}.md`;
 const canonicalUrl = `${siteUrl}${canonicalPath}`;
-const ogImageUrl = `${siteUrl}/images/scott-clark.jpg`;
+// Default social image is the headshot (small "summary" card); pages passing
+// a generated 1200x630 card (blog posts) upgrade to the large-image card.
+const ogImageUrl = ogImage ?? `${siteUrl}/images/scott-clark.jpg`;
+const ogImageAltText = ogImageAlt ?? "Scott Clark";
+const twitterCard = ogImage ? "summary_large_image" : "summary";
 
 // Build a single JSON-LD @graph: Person + WebSite + BreadcrumbList + (optional)
 // page-specific entity. Strip @context from inner nodes since the outer wrapper
@@ -152,7 +164,7 @@ const relMeLinks = [...personSchema.sameAs, `mailto:${personSchema.email}`];
     <meta property="og:site_name" content="Scott Clark" />
     <meta property="og:locale" content="en_US" />
     <meta property="og:image" content={ogImageUrl} />
-    <meta property="og:image:alt" content="Scott Clark" />
+    <meta property="og:image:alt" content={ogImageAltText} />
     {ogType === "profile" && (
       <>
         <meta property="profile:first_name" content="Scott" />
@@ -160,13 +172,20 @@ const relMeLinks = [...personSchema.sameAs, `mailto:${personSchema.email}`];
         <meta property="profile:username" content="DrScottClark" />
       </>
     )}
+    {article && (
+      <meta property="article:published_time" content={article.published} />
+    )}
+    {article?.modified && (
+      <meta property="article:modified_time" content={article.modified} />
+    )}
+    {article && <meta property="article:author" content={article.author} />}
 
     {/* Twitter Card */}
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content={twitterCard} />
     <meta name="twitter:title" content={pageTitle} />
     <meta name="twitter:description" content={pageDescription} />
     <meta name="twitter:image" content={ogImageUrl} />
-    <meta name="twitter:image:alt" content="Scott Clark" />
+    <meta name="twitter:image:alt" content={ogImageAltText} />
     <meta name="twitter:creator" content="@DrScottClark" />
     <meta name="twitter:site" content="@DrScottClark" />
 

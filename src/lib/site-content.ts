@@ -11,12 +11,21 @@ export interface ChronoRow {
 }
 
 export const navLinks = [
+  // "Writing" label is provisional (Scott's open pick vs "Blog"; the PATH is
+  // /blog either way — estate URL grammar, SPEC-blog-surfaces ruling 1).
+  { href: "/blog", label: "Writing" },
   { href: "/cv", label: "CV" },
   { href: "/talks", label: "Talks" },
   { href: "/projects", label: "Projects" },
   { href: "/publications", label: "Research" },
   { href: "/press", label: "Press" },
 ];
+
+// Blog listing header + meta description + feed subtitle. Provisional copy —
+// jam-able.
+export const blogTitle = "Writing";
+export const blogDescription =
+  "Essays from Scott Clark on optimization thinking, startup leadership, research to product, and the craft of working with agents.";
 
 // Editorial third-person paragraph. ~70 words.
 export const lede = `Scott Clark is the co-founder and CEO of <strong>Distributional</strong>, an enterprise AI reliability company backed by a16z and Two Sigma. He was previously co-founder and CEO of <strong>SigOpt</strong>, a YC-and-a16z-backed Bayesian optimization platform acquired by <strong>Intel</strong> in 2020, where he then served as VP &amp; GM of AI and HPC supercomputing through 2023. He holds a PhD in applied mathematics and an MS in computer science from Cornell University, where he was a Department of Energy Computational Science Graduate Fellow.`;
