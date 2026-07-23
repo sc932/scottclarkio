@@ -10,22 +10,14 @@
     "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {
-    "@astrojs/rss": "4.0.18",
-    "@astrojs/sitemap": "3.7.2",
+    "@astrojs/rss": "4.0.19",
+    "@astrojs/sitemap": "3.7.3",
     "@fontsource-variable/ibm-plex-sans": "5.2.8",
     "@fontsource-variable/source-serif-4": "5.2.9",
-    "astro": "5.18.1"
+    "astro": "7.0.7"
   },
   "overrides": {
-    "astro": {
-      "vite": "6.4.2"
-    },
-    "postcss": "8.5.10",
-    "picomatch": "4.0.4",
-    "defu": "6.1.7",
-    "devalue": "5.7.1",
-    "h3": "1.15.11",
-    "smol-toml": "1.6.1",
-    "svgo": "4.0.1"
+    "sharp": "0.35.0",
+    "svgo": "4.0.2"
   }
 }
