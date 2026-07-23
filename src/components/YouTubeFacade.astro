@@ -13,6 +13,9 @@ interface Props {
   poster?: "maxresdefault" | "hqdefault";
 }
 const { id, title, poster = "maxresdefault" } = Astro.props;
+if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
+  throw new Error(`YouTubeFacade: invalid YouTube video id: ${id}`);
+}
 const posterUrl = `https://i.ytimg.com/vi/${id}/${poster}.jpg`;
 const embedUrl = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
 const watchUrl = `https://www.youtube.com/watch?v=${id}`;

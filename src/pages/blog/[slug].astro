@@ -36,7 +36,10 @@ const pageSchema = buildBlogPostingSchema(post);
   article={{
     published: post.data.date.toISOString(),
     modified: post.data.updated?.toISOString(),
-    author: post.data.author,
+    author:
+      post.data.author === "Scott Clark"
+        ? "https://scottclark.io"
+        : post.data.author,
   }}
   pageSchema={pageSchema}
 >

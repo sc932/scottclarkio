@@ -30,7 +30,10 @@ const blog = defineCollection({
     sourceUrl: z.string().url().optional(),
     pinned: z.boolean().default(false),
     draft: z.boolean().default(false),
-  }),
+  })
+    .refine((d) => d.format !== "video" || Boolean(d.videoId), {
+      message: "format: video requires videoId",
+    }),
 });
 
 const publications = defineCollection({

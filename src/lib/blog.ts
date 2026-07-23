@@ -50,11 +50,9 @@ export function buildBlogPostingSchema(post: Post) {
     headline: post.data.title,
     description: post.data.description,
     url: postUrl(post),
-    mainEntityOfPage: postUrl(post),
+    mainEntityOfPage: { "@type": "WebPage", "@id": postUrl(post) },
     datePublished: post.data.date.toISOString(),
-    ...(post.data.updated
-      ? { dateModified: post.data.updated.toISOString() }
-      : {}),
+    dateModified: (post.data.updated ?? post.data.date).toISOString(),
     author:
       post.data.author === "Scott Clark"
         ? person
@@ -72,8 +70,9 @@ export function buildBlogPostingSchema(post: Post) {
       "@type": "VideoObject",
       name: post.data.title,
       description: post.data.description,
-      thumbnailUrl: `https://i.ytimg.com/vi/${post.data.videoId}/maxresdefault.jpg`,
+      thumbnailUrl: `https://i.ytimg.com/vi/${post.data.videoId}/hqdefault.jpg`,
       uploadDate: (post.data.videoUploadDate ?? post.data.date).toISOString(),
+      contentUrl: `https://www.youtube.com/watch?v=${post.data.videoId}`,
       embedUrl: `https://www.youtube-nocookie.com/embed/${post.data.videoId}`,
       ...(post.data.videoDuration
         ? { duration: post.data.videoDuration }
@@ -112,17 +111,22 @@ export function buildBlogIndexSchema(posts: Post[]) {
 export function mdxBodyToPlainMd(post: Post): string {
   let body = post.body ?? "";
   body = body.replace(/^import .*$\n?/gm, "");
-  body = body.replace(/^\{\/\*[\s\S]*?\*\/\}\n?/m, "");
-  body = body.replace(
-    /<Figure\s+slug="([^"]+)"\s+name="([^"]+)"\s+caption="([^"]*)"[^/>]*\/>/g,
-    (_m, slug, name, caption) =>
-      `![${caption}](${siteUrl}/images/blog/${slug}/${name}.png)`,
-  );
-  body = body.replace(
-    /<YouTubeFacade\s+id="([^"]+)"\s+title="([^"]*)"[^/>]*\/>/g,
-    (_m, id, title) =>
-      `[Watch on YouTube: ${title}](https://www.youtube.com/watch?v=${id})`,
-  );
+  body = body.replace(/\{\/\*[\s\S]*?\*\/\}\n?/g, "");
+  const attr = (attrs: string, k: string) =>
+    attrs.match(new RegExp(`${k}="([^"]*)"`))?.[1];
+  body = body.replace(/<Figure\s+([^>]*?)\/>/g, (m, attrs) => {
+    const slug = attr(attrs, "slug");
+    const name = attr(attrs, "name");
+    const caption = attr(attrs, "caption") ?? "";
+    if (!slug || !name) return m;
+    return `![${caption}](${siteUrl}/images/blog/${slug}/${name}.png)`;
+  });
+  body = body.replace(/<YouTubeFacade\s+([^>]*?)\/>/g, (m, attrs) => {
+    const id = attr(attrs, "id");
+    const title = attr(attrs, "title") ?? "";
+    if (!id) return m;
+    return `[Watch on YouTube: ${title}](https://www.youtube.com/watch?v=${id})`;
+  });
   return body.trim();
 }
 

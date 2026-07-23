@@ -24,8 +24,14 @@ const raw = svgs[key];
 if (!raw) throw new Error(`Figure SVG not found: ${key}`);
 
 // a11y: mark the root element as an image with an accessible name.
-const label = (alt ?? caption).replace(/"/g, "&quot;");
-const svg = raw.replace(/<svg\s/, `<svg role="img" aria-label="${label}" `);
+// Full attribute escaping (integrity, not XSS — SVGs and captions are
+// repo-committed trusted inputs; never commit third-party SVGs unscanned).
+const esc = (s: string) =>
+  s.replace(/[&<>"]/g, (c) =>
+    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string,
+  );
+const label = esc(alt ?? caption);
+const svg = raw.replace(/<svg\b/, `<svg role="img" aria-label="${label}"`);
 ---
 
 <figure class="post-figure" data-png={`/images/blog/${slug}/${name}.png`}>

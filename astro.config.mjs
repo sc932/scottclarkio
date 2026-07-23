@@ -23,15 +23,14 @@ try {
     );
     if (frontmatter.draft === true) continue;
     const d = frontmatter.updated ?? frontmatter.date;
-    if (d) {
-      postLastmod.set(
-        `/blog/${f.replace(/\.mdx$/, "")}`,
-        new Date(d).toISOString(),
-      );
+    const dObj = d ? new Date(d) : null;
+    if (dObj && !Number.isNaN(dObj.getTime())) {
+      postLastmod.set(`/blog/${f.replace(/\.mdx$/, "")}`, dObj.toISOString());
     }
   }
-} catch {
-  // no posts yet — sitemap simply omits lastmod
+} catch (err) {
+  // ENOENT = no posts yet (fine); anything else deserves a loud warning.
+  if (err?.code !== "ENOENT") console.warn("lastmod scan:", err?.message);
 }
 
 export default defineConfig({
