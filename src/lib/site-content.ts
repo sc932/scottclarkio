@@ -172,8 +172,8 @@ export const personSchema = {
   email: "scott@scottclark.io",
   worksFor: {
     "@type": "Organization",
-    name: "Distributional, Inc.",
-    url: "https://distributional.com",
+    name: "Talaria Scientific",
+    url: "https://talariasci.com",
   },
   alumniOf: [
     {
