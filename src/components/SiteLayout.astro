@@ -515,6 +515,26 @@ const relMeLinks = [...personSchema.sameAs, `mailto:${personSchema.email}`];
         .row { grid-template-columns: 1fr; gap: 6px; }
         .row-period { font-size: 13px; }
       }
+
+      /* Phones / narrow screens: give the wordmark its own row and drop the
+         five nav links to a full second row with comfortable tap targets.
+         flex-wrap on both the inner row and the nav guarantees the links wrap
+         (never clip or force horizontal scroll) at any width down to 320px. */
+      @media (max-width: 520px) {
+        .masthead-inner {
+          flex-wrap: wrap;
+          padding-top: 10px;
+          padding-bottom: 2px;
+        }
+        .masthead nav {
+          flex-basis: 100%;
+          flex-wrap: wrap;
+          gap: 4px 16px;
+          margin-top: 2px;
+        }
+        .masthead nav a { padding: 10px 0; }
+        .socials a { padding: 8px 0; }
+      }
     </style>
   </body>
 </html>
