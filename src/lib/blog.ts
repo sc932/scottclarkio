@@ -161,6 +161,11 @@ export function mdxBodyToPlainMd(post: Post): string {
     if (!id) return m;
     return `[Watch on YouTube: ${title}](https://www.youtube.com/watch?v=${id})`;
   });
+  // Root-relative markdown destinations -> absolute: twins are consumed AT
+  // /blog/<slug>.md by agents, and the Figure rewrite above already emits
+  // absolute URLs — plain markdown links/images must match (grammar sweep
+  // from the dbnl archive build, 2026-07-23).
+  body = body.replace(/\]\((\/(?!\/)[^)\s]*)\)/g, (_, p) => `](${siteUrl}${p})`);
   // Tripwire (sol S16 + round-2 S8): this is a controlled-grammar rewrite,
   // not an MDX transpiler. ANY JSX/ESM/expression residue outside masked
   // code means the post stepped outside the grammar (blog-grammar.md) —
