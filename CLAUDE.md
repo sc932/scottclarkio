@@ -303,10 +303,20 @@ nvm use            # Node 22 from .nvmrc — required first
 npm run dev        # localhost:4321
 npm run build      # static build to dist/
 npm run preview    # preview built output
+npm run check:links # Cross-link gate over dist/ (build first)
 npm run deploy     # Manual deploy via scripts/deploy.sh (uses .env + local
                    # AWS auth; rarely needed since GH Actions handles deploys
                    # on every push to main).
 ```
+
+**Cross-link gate (2026-07-24):** any page naming a sibling estate property
+(Talaria → talariasci.com, Distributional → distributional.com) must carry the
+phrase itself as a link — "a link to the host exists somewhere" does not pass.
+Enforced by `scripts/check-crosslinks.mjs` in CI (between build and sync) and
+on the `scripts/deploy.sh` manual path; per-repo rules + deliberate EXCLUDEs
+(press excerpts are verbatim third-party quotes) live at the top of the
+script. Estate contract: vault `Projects/content_factory/blog-grammar.md`
+§ cross-link gate.
 
 For Terraform changes, the workflow is:
 

@@ -147,7 +147,7 @@ export async function renderTalksMd(): Promise<string> {
         .join(" · ");
       return `## ${t.data.title}\n\n**${date}** · ${t.data.event}${
         links ? `\n\n${links}` : ""
-      }\n\n${t.data.description}`;
+      }\n\n${htmlToMd(t.data.description)}`;
     })
     .join("\n\n");
   return `# Talks & Podcasts — Scott Clark

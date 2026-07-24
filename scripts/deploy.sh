@@ -30,6 +30,11 @@ echo "==> Building site..."
 cd "$PROJECT_DIR"
 npm run build
 
+# The manual path carries the same gate as CI — a hand deploy must not be
+# able to ship what a push could not.
+echo "==> Gate (cross-links)..."
+npm run check:links
+
 echo "==> Syncing to S3 (s3://$S3_BUCKET)..."
 aws s3 sync dist/ "s3://$S3_BUCKET" \
   --delete \

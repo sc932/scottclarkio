@@ -173,7 +173,7 @@ export const selectedPubs: SelectedPubRow[] = [
     period: "2025",
     title: "Anomaly Detection in Deployed Artificial Intelligence Applications",
     venue: "U.S. Patent 12,505,027",
-    body: "Distributional's first granted patent. McCourt, Bourassa-Denis, Laban, Kim, Dewancker, Cheng, Clark.",
+    body: `<a href="https://distributional.com">Distributional</a>'s first granted patent. McCourt, Bourassa-Denis, Laban, Kim, Dewancker, Cheng, Clark.`,
   },
 ];
 

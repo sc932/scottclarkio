@@ -5,6 +5,7 @@ import { getCollection } from "astro:content";
 import SiteLayout from "../components/SiteLayout.astro";
 import { v2Theme } from "../lib/site-theme";
 import { siteUrl, buildCollectionPageSchema } from "../lib/site-content";
+import { htmlToText } from "../lib/md-helpers";
 
 const talks = (await getCollection("talks")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
@@ -25,7 +26,7 @@ const talksPageSchema = buildCollectionPageSchema({
     name: t.data.title,
     creator: { "@id": `${siteUrl}/#person` },
     datePublished: t.data.date.toISOString().slice(0, 10),
-    description: t.data.description,
+    description: htmlToText(t.data.description),
     publisher: { "@type": "Organization", name: t.data.event },
     ...(t.data.videoUrl && { url: t.data.videoUrl }),
   })),
@@ -55,7 +56,9 @@ const talksPageSchema = buildCollectionPageSchema({
               <span class="row-org">{t.data.title}</span>
               <span class="row-title">{t.data.event}</span>
             </div>
-            <p class="row-desc">{t.data.description}</p>
+            {/* Descriptions are our own site copy (titles/events stay verbatim
+                artifact names) — HTML allowed so estate mentions can link. */}
+            <p class="row-desc" set:html={t.data.description} />
             {(t.data.videoUrl || t.data.slidesUrl) && (
               <p class="row-links">
                 {t.data.videoUrl && <a href={t.data.videoUrl} target="_blank" rel="noopener">Video</a>}
