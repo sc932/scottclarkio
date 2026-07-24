@@ -62,7 +62,7 @@ export const experience: ChronoRow[] = [
     // the raise on bullet 3. Facts from talariasci.com + the manifesto.
     bullets: [
       `Building <a href="https://talariasci.com">Talaria Scientific</a>: a multi-agent harness for computational science that turns a 10x researcher into a 100x researcher`,
-      `Built AI testing and agent analytic tools before pivoting in July <a href="https://distributional.com/blog/distributional-is-now-talaria">2026</a>`,
+      `Built AI testing and agent analytic tools before <a href="https://distributional.com/blog/distributional-is-now-talaria">pivoting in July 2026</a>`,
       `Raised $30M from a16z, Two Sigma Ventures, SV Angel, and others`,
     ],
     cvBullets: [
