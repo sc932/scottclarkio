@@ -68,7 +68,7 @@ export const experience: ChronoRow[] = [
     cvBullets: [
       `Pivoted to <strong>Talaria Scientific</strong> in 2026 (same corporation, same investors, new mission): a multi-agent harness for computational science — scientist-in-the-loop agents with HPC as the guardrail, in private beta. <a href="https://distributional.com/blog/distributional-is-now-talaria">The announcement</a>.`,
       `Analytics for AI agents — discovering behavioral signals in agent trace data for continuous AI reliability. <strong>30-person team</strong>, <strong>$30M raised</strong> (Seed Dec 2023 led by <em>Andreessen Horowitz</em>; Series A Oct 2024 led by <em>Two Sigma Ventures</em>).`,
-      `Co-founders: Michael McCourt (CTO; multi-paper SigOpt-era co-author), David Rosales (COO), Nick Payton (CRO). 11-person founding team sourced from <em>Bloomberg</em>, <em>Google</em>, <em>Meta</em>, <em>Intel</em>, <em>SigOpt</em>, <em>Slack</em>, <em>Stripe</em>, <em>Uber</em>, <em>Yelp</em>.`,
+      `Co-founders: Michael McCourt (CTO through ~2025; multi-paper SigOpt-era co-author), David Rosales (COO), Nick Payton (CRO). 11-person founding team sourced from <em>Bloomberg</em>, <em>Google</em>, <em>Meta</em>, <em>Intel</em>, <em>SigOpt</em>, <em>Slack</em>, <em>Stripe</em>, <em>Uber</em>, <em>Yelp</em>.`,
       `Product evolved 2023–2025 from pre-deployment AI-testing to production behavioral analytics for AI agents; sunset with the 2026 pivot to Talaria.`,
       `<strong>US Patent 12,505,027</strong> (2025, named inventor): anomaly detection in deployed AI applications.`,
     ],
