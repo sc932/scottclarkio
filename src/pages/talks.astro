@@ -58,11 +58,11 @@ const talksPageSchema = buildCollectionPageSchema({
             <p class="row-desc">{t.data.description}</p>
             {(t.data.videoUrl || t.data.slidesUrl) && (
               <p class="row-links">
-                {t.data.videoUrl && <a href={t.data.videoUrl}>Video</a>}
+                {t.data.videoUrl && <a href={t.data.videoUrl} target="_blank" rel="noopener">Video</a>}
                 {t.data.videoUrl && t.data.slidesUrl && (
                   <span class="sep">·</span>
                 )}
-                {t.data.slidesUrl && <a href={t.data.slidesUrl}>Slides</a>}
+                {t.data.slidesUrl && <a href={t.data.slidesUrl} target="_blank" rel="noopener">Slides</a>}
               </p>
             )}
           </div>

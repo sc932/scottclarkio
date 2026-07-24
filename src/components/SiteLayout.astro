@@ -6,6 +6,7 @@ import {
   buildBreadcrumbList,
   siteUrl,
 } from "../lib/site-content";
+import { footerSocials } from "../lib/social-icons";
 
 interface Props {
   /** <title> */
@@ -191,9 +192,25 @@ const relMeLinks = [...personSchema.sameAs, `mailto:${personSchema.email}`];
       <slot />
 
       <footer class="endnotes">
+        {/* Estate footer grammar (Scott, 2026-07-24): icon + HANDLE, same
+            glyphs as the home social row (social-icons.ts is generated from
+            it). External -> new tab, estate rule; mailto stays in-tab. */}
+        <p class="social">
+          {footerSocials.map((s) => (
+            <a
+              href={s.href}
+              rel={s.href.startsWith("mailto:") ? "me" : "me noopener"}
+              target={s.href.startsWith("mailto:") ? undefined : "_blank"}
+              aria-label={`${s.label}: ${s.handle}`}
+            >
+              <Fragment set:html={s.svg} />
+              <span>{s.handle}</span>
+            </a>
+          ))}
+        </p>
         <p>
           Resume: <a href="/resume/scott-clark-resume.pdf">PDF</a> · Source: <a
-            href="https://github.com/sc932/resume">github.com/sc932/resume</a
+            href="https://github.com/sc932/resume" target="_blank" rel="noopener">github.com/sc932/resume</a
           >
         </p>
         <p class="copy">© 2026 Scott Clark</p>
@@ -500,6 +517,27 @@ const relMeLinks = [...personSchema.sameAs, `mailto:${personSchema.email}`];
       }
       .endnotes p { margin: 0 0 6px; }
       .endnotes a { color: var(--mute); }
+      .endnotes .social {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px 16px;
+        margin-bottom: 14px;
+      }
+      .endnotes .social a {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        text-decoration: none;
+      }
+      .endnotes .social .icon {
+        width: 15px;
+        height: 15px;
+        flex: none;
+      }
+      @media (max-width: 720px) {
+        .endnotes .social { gap: 2px 12px; }
+        .endnotes .social a { padding: 8px 4px; }
+      }
       .endnotes a:hover { color: var(--accent); }
       .copy { color: var(--soft); }
 

@@ -80,10 +80,10 @@ const publicationsPageSchema = buildCollectionPageSchema({
             )}
             {(p.data.url || p.data.doi) && (
               <p class="row-links">
-                {p.data.url && <a href={p.data.url}>Link</a>}
+                {p.data.url && <a href={p.data.url} target="_blank" rel="noopener">Link</a>}
                 {p.data.url && p.data.doi && <span class="sep">·</span>}
                 {p.data.doi && (
-                  <a href={`https://doi.org/${p.data.doi}`}>DOI: {p.data.doi}</a>
+                  <a href={`https://doi.org/${p.data.doi}`} target="_blank" rel="noopener">DOI: {p.data.doi}</a>
                 )}
               </p>
             )}

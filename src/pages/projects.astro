@@ -128,7 +128,7 @@ const projectsPageSchema = buildCollectionPageSchema({
                   {links.map((l, i) => (
                     <>
                       {i > 0 && <span class="sep">·</span>}
-                      <a href={l.href}>{l.label}</a>
+                      <a href={l.href} target={l.href.startsWith("http") ? "_blank" : undefined} rel={l.href.startsWith("http") ? "noopener" : undefined}>{l.label}</a>
                     </>
                   ))}
                 </p>
@@ -159,7 +159,7 @@ const projectsPageSchema = buildCollectionPageSchema({
               {fam.data.patents.map((pat) => (
                 <li class="patent-chip">
                   {pat.url ? (
-                    <a href={pat.url}>
+                    <a href={pat.url} target="_blank" rel="noopener">
                       {pat.number} ({pat.year})
                     </a>
                   ) : (
