@@ -56,17 +56,21 @@ export const socialLinks = [
 export const experience: ChronoRow[] = [
   {
     period: "2023 — present",
-    org: "Distributional",
+    org: "Talaria Scientific (formerly Distributional)",
     title: "Co-founder & CEO",
+    // First pass 2026-07-23 (Scott wordsmithing): bullets 1–2 = Talaria,
+    // bullet 3 = the pivot with the announcement link. Facts sourced from
+    // talariasci.com landing copy + the manifesto — nothing invented.
     bullets: [
-      "Analytics for agents, discovering behavioral signals in AI logs for continuous improvement",
-      "Built enterprise tooling for AI reliability with statistical testing and adaptive analytics",
-      "Led a remote team of 30. Raised $30M from a16z, Two Sigma, others over 2 rounds",
+      `Building <a href="https://talariasci.com">Talaria Scientific</a>: a multi-agent harness for computational science that turns a 10x researcher into a 100x researcher`,
+      `Scientist-in-the-loop agents with HPC as the guardrail — taking on the coding, environments, runs, and record-keeping while the scientist keeps the science. In private beta with a small group of researchers`,
+      `A hard pivot from Distributional (raised $30M from a16z, Two Sigma, others; served multiple Fortune 500 customers) — <a href="https://distributional.com/blog/distributional-is-now-talaria">the announcement</a>`,
     ],
     cvBullets: [
-      `Analytics for AI agents — discovering behavioral signals in agent trace data for continuous AI reliability. <strong>30-person team</strong>, <strong>$30M raised</strong> (Seed Dec 2023 led by <em>Andreessen Horowitz</em>; Series A Oct 2024 led by <em>Two Sigma Ventures</em>).`,
+      `Pivoted to <strong>Talaria Scientific</strong> in 2026 (same corporation, same investors, new mission): a multi-agent harness for computational science — scientist-in-the-loop agents with HPC as the guardrail, in private beta. <a href="https://distributional.com/blog/distributional-is-now-talaria">The announcement</a>.`,
+      `As Distributional: analytics for AI agents — discovering behavioral signals in agent trace data for continuous AI reliability. <strong>30-person team</strong>, <strong>$30M raised</strong> (Seed Dec 2023 led by <em>Andreessen Horowitz</em>; Series A Oct 2024 led by <em>Two Sigma Ventures</em>).`,
       `Co-founders: Michael McCourt (CTO; multi-paper SigOpt-era co-author), David Rosales (COO), Nick Payton (CRO). 11-person founding team sourced from <em>Bloomberg</em>, <em>Google</em>, <em>Meta</em>, <em>Intel</em>, <em>SigOpt</em>, <em>Slack</em>, <em>Stripe</em>, <em>Uber</em>, <em>Yelp</em>.`,
-      `Product evolved 2023–2025 from pre-deployment AI-testing to production behavioral analytics for AI agents — turning raw trace data into actionable insights for AI teams.`,
+      `Product evolved 2023–2025 from pre-deployment AI-testing to production behavioral analytics for AI agents; sunset with the 2026 pivot to Talaria.`,
       `<strong>US Patent 12,505,027</strong> (2025, named inventor): anomaly detection in deployed AI applications.`,
     ],
   },
