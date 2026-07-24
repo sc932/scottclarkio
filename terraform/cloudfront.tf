@@ -113,6 +113,11 @@ resource "aws_cloudfront_response_headers_policy" "security" {
 }
 
 resource "aws_cloudfront_distribution" "site" {
+  # Logging delivery needs the awslogsdelivery ACL grant to exist BEFORE
+  # CloudFront enables logging on a clean apply (r4 sol S4 — the ACL sits
+  # on a parallel graph branch otherwise).
+  depends_on = [aws_s3_bucket_acl.logs]
+
   enabled             = true
   is_ipv6_enabled     = true
   default_root_object = "index.html"

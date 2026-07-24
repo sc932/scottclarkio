@@ -15,12 +15,24 @@ import { join } from "node:path";
 const DIST = "dist";
 const PUB = "public";
 
-const keyFile = readdirSync(PUB).find((f) => /^[0-9a-f]{32}\.txt$/.test(f));
-if (!keyFile) {
-  console.error("indexnow: no public/<32-hex>.txt key file — skipping");
+let keyFile, key;
+try {
+  const keys = readdirSync(PUB).filter((f) => /^[0-9a-f]{32}\.txt$/.test(f));
+  if (keys.length !== 1) {
+    console.error(`indexnow: expected exactly one key file, found ${keys.length} — skipping`);
+    process.exit(0);
+  }
+  keyFile = keys[0];
+  key = keyFile.replace(/\.txt$/, "");
+  const body = readFileSync(join(PUB, keyFile), "utf8").trim();
+  if (body !== key) {
+    console.error("indexnow: key file body != filename stem — skipping (r4 sol S3)");
+    process.exit(0);
+  }
+} catch (err) {
+  console.error(`indexnow: WARN key discovery failed (deploy unaffected): ${err.message}`);
   process.exit(0);
 }
-const key = keyFile.replace(/\.txt$/, "");
 
 // sitemap-index.xml -> sitemap-*.xml -> <loc> URLs. File errors WARN and
 // exit 0 like every other failure here (best-effort by doctrine): the site
@@ -43,7 +55,13 @@ if (urls.size === 0) {
   console.error("indexnow: sitemap yielded zero URLs — skipping");
   process.exit(0);
 }
-const host = new URL([...urls][0]).host;
+let host;
+try {
+  host = new URL([...urls][0]).host;
+} catch (err) {
+  console.error(`indexnow: WARN bad sitemap URL (deploy unaffected): ${err.message}`);
+  process.exit(0);
+}
 
 const body = {
   host,
