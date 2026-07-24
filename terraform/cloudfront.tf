@@ -42,10 +42,10 @@ locals {
           var entry = request.querystring[k];
           if (entry.multiValue) {
             for (var i = 0; i < entry.multiValue.length; i++) {
-              qs += (qs ? '&' : '?') + k + '=' + entry.multiValue[i].value;
+              qs += (qs ? '&' : '?') + encodeURIComponent(k) + '=' + encodeURIComponent(entry.multiValue[i].value);
             }
           } else {
-            qs += (qs ? '&' : '?') + k + (entry.value ? '=' + entry.value : '');
+            qs += (qs ? '&' : '?') + encodeURIComponent(k) + (entry.value ? '=' + encodeURIComponent(entry.value) : '');
           }
         }
         return {

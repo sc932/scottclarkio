@@ -22,14 +22,22 @@ if (!keyFile) {
 }
 const key = keyFile.replace(/\.txt$/, "");
 
-// sitemap-index.xml -> sitemap-*.xml -> <loc> URLs.
-const index = readFileSync(join(DIST, "sitemap-index.xml"), "utf8");
-const parts = [...index.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+// sitemap-index.xml -> sitemap-*.xml -> <loc> URLs. File errors WARN and
+// exit 0 like every other failure here (best-effort by doctrine): the site
+// is already deployed when this step runs — never paint the run red over a
+// search ping (r4 inkling S3; the runsheet greps the success line instead).
 const urls = new Set();
-for (const part of parts) {
-  const file = part.split("/").pop();
-  const xml = readFileSync(join(DIST, file), "utf8");
-  for (const m of xml.matchAll(/<loc>([^<]+)<\/loc>/g)) urls.add(m[1]);
+try {
+  const index = readFileSync(join(DIST, "sitemap-index.xml"), "utf8");
+  const parts = [...index.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
+  for (const part of parts) {
+    const file = part.split("/").pop();
+    const xml = readFileSync(join(DIST, file), "utf8");
+    for (const m of xml.matchAll(/<loc>([^<]+)<\/loc>/g)) urls.add(m[1]);
+  }
+} catch (err) {
+  console.error(`indexnow: WARN sitemap read failed (deploy unaffected): ${err.message}`);
+  process.exit(0);
 }
 if (urls.size === 0) {
   console.error("indexnow: sitemap yielded zero URLs — skipping");
