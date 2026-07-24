@@ -9,6 +9,7 @@
 // debt pinning, lastmod truth-check, and the video-lane tooth.
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { parseFrontmatter } from "@astrojs/markdown-remark";
 
 // ---- per-repo config ----
 const SITE_URL = "https://scottclark.io";
@@ -26,6 +27,11 @@ const KNOWN_DEBTS = [];
 const RSS_CHANNEL_TITLE = "Writing by Scott Clark";
 // The estate's ONE cross-domain author identity (sol S11).
 const AUTHOR_ID = "https://scottclark.io/#person";
+// Author node mode (round-2 S10): "inline" = named Person node (company
+// sites); "graph-ref" = bare @id reference to the page's own #person.
+const AUTHOR_MODE = "graph-ref";
+// Exact publisher identity per site (round-2 G31).
+const PUBLISHER_ID = "https://scottclark.io/#person";
 // -------------------------
 
 const DIST = "dist";
@@ -59,21 +65,28 @@ const decodeEntities = (s) =>
     .replace(/&ldquo;/g, "“")
     .replace(/&rdquo;/g, "”");
 
-// Frontmatter extraction — the fields the gate reads are single-line scalars
-// by grammar; no YAML dep needed.
-function readFm(raw) {
-  if (!raw.startsWith("---")) return null;
-  const end = raw.indexOf("\n---", 3);
-  if (end < 0) return null;
-  const fm = raw.slice(0, end);
-  const get = (k) =>
-    fm.match(new RegExp(`^${k}:\\s*"?([^"\\n]*?)"?\\s*$`, "m"))?.[1]?.trim();
+// Frontmatter via the SAME parser the build uses (@astrojs/markdown-remark)
+// — the regex mini-parser diverged from zod on valid YAML: quoting styles,
+// trailing comments, folded scalars (round-2 S2/G16).
+function readFm(raw, name) {
+  let fm;
+  try {
+    fm = parseFrontmatter(raw).frontmatter ?? {};
+  } catch (e) {
+    failures.push(`${name}: frontmatter parse failed: ${e.message}`);
+    return null;
+  }
+  const d = (v) => (v == null ? undefined : new Date(v));
   return {
-    draft: /^draft:\s*true\s*$/m.test(fm),
-    format: get("format") ?? "post",
-    title: get("title"),
-    date: get("date"),
-    updated: get("updated"),
+    draft: fm.draft === true,
+    format: fm.format ?? "post",
+    title: fm.title,
+    date: d(fm.date),
+    updated: d(fm.updated),
+    author: typeof fm.author === "string" ? fm.author.trim() : fm.author,
+    archived: fm.archived === true,
+    pinned: fm.pinned === true,
+    archivedNote: fm.archivedNote,
     usesFacade: raw.includes("<YouTubeFacade"),
   };
 }
@@ -98,18 +111,18 @@ if (existsSync(SRC_BLOG)) {
       continue;
     }
     if (!name.endsWith(".mdx")) continue;
-    const fm = readFm(readFileSync(p, "utf8"));
-    if (!fm) {
-      notes.push(`WARN ${name}: no frontmatter fence; treated as published`);
-      srcMeta.set(name.replace(/\.mdx$/, ""), { format: "post" });
-      continue;
-    }
+    const fm = readFm(readFileSync(p, "utf8"), name);
+    if (!fm) continue; // parse failure already recorded as a gate failure
     if (fm.draft) continue;
     const slug = name.replace(/\.mdx$/, "");
     srcMeta.set(slug, fm);
     if (fm.format === "video" && !VIDEO_LANE_OPEN)
       failures.push(
         `${slug}: published format "video" while the video lane is tooth-parked — land the feed-safe facade rewrite + self-hosted posters first (sol S10/S22, SPEC-blog-surfaces)`,
+      );
+    if (fm.usesFacade && !VIDEO_LANE_OPEN)
+      failures.push(
+        `${slug}: published post embeds YouTubeFacade while the video lane is tooth-parked — the facade is not feed-safe regardless of format (round-2 G3)`,
       );
   }
 }
@@ -123,6 +136,19 @@ for (const s of srcPosts)
   if (!distPosts.includes(s)) failures.push(`post did not build: ${s}`);
 for (const d of distPosts)
   if (!srcPosts.includes(d)) failures.push(`dist-only leftover post: ${d}`);
+// Twin FILE set must exactly match the post set — a rewired alternate link
+// must not hide missing or stray twins (round-2 S4).
+{
+  const twinFiles = existsSync(join(DIST, "blog"))
+    ? readdirSync(join(DIST, "blog"))
+        .filter((f) => f.endsWith(".md"))
+        .map((f) => f.replace(/\.md$/, ""))
+    : [];
+  const a = new Set(twinFiles);
+  const b = new Set(distPosts);
+  if (!(a.size === b.size && [...a].every((x) => b.has(x))))
+    failures.push(`twin file set != posts: [${twinFiles}] vs [${distPosts}]`);
+}
 
 const pickGraph = (html) => {
   const blocks = [
@@ -148,7 +174,13 @@ for (const file of htmlFiles) {
   const rel = file.slice(DIST.length + 1);
   if (rel === "404.html") continue;
   const html = readFileSync(file, "utf8");
-  if (html.includes('http-equiv="refresh"')) continue; // redirect stubs
+  // Real redirect stubs only (round-2 S3): the refresh meta must sit in the
+  // head region. Astro's minimal stubs have no </head> — fall back to the
+  // first 1000 chars (a real page's first 1000 chars are its own <head>,
+  // which the layout controls; body code samples sit far beyond).
+  const headEnd = html.indexOf("</head>");
+  const stubScope = headEnd > -1 ? html.slice(0, headEnd) : html.slice(0, 1000);
+  if (stubScope.includes('<meta http-equiv="refresh"')) continue;
   const isBlogPage = rel.startsWith("blog/");
   const isPostPage = isBlogPage && rel !== "blog/index.html";
   const slug = isPostPage ? rel.split("/")[1] : null;
@@ -166,11 +198,18 @@ for (const file of htmlFiles) {
     /<script[^>]*type="application\/ld\+json"[\s\S]*?<\/script>/g,
     "",
   );
-  if (/<script[\s>]/.test(nonLd)) {
-    const allowed = isPostPage && srcMeta.get(slug)?.usesFacade;
-    if (!allowed)
-      failures.push(`${rel}: unexpected <script> (only the YouTube facade may ship JS)`);
+  const scriptCount = (nonLd.match(/<script[\s>]/gi) ?? []).length;
+  if (scriptCount > 0) {
+    const facadeOk =
+      isPostPage && scriptCount === 1 && html.includes('class="yt-facade"');
+    if (!facadeOk)
+      failures.push(
+        `${rel}: ${scriptCount} non-JSON-LD <script>(s) — only the single YouTube facade script may ship (round-2 S24)`,
+      );
   }
+  const nonScript = nonLd.replace(/<script[\s\S]*?<\/script>/gi, "");
+  if (/\son[a-z]+\s*=|href="javascript:/i.test(nonScript))
+    failures.push(`${rel}: inline event handler or javascript: URL (round-2 S24)`);
 
   const graph = pickGraph(html);
   if (!graph) failures.push(`${rel}: no JSON-LD`);
@@ -198,20 +237,34 @@ for (const file of htmlFiles) {
         failures.push(`${rel}: BlogPosting @id ${bp["@id"]} != ${canonical}#article`);
       if (bp.url !== canonical)
         failures.push(`${rel}: BlogPosting url ${bp.url} != ${canonical}`);
-      if (!String(bp.image).endsWith(`/blog/${slug}/og.png`))
-        failures.push(`${rel}: BlogPosting image is not the per-post og card`);
+      if (bp.image !== `${canonical}/og.png`)
+        failures.push(`${rel}: BlogPosting image != ${canonical}/og.png (round-2 S10)`);
+      if (fm?.date) {
+        const expMod = new Date(fm.updated ?? fm.date).getTime();
+        if (new Date(bp.dateModified).getTime() !== expMod)
+          failures.push(`${rel}: dateModified != frontmatter updated ?? date (round-2 S10)`);
+      }
       if (fm?.title && bp.headline !== fm.title)
         failures.push(`${rel}: headline "${bp.headline}" != frontmatter title`);
       if (fm?.date && new Date(bp.datePublished).getTime() !== new Date(fm.date).getTime())
         failures.push(`${rel}: datePublished != frontmatter date`);
       const author = bp.author ?? {};
-      // The estate's ONE cross-domain Person identity (sol S11): either an
-      // inline Person node (company sites) or a bare @id graph reference
-      // (scottclarkio, where the full #person node lives in the same @graph).
-      if (author["@id"] !== AUTHOR_ID && !author.name)
-        failures.push(`${rel}: BlogPosting author has neither the estate @id nor a name`);
-      if (author.name === "Scott Clark" && author["@id"] !== AUTHOR_ID)
-        failures.push(`${rel}: Scott Clark author node missing @id ${AUTHOR_ID}`);
+      if (AUTHOR_MODE === "graph-ref") {
+        // Personal site: the author is a bare reference to the page's own
+        // #person node — an inline duplicate would drift the graph (S10).
+        if (author["@id"] !== AUTHOR_ID || author.name)
+          failures.push(`${rel}: author must be the bare @id graph-ref ${AUTHOR_ID} (round-2 S10)`);
+      } else {
+        // Company sites: inline named Person; Scott's carries the estate @id.
+        if (author["@type"] !== "Person" || !author.name)
+          failures.push(`${rel}: author is not a named Person node (round-2 S10)`);
+        if (fm?.author && author.name !== fm.author)
+          failures.push(`${rel}: author "${author.name}" != frontmatter "${fm.author}" (round-2 S9)`);
+        if (author.name === "Scott Clark" && author["@id"] !== AUTHOR_ID)
+          failures.push(`${rel}: Scott Clark author node missing @id ${AUTHOR_ID}`);
+      }
+      if (bp.publisher?.["@id"] !== PUBLISHER_ID)
+        failures.push(`${rel}: BlogPosting publisher @id != ${PUBLISHER_ID} (round-2 G31)`);
       if (fm?.format === "video" && bp.video?.["@type"] !== "VideoObject")
         failures.push(`${rel}: format video without VideoObject`);
     }
@@ -224,8 +277,12 @@ for (const file of htmlFiles) {
     /<link rel="alternate" type="text\/markdown" href="([^"]+)"/,
   );
   if (!twin) failures.push(`${rel}: no markdown-twin link tag`);
-  else if (!existsSync(join(DIST, twin[1].replace(/^\//, ""))))
-    failures.push(`${rel}: twin ${twin[1]} did not build`);
+  else {
+    if (!existsSync(join(DIST, twin[1].replace(/^\//, ""))))
+      failures.push(`${rel}: twin ${twin[1]} did not build`);
+    if (isPostPage && twin[1] !== `/blog/${slug}.md`)
+      failures.push(`${rel}: twin link is ${twin[1]}, not /blog/${slug}.md (round-2 S4)`);
+  }
 
   for (const marker of ["[LINK", "[PIVOT", "[TALARIA]", "[[FIG", "DERIVATIVE KIT", "FIGURE JAM"])
     if (html.includes(marker)) failures.push(`${rel}: unresolved ${marker}`);
@@ -263,7 +320,12 @@ for (const file of htmlFiles) {
       else {
         // Real 1200x630 PNG, not just a file (sol S18): signature + IHDR.
         const buf = readFileSync(ogPath);
-        const isPng = buf.length > 24 && buf.readUInt32BE(0) === 0x89504e47;
+        const isPng =
+          buf.length > 33 &&
+          buf.readUInt32BE(0) === 0x89504e47 &&
+          buf.readUInt32BE(4) === 0x0d0a1a0a &&
+          buf.readUInt32BE(8) === 13 &&
+          buf.toString("ascii", 12, 16) === "IHDR";
         const w = isPng ? buf.readUInt32BE(16) : 0;
         const h = isPng ? buf.readUInt32BE(20) : 0;
         if (!isPng || w !== 1200 || h !== 630)
@@ -313,9 +375,15 @@ for (const s of distPosts) {
   const twinPath = join(DIST, "blog", `${s}.md`);
   if (!existsSync(twinPath)) continue; // caught above via link tag
   const md = readFileSync(twinPath, "utf8");
+  // Mask code regions first — a fenced sample legitimately shows imports
+  // or component tags (round-2 S7); residue checks apply OUTSIDE code only.
+  const mdMasked = md
+    .replace(/(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[ \t]*(?=\n|$)/g, "")
+    .replace(/`[^`\n]+`/g, "");
   for (const bad of ["<Figure", "<YouTubeFacade"])
-    if (md.includes(bad)) failures.push(`twin ${s}.md leaks ${bad}`);
-  if (/^import /m.test(md)) failures.push(`twin ${s}.md leaks an import line`);
+    if (mdMasked.includes(bad)) failures.push(`twin ${s}.md leaks ${bad}`);
+  if (/^import\s|^export[\s{]|<[A-Z][A-Za-z]*[\s/>]/m.test(mdMasked))
+    failures.push(`twin ${s}.md leaks JSX/ESM residue (round-2 S8)`);
 }
 
 // ---- corpus surfaces: exact coverage (sol S13/S17) ----
@@ -339,9 +407,18 @@ if (distPosts.length) {
     failures.push(`llms.txt does not link the /blog.md listing twin (sol S13)`);
   if (!llmsFull.includes(`Source: ${SITE_URL}/blog (`))
     failures.push(`llms-full.txt missing the blog listing section (sol S13)`);
-  for (const s of distPosts)
+  for (const s of distPosts) {
     if (!llmsFull.includes(`Canonical: ${SITE_URL}/blog/${s}`))
       failures.push(`llms-full.txt missing post ${s}`);
+    // The corpus must embed the twin VERBATIM — stubs are not a corpus
+    // (round-2 S21). Same renderer feeds both, so bytes must match.
+    const tp = join(DIST, "blog", `${s}.md`);
+    if (existsSync(tp) && !llmsFull.includes(readFileSync(tp, "utf8").trim()))
+      failures.push(`llms-full.txt does not embed ${s}'s twin verbatim (round-2 S21)`);
+    const linkCount = llms.split(`/blog/${s}.md)`).length - 1;
+    if (linkCount !== 1)
+      failures.push(`llms.txt links ${s} ${linkCount}x, expected exactly once (round-2 S21)`);
+  }
 }
 
 // ---- sitemap: exact locs + truthful lastmod (sol S15/S17) ----
@@ -373,6 +450,18 @@ for (const e of urlEntries)
     failures.push(
       `sitemap lastmod on non-post URL ${e.loc} — only truthful per-post dates allowed`,
     );
+{
+  // Ghost/duplicate blog URLs must not ride the sitemap (round-2 S15).
+  const blogLocs = urlEntries
+    .map((e) => e.loc?.replace(/\/$/, ""))
+    .filter((l) => l && /\/blog\/[^/.]+$/.test(l));
+  if (new Set(blogLocs).size !== blogLocs.length)
+    failures.push(`sitemap: duplicate blog <loc> entries`);
+  const a = new Set(blogLocs);
+  const b = new Set(distPosts.map((s) => `${SITE_URL}/blog/${s}`));
+  if (!(a.size === b.size && [...a].every((x) => b.has(x))))
+    failures.push(`sitemap blog loc set != posts (round-2 S15)`);
+}
 
 // ---- RSS: exact items, real content, strict order, channel identity ----
 const items = [...rssXml.matchAll(/<item>([\s\S]*?)<\/item>/g)].map((m) => m[1]);
@@ -386,13 +475,24 @@ if (distPosts.length) {
   const expected = new Set(distPosts.map((s) => `${SITE_URL}/blog/${s}`));
   if (!eqSets(itemLinks, expected))
     failures.push(`rss item links != posts: [${[...itemLinks]}] vs [${[...expected]}]`);
-  let prev = Infinity;
+  const expectedSeq = [...srcMeta.entries()]
+    .filter(([s]) => distPosts.includes(s))
+    .sort(
+      (a, b) =>
+        (b[1].date?.getTime() ?? 0) - (a[1].date?.getTime() ?? 0) ||
+        a[0].localeCompare(b[0]),
+    )
+    .map(([s]) => `${SITE_URL}/blog/${s}`);
+  const actualSeq = items.map((i) =>
+    unc(i.match(/<link>([\s\S]*?)<\/link>/)?.[1])?.trim(),
+  );
+  if (JSON.stringify(actualSeq) !== JSON.stringify(expectedSeq))
+    failures.push(
+      `rss item sequence != expected date-desc/slug order (round-2 S18)`,
+    );
   for (const i of items) {
     const t = new Date(i.match(/<pubDate>([^<]+)<\/pubDate>/)?.[1] ?? NaN).getTime();
     if (Number.isNaN(t)) failures.push(`rss item without a parseable pubDate`);
-    else if (t > prev)
-      failures.push(`rss items not in strict date order (sol S12 — pinning must not contaminate the feed)`);
-    prev = Math.min(prev, t);
     const content = i.match(/<content:encoded>([\s\S]*?)<\/content:encoded>/)?.[1] ?? "";
     if (content.length < 300)
       failures.push(`rss item has empty/thin content — full-content feed broken`);
@@ -401,11 +501,13 @@ if (distPosts.length) {
     rssXml.match(/<channel>\s*<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/)?.[1] ?? "";
   if (chTitle !== RSS_CHANNEL_TITLE)
     failures.push(`rss channel title "${chTitle}" != "${RSS_CHANNEL_TITLE}" (sol S12)`);
+  if (!/<language>en-us<\/language>/.test(rssXml))
+    failures.push(`rss channel missing <language>en-us</language> (round-2 S18)`);
 }
 for (const bad of ["&lt;Figure", "&lt;YouTubeFacade", 'src=&quot;/'])
   if (rssXml.includes(bad)) failures.push(`rss.xml contains ${bad} (unrendered/unabsolutized)`);
 // Feed-safety tooth (sol S10): facade markup must never reach the feed.
-for (const bad of ["yt-facade", "<button", "&lt;button"])
+for (const bad of ["yt-facade", "<button", "&lt;button", "<iframe", "&lt;iframe", "data-png="])
   if (rssXml.includes(bad))
     failures.push(`rss.xml contains "${bad}" — facade markup is not feed-safe (sol S10)`);
 
@@ -445,15 +547,32 @@ function robotsGroups(txt) {
 const groups = robotsGroups(robots);
 const starGroup = groups.find((g) => g.agents.includes("*"));
 if (!starGroup) failures.push("robots.txt: no * group");
-else if (!starGroup.directives.includes(CS))
-  failures.push(`robots.txt: * group does not carry the exact Content-Signal INSIDE the group (sol S9)`);
+else {
+  if (!starGroup.directives.includes(CS))
+    failures.push(`robots.txt: * group does not carry the exact Content-Signal INSIDE the group (sol S9)`);
+  if (!starGroup.directives.includes("Allow: /"))
+    failures.push(`robots.txt: * group missing "Allow: /" — the open stance must be explicit (round-2 G10)`);
+}
 for (const ua of ["GPTBot", "ClaudeBot", "PerplexityBot", "Google-Extended"]) {
   const g = groups.find((x) =>
     x.agents.some((a) => a.toLowerCase() === ua.toLowerCase()),
   );
   if (!g) failures.push(`robots.txt: no group covers ${ua}`);
-  else if (!g.directives.includes(CS))
-    failures.push(`robots.txt: ${ua}'s group does not carry the exact Content-Signal (sol S9)`);
+  else {
+    if (!g.directives.includes(CS))
+      failures.push(`robots.txt: ${ua}'s group does not carry the exact Content-Signal (sol S9)`);
+    if (!g.directives.includes("Allow: /"))
+      failures.push(`robots.txt: ${ua}'s group missing "Allow: /" (round-2 G10)`);
+  }
+}
+for (const g of groups) {
+  if (!g.directives.includes(CS))
+    failures.push(
+      `robots.txt: group [${g.agents.join(",")}] missing the Content-Signal (round-2 S14)`,
+    );
+  for (const d of g.directives)
+    if (/^disallow:\s*\S/i.test(d))
+      failures.push(`robots.txt: "${d}" contradicts the fully-open stance (round-2 S14)`);
 }
 if (!/^sitemap:/im.test(robots)) failures.push(`robots.txt missing "Sitemap:"`);
 
@@ -467,13 +586,23 @@ if (existsSync(SVG_SRC)) {
       failures.push(`${f}: event-handler attribute in committed SVG`);
     if (/<foreignObject\b/i.test(svg)) failures.push(`${f}: foreignObject in SVG`);
     if (
-      /(?:xlink:href|href|src)\s*=\s*"(?:https?:)?\/\//i.test(svg) ||
-      /url\(\s*['"]?https?:/i.test(svg)
+      /(?:xlink:href|href|src)\s*=\s*["']?(?:https?:)?\/\//i.test(svg) ||
+      /url\(\s*['"]?(?:https?:)?\/\//i.test(svg) ||
+      /javascript:/i.test(svg) ||
+      /@import/i.test(svg)
     )
-      failures.push(`${f}: external resource reference — inline SVGs must be self-contained`);
+      failures.push(`${f}: external/active resource reference — inline SVGs must be self-contained (round-2 S25)`);
   }
 }
 
+// A debt pinned to a file that no longer exists is a stale declaration —
+// debts must die loudly, not linger (round-2 S22).
+{
+  const distRel = new Set(htmlFiles.map((f) => f.slice(DIST.length + 1)));
+  for (const d of KNOWN_DEBTS)
+    if (!distRel.has(d.file))
+      failures.push(`stale KNOWN_DEBT declaration: ${d.file} is not in dist`);
+}
 for (const n of notes) console.log("  " + n);
 if (failures.length) {
   console.error(`\naio-check: ${failures.length} FAILURE(S)`);

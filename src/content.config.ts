@@ -18,7 +18,7 @@ const blog = defineCollection({
     date: z.coerce.date(),
     updated: z.coerce.date().optional(),
     format: z.enum(["post", "video", "event", "thread"]).default("post"),
-    author: z.string().default("Scott Clark"),
+    author: z.string().trim().default("Scott Clark"),
     pillar: z
       .enum([
         "optimization-thinking",

@@ -43,14 +43,18 @@ jobs:
           # cards, figure PNGs, favicons, the resume PDF) and rides the
           # short cache class — an unhashed object on the immutable class
           # serves stale for a year (the 2026-07-23 live-metadata lesson).
+          # NO --delete here: old hashed assets must survive the HTML
+          # cache window (edge/browser HTML up to 1h old still references
+          # them) — deleting them at deploy start is an avoidable outage
+          # (round-2 S6). Orphan cleanup = phase-4 lifecycle decision.
           aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }} \
-            --delete \
             --cache-control "public, max-age=31536000, immutable" \
             --exclude "*" \
             --include "_astro/*"
-          # --delete on BOTH passes: complementary filters split deletion
-          # coverage; without it a removed post stays reachable in S3
-          # forever while vanishing from the sitemap (sol S2, 2026-07-23).
+          # --delete on the mutable pass: a removed post must not stay
+          # reachable in S3 while vanishing from the sitemap (sol S2).
+          # Hashed-asset deletion is deferred (S6 above), so this pass is
+          # the only deletion surface — its filter covers all mutables.
           aws s3 sync dist/ s3://${{ secrets.S3_BUCKET }} \
             --delete \
             --cache-control "public, max-age=3600, must-revalidate" \
@@ -59,6 +63,13 @@ jobs:
           # metadata even when bytes are unchanged — `sync` skips unchanged
           # files, so a cache-class or content-type fix would otherwise
           # never reach already-live objects (sol S21, 2026-07-23).
+          # Repair pass for ALL mutable objects (round-2 S5): unchanged
+          # files (figures, favicons, PDFs) migrated from the old immutable
+          # class never re-upload via sync, so force their metadata every
+          # deploy. Small sites; the re-upload cost is trivial.
+          aws s3 cp dist/ s3://${{ secrets.S3_BUCKET }} --recursive \
+            --exclude "_astro/*" \
+            --cache-control "public, max-age=3600, must-revalidate"
           aws s3 cp dist/ s3://${{ secrets.S3_BUCKET }} --recursive \
             --exclude "*" --include "*.md" \
             --content-type "text/markdown; charset=utf-8" \

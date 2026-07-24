@@ -122,9 +122,26 @@ export function buildBlogIndexSchema(posts: Post[]) {
 // self-closing <Figure .../> and <YouTubeFacade .../> only (blog-grammar.md).
 export function mdxBodyToPlainMd(post: Post): string {
   let body = post.body ?? "";
+  // Mask code regions FIRST — fenced blocks (``` or ~~~, any length >= 3)
+  // and inline code spans. The transforms and the residue tripwire must
+  // never rewrite or trip on sample code (round-2 S7): masking beats the
+  // old strip-at-scan approach because the REWRITES are now fence-safe too.
+  const masked: string[] = [];
+  const stash = (m: string) => `@@MDX-MASK-${masked.push(m) - 1}@@`;
+  body = body.replace(
+    /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[ \t]*(?=\n|$)/g,
+    (m) => stash(m),
+  );
+  body = body.replace(/`[^`\n]+`/g, (m) => stash(m));
+  // Any fence marker left after masking = unclosed/mismatched fence; the
+  // masked scan below would go blind past it — fail loudly (round-2 G19).
+  if (/^(?:`{3,}|~{3,})/m.test(body)) {
+    throw new Error(
+      `mdxBodyToPlainMd(${post.id}): unclosed or mismatched code fence`,
+    );
+  }
   // ESM imports live only in the leading header region under the controlled
-  // grammar — strip them THERE only, so an `import` line inside a code fence
-  // further down (sample code in a post) is never eaten (sol S16, 2026-07-23).
+  // grammar — strip them THERE only (sol S16, 2026-07-23).
   body = body.replace(/^(?:(?:import .*|[ \t]*)\n)*/, (head) =>
     head.replace(/^import .*$\n?/gm, ""),
   );
@@ -144,14 +161,12 @@ export function mdxBodyToPlainMd(post: Post): string {
     if (!id) return m;
     return `[Watch on YouTube: ${title}](https://www.youtube.com/watch?v=${id})`;
   });
-  // Tripwire (sol S16, 2026-07-23): this is a controlled-grammar transform,
-  // not an MDX transpiler — any residue means a post stepped outside the
-  // grammar (blog-grammar.md § controlled MDX shapes). Fail the BUILD loudly
-  // instead of leaking raw JSX into twins/feeds/llms. Code fences are exempt
-  // (sample code may legitimately contain import lines or angle brackets).
-  const scannable = body.replace(/```[\s\S]*?```/g, "");
-  const residue = scannable.match(
-    /^import\s.*$|<(?:Figure|YouTubeFacade)[\s/>][^\n]*|\{\/\*/m,
+  // Tripwire (sol S16 + round-2 S8): this is a controlled-grammar rewrite,
+  // not an MDX transpiler. ANY JSX/ESM/expression residue outside masked
+  // code means the post stepped outside the grammar (blog-grammar.md) —
+  // fail the BUILD loudly rather than leak raw markup to twins/feeds/llms.
+  const residue = body.match(
+    /^import\s.*$|^export[\s{].*$|<[A-Z][A-Za-z]*[\s/>][^\n]*|\{[^\n]*/m,
   );
   if (residue) {
     throw new Error(
@@ -160,6 +175,7 @@ export function mdxBodyToPlainMd(post: Post): string {
       )} — the post violates the controlled component grammar (blog-grammar.md)`,
     );
   }
+  body = body.replace(/@@MDX-MASK-(\d+)@@/g, (_, i) => masked[Number(i)]);
   return body.trim();
 }
 

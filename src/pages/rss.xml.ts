@@ -21,7 +21,7 @@ function feedifyHtml(html: string): string {
         return `<figure><img src="${siteUrl}${png}" alt="${alt}" /><figcaption>${caption}</figcaption></figure>`;
       },
     )
-    .replace(/(href|src)="\//g, `$1="${siteUrl}/`);
+    .replace(/(href|src)="\/(?!\/)/g, `$1="${siteUrl}/`); // (?!\/) guards protocol-relative URLs (round-2 S13)
 }
 
 export const GET: APIRoute = async (context) => {
