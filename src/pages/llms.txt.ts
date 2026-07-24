@@ -3,12 +3,12 @@
 // page-by-page markdown. The full corpus lives at /llms-full.txt.
 
 import type { APIRoute } from "astro";
-import { siteUrl } from "../lib/site-content";
+import { siteUrl, personDescription } from "../lib/site-content";
 
 export const GET: APIRoute = async () => {
   const txt = `# Scott Clark
 
-> Co-founder and CEO of Distributional (enterprise AI reliability). Previously co-founder & CEO of SigOpt (acquired by Intel 2020); VP & GM of AI and HPC supercomputing at Intel through 2023. PhD Applied Mathematics, Cornell University.
+> ${personDescription}
 
 This site is the canonical reference for Scott Clark's professional bio, work history, publications, talks, projects, and patents. Every page has a plain-markdown twin for direct LLM ingestion (linked below). For one-shot ingestion, see [llms-full.txt](${siteUrl}/llms-full.txt).
 
