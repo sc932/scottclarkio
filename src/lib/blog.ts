@@ -4,17 +4,29 @@
 // instantiation of the estate blog grammar (vault: blog-grammar.md); the
 // JSON-LD seam here references the site's canonical Person/#website nodes.
 import { getCollection, type CollectionEntry } from "astro:content";
-import { siteUrl } from "./site-content";
+import { siteUrl, blogTitle, blogDescription } from "./site-content";
 
 export type Post = CollectionEntry<"blog">;
 
-/** Non-draft posts: pinned first, then newest first. */
+/** Non-draft posts: pinned first, then newest first — LISTING order only. */
 export async function getPublishedPosts(): Promise<Post[]> {
   const posts = await getCollection("blog", ({ data }) => !data.draft);
   return posts.sort((a, b) => {
     if (a.data.pinned !== b.data.pinned) return a.data.pinned ? -1 : 1;
     return b.data.date.valueOf() - a.data.date.valueOf();
   });
+}
+
+/** Strict reverse-chron with a stable tie-break — syndication order (RSS,
+ * llms-full). Pinning is a LISTING affordance and must never contaminate
+ * feed order (sol S12, 2026-07-23). */
+export async function getPostsByDate(): Promise<Post[]> {
+  const posts = await getCollection("blog", ({ data }) => !data.draft);
+  return posts.sort(
+    (a, b) =>
+      b.data.date.valueOf() - a.data.date.valueOf() ||
+      a.id.localeCompare(b.id),
+  );
 }
 
 export const postPath = (post: Post) => `/blog/${post.id}`;
@@ -110,7 +122,12 @@ export function buildBlogIndexSchema(posts: Post[]) {
 // self-closing <Figure .../> and <YouTubeFacade .../> only (blog-grammar.md).
 export function mdxBodyToPlainMd(post: Post): string {
   let body = post.body ?? "";
-  body = body.replace(/^import .*$\n?/gm, "");
+  // ESM imports live only in the leading header region under the controlled
+  // grammar — strip them THERE only, so an `import` line inside a code fence
+  // further down (sample code in a post) is never eaten (sol S16, 2026-07-23).
+  body = body.replace(/^(?:(?:import .*|[ \t]*)\n)*/, (head) =>
+    head.replace(/^import .*$\n?/gm, ""),
+  );
   body = body.replace(/\{\/\*[\s\S]*?\*\/\}\n?/g, "");
   const attr = (attrs: string, k: string) =>
     attrs.match(new RegExp(`${k}="([^"]*)"`))?.[1];
@@ -127,7 +144,47 @@ export function mdxBodyToPlainMd(post: Post): string {
     if (!id) return m;
     return `[Watch on YouTube: ${title}](https://www.youtube.com/watch?v=${id})`;
   });
+  // Tripwire (sol S16, 2026-07-23): this is a controlled-grammar transform,
+  // not an MDX transpiler — any residue means a post stepped outside the
+  // grammar (blog-grammar.md § controlled MDX shapes). Fail the BUILD loudly
+  // instead of leaking raw JSX into twins/feeds/llms. Code fences are exempt
+  // (sample code may legitimately contain import lines or angle brackets).
+  const scannable = body.replace(/```[\s\S]*?```/g, "");
+  const residue = scannable.match(
+    /^import\s.*$|<(?:Figure|YouTubeFacade)[\s/>][^\n]*|\{\/\*/m,
+  );
+  if (residue) {
+    throw new Error(
+      `mdxBodyToPlainMd(${post.id}): unconverted MDX residue near ${JSON.stringify(
+        residue[0].slice(0, 80),
+      )} — the post violates the controlled component grammar (blog-grammar.md)`,
+    );
+  }
   return body.trim();
+}
+
+/** Plain-markdown twin of the writing LISTING (served at /blog.md, embedded
+ * in llms-full.txt so the "every page" promise stays literally true —
+ * sol S13, 2026-07-23). */
+export function renderBlogIndexMd(posts: Post[]): string {
+  const rows = posts
+    .map(
+      (p) =>
+        `- [${p.data.title}](${postUrl(p)}.md) (${formatDate(p.data.date)}): ${p.data.description}`,
+    )
+    .join("\n");
+  return `# ${blogTitle} — Scott Clark
+
+> ${blogDescription}
+
+Each entry links the post's plain-markdown twin; HTML versions live at \`${siteUrl}/blog/<slug>\`. Full-content RSS: ${siteUrl}/rss.xml.
+
+${rows}
+
+---
+
+Source: ${siteUrl}/blog (Scott Clark)
+`;
 }
 
 /** Full markdown twin for a post (served at /blog/<slug>.md). */

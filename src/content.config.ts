@@ -7,9 +7,13 @@ import { z } from "astro/zod";
 // schema SHAPE is shared across the three sites; the taxonomy enum here is
 // the personal-track `pillar` (the company sites use `series`).
 const blog = defineCollection({
-  loader: glob({ pattern: "**/*.mdx", base: "./src/content/blog" }),
+  // Flat by contract: slug = filename = URL segment. A nested file would
+  // silently miss lastmod/routing assumptions, so the loader refuses to see
+  // it and the AIO gate fails on any subdirectory (sol S14, 2026-07-23).
+  loader: glob({ pattern: "*.mdx", base: "./src/content/blog" }),
   schema: z.object({
-    title: z.string(),
+    // Max keeps the OG card renderable at its smallest threshold (sol S23).
+    title: z.string().min(3).max(110),
     description: z.string().min(40).max(320),
     date: z.coerce.date(),
     updated: z.coerce.date().optional(),
@@ -24,7 +28,10 @@ const blog = defineCollection({
       ])
       .optional(),
     kind: z.enum(["why", "how", "proof", "news"]).optional(),
-    videoId: z.string().optional(),
+    videoId: z
+      .string()
+      .regex(/^[A-Za-z0-9_-]{11}$/, "videoId must be the 11-char YouTube id")
+      .optional(),
     videoDuration: z.string().optional(),
     videoUploadDate: z.coerce.date().optional(),
     sourceUrl: z.string().url().optional(),

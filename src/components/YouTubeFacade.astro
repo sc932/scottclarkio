@@ -9,10 +9,11 @@ interface Props {
   /** YouTube video id (the 11-char id, not a URL). */
   id: string;
   title: string;
-  /** Poster quality; maxresdefault falls back to hqdefault if missing. */
+  /** Poster quality. Default hqdefault: it exists for EVERY video, while
+   * maxresdefault 404s for many — opt in per-post when known good (sol S22). */
   poster?: "maxresdefault" | "hqdefault";
 }
-const { id, title, poster = "maxresdefault" } = Astro.props;
+const { id, title, poster = "hqdefault" } = Astro.props;
 if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
   throw new Error(`YouTubeFacade: invalid YouTube video id: ${id}`);
 }
@@ -28,6 +29,7 @@ const watchUrl = `https://www.youtube.com/watch?v=${id}`;
     width="1280"
     height="720"
     loading="lazy"
+    referrerpolicy="no-referrer"
   />
   <button type="button" aria-label={`Play video: ${title}`}>
     <svg viewBox="0 0 68 48" width="68" height="48" aria-hidden="true">
@@ -54,6 +56,11 @@ const watchUrl = `https://www.youtube.com/watch?v=${id}`;
         iframe.allow =
           "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
         iframe.allowFullscreen = true;
+        // Sized via inline styles, NOT the component <style>: Astro scopes
+        // component CSS with data-astro-cid attributes that a JS-created
+        // element never receives (sol S4, 2026-07-23).
+        iframe.style.cssText =
+          "position:absolute;inset:0;width:100%;height:100%;border:0";
         el.replaceChildren(iframe);
         el.classList.add("is-playing");
       },
@@ -94,12 +101,5 @@ const watchUrl = `https://www.youtube.com/watch?v=${id}`;
   .yt-facade button:hover {
     color: #e33;
     background: rgba(0, 0, 0, 0.04);
-  }
-  .yt-facade.is-playing iframe {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    border: 0;
   }
 </style>

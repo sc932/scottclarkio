@@ -4,71 +4,38 @@
 #
 # Content-Signal (contentsignals.org convention): fully open by design,
 # INCLUDING training — being in the models is the point of the site.
-Content-Signal: search=yes, ai-input=yes, ai-train=yes
+# The signal is a GROUP directive: a crawler that matches a specific group
+# ignores the * group entirely (RFC 9309), so every group carries its own
+# copy (sol S9, 2026-07-23).
 
 User-agent: *
-Allow: /
-
-User-agent: Claude-SearchBot
-Allow: /
-
-User-agent: Claude-User
-Allow: /
-
-User-agent: DuckAssistBot
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 Allow: /
 
 # Major LLM training + retrieval crawlers, named explicitly so a robots.txt
-# tightening upstream doesn't accidentally remove our consent signal.
+# tightening upstream doesn't accidentally remove our consent signal. One
+# shared group: same welcome, same signal.
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: DuckAssistBot
 User-agent: GPTBot
-Allow: /
-
 User-agent: ChatGPT-User
-Allow: /
-
 User-agent: OAI-SearchBot
-Allow: /
-
 User-agent: ClaudeBot
-Allow: /
-
 User-agent: Claude-Web
-Allow: /
-
 User-agent: anthropic-ai
-Allow: /
-
 User-agent: PerplexityBot
-Allow: /
-
 User-agent: Perplexity-User
-Allow: /
-
 User-agent: Google-Extended
-Allow: /
-
 User-agent: Applebot-Extended
-Allow: /
-
 User-agent: Amazonbot
-Allow: /
-
 User-agent: Bytespider
-Allow: /
-
 User-agent: cohere-ai
-Allow: /
-
 User-agent: Diffbot
-Allow: /
-
 User-agent: FacebookBot
-Allow: /
-
 User-agent: meta-externalagent
-Allow: /
-
 User-agent: Meta-ExternalFetcher
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
 Allow: /
 
 Sitemap: https://scottclark.io/sitemap-index.xml

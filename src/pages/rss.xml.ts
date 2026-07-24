@@ -10,7 +10,7 @@ import { loadRenderers } from "astro:container";
 import { getContainerRenderer as getMDXRenderer } from "@astrojs/mdx/container-renderer";
 import { render } from "astro:content";
 import { siteUrl, blogDescription } from "../lib/site-content";
-import { getPublishedPosts, postPath, pillarLabel } from "../lib/blog";
+import { getPostsByDate, postPath, pillarLabel } from "../lib/blog";
 
 function feedifyHtml(html: string): string {
   return html
@@ -25,7 +25,9 @@ function feedifyHtml(html: string): string {
 }
 
 export const GET: APIRoute = async (context) => {
-  const posts = await getPublishedPosts();
+  // Strict date order — pinning is a listing affordance, never feed order
+  // (sol S12, 2026-07-23).
+  const posts = await getPostsByDate();
   const renderers = await loadRenderers([getMDXRenderer()]);
   const container = await AstroContainer.create({ renderers });
 
@@ -47,10 +49,14 @@ export const GET: APIRoute = async (context) => {
   }
 
   return rss({
-    title: "Scott Clark",
+    // Channel identity: the WRITING feed's own name (matches the JSON-LD
+    // Blog node), not the bare site name (sol S12, 2026-07-23) — feed
+    // readers list this next to every other subscription.
+    title: "Writing by Scott Clark",
     description: blogDescription,
     site: context.site?.toString() ?? siteUrl,
     items,
     trailingSlash: false,
+    customData: "<language>en-us</language>",
   });
 };

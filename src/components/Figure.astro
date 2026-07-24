@@ -31,7 +31,12 @@ const esc = (s: string) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c] as string,
   );
 const label = esc(alt ?? caption);
-const svg = raw.replace(/<svg\b/, `<svg role="img" aria-label="${label}"`);
+// Replace (never duplicate) any role/aria-label the root already carries —
+// a duplicated attribute is invalid markup (sol S24, 2026-07-23).
+const svg = raw.replace(/<svg\b[^>]*>/, (root) => {
+  const cleaned = root.replace(/\s(?:role|aria-label)="[^"]*"/g, "");
+  return cleaned.replace(/<svg\b/, `<svg role="img" aria-label="${label}"`);
+});
 ---
 
 <figure class="post-figure" data-png={`/images/blog/${slug}/${name}.png`}>

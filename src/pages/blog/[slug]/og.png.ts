@@ -37,7 +37,10 @@ const el = (
 export const GET: APIRoute = async ({ props }) => {
   const { post } = props as { post: Post };
   const title = post.data.title;
-  const titleSize = title.length > 70 ? 54 : title.length > 45 ? 62 : 68;
+  // Scale the title down as it grows so the wrapped lines always fit the
+  // 630px canvas; the schema caps titles at 110 chars (sol S23, 2026-07-23).
+  const titleSize =
+    title.length > 90 ? 46 : title.length > 70 ? 54 : title.length > 45 ? 62 : 68;
 
   const tree = el(
     "div",

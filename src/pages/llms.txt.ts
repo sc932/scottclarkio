@@ -9,7 +9,7 @@ import { getPublishedPosts, postUrl } from "../lib/blog";
 export const GET: APIRoute = async () => {
   const posts = await getPublishedPosts();
   const writingSection = posts.length
-    ? `\n## Writing\n\nEssays by Scott Clark (index: [${siteUrl}/blog](${siteUrl}/blog)); every post has a plain-markdown twin (linked below) and ships in the full-content RSS feed at ${siteUrl}/rss.xml.\n\n${posts
+    ? `\n## Writing\n\nEssays by Scott Clark (index: [${siteUrl}/blog](${siteUrl}/blog); markdown twin: [${siteUrl}/blog.md](${siteUrl}/blog.md)); every post has a plain-markdown twin (linked below) and ships in the full-content RSS feed at ${siteUrl}/rss.xml.\n\n${posts
         .map((p) => `- [${p.data.title}](${postUrl(p)}.md): ${p.data.description}`)
         .join("\n")}\n`
     : "";

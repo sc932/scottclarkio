@@ -1,0 +1,19 @@
+---
+title: "Video lane fixture (never publishes)"
+description: "Draft fixture keeping the format: video schema lane exercised at every build: videoId shape validation, VideoObject JSON-LD, and the YouTubeFacade component path. Stays draft until the video lane opens."
+date: 2026-07-23
+format: video
+videoId: "dQw4w9WgXcQ"
+videoDuration: "PT3M33S"
+draft: true
+---
+
+import YouTubeFacade from "../../components/YouTubeFacade.astro";
+
+This draft exists so the `format: video` schema path is exercised by every
+build (zod parses draft entries too) while the video lane itself is
+tooth-parked: the AIO gate fails any PUBLISHED video post until the feed-safe
+facade rewrite and self-hosted posters land (sol S10/S22, 2026-07-23; see the
+vault SPEC-blog-surfaces). `draft: true` keeps this out of every surface.
+
+<YouTubeFacade id="dQw4w9WgXcQ" title="Video lane fixture" />

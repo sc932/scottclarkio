@@ -15,11 +15,14 @@ import { readFileSync, readdirSync } from "node:fs";
 // bump `updated` only on real content changes; pages without a truthful date
 // simply omit lastmod (omit, never fake).
 const postLastmod = new Map();
+// Anchored to THIS file, not process CWD — `astro build --root` from another
+// directory must not silently drop every lastmod (sol S15, 2026-07-23).
+const BLOG_DIR = new URL("./src/content/blog/", import.meta.url);
 try {
-  for (const f of readdirSync("./src/content/blog")) {
+  for (const f of readdirSync(BLOG_DIR)) {
     if (!f.endsWith(".mdx")) continue;
     const { frontmatter } = parseFrontmatter(
-      readFileSync(`./src/content/blog/${f}`, "utf8"),
+      readFileSync(new URL(f, BLOG_DIR), "utf8"),
     );
     if (frontmatter.draft === true) continue;
     const d = frontmatter.updated ?? frontmatter.date;
@@ -29,8 +32,9 @@ try {
     }
   }
 } catch (err) {
-  // ENOENT = no posts yet (fine); anything else deserves a loud warning.
-  if (err?.code !== "ENOENT") console.warn("lastmod scan:", err?.message);
+  // ENOENT = no posts yet (fine); anything else must fail the build — a
+  // swallowed parse error here would silently drop every lastmod (sol S15).
+  if (err?.code !== "ENOENT") throw err;
 }
 
 export default defineConfig({
