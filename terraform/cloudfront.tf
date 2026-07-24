@@ -111,6 +111,15 @@ resource "aws_cloudfront_distribution" "site" {
   # fine for a personal site whose primary audience is in those regions.
   price_class = "PriceClass_100"
 
+  # Server-side analytics (estate pattern, ported from talaria-site
+  # 2026-07-23): CloudFront standard logs -> private S3 (logging.tf) ->
+  # Athena (scripts/athena-setup.sh + analytics-report.sh). Zero client JS.
+  logging_config {
+    bucket          = aws_s3_bucket.logs.bucket_domain_name
+    include_cookies = false
+    prefix          = "cf/"
+  }
+
   origin {
     domain_name              = aws_s3_bucket.site.bucket_regional_domain_name
     origin_id                = "s3-${var.domain}"

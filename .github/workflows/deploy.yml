@@ -53,3 +53,9 @@ jobs:
           aws cloudfront create-invalidation \
             --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
             --paths "/*"
+
+      # Bing-fed surfaces learn about changed URLs immediately; Google
+      # ignores IndexNow. Best-effort by design — the script warns and
+      # exits 0 on any failure (SPEC-blog-surfaces, AIO layer).
+      - name: IndexNow ping
+        run: node scripts/indexnow-ping.mjs
