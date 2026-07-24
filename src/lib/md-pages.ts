@@ -200,7 +200,7 @@ export async function renderProjectsMd(): Promise<string> {
       const tags = p.data.tags.length
         ? `\n\n*Tags:* ${p.data.tags.join(", ")}`
         : "";
-      return `### ${p.data.title}\n\n${p.data.description}${
+      return `### ${p.data.title}\n\n${htmlToMd(p.data.description)}${
         links ? `\n\n${links}` : ""
       }${tags}`;
     })
