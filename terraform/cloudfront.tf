@@ -22,30 +22,43 @@ locals {
       var host = request.headers.host.value;
       var uri = request.uri;
 
-      if (host === 'www.${var.domain}') {
-        return {
-          statusCode: 301,
-          statusDescription: 'Moved Permanently',
-          headers: {
-            location: { value: 'https://${var.domain}' + uri }
-          }
-        };
+      // Site-wide trailing-slash collapse (phase-4 bundle, 2026-07-23):
+      // canonical form is slashless; root stays '/'. The legacy /about
+      // redirect folds into the same single-301 path (query preserved).
+      var target = uri;
+      if (target.length > 1) {
+        target = target.replace(/\/+$/, '');
+        if (target === '') target = '/';
+      }
+      if (target === '/about') {
+        target = '/';
       }
 
-      if (uri === '/about' || uri === '/about/') {
+      if (host !== '${var.domain}' || target !== uri) {
+        // Preserve the query string on every 301 (estate rule; the drop
+        // was this function's round-2 G1 gap).
+        var qs = '';
+        for (var k in request.querystring) {
+          var entry = request.querystring[k];
+          if (entry.multiValue) {
+            for (var i = 0; i < entry.multiValue.length; i++) {
+              qs += (qs ? '&' : '?') + k + '=' + entry.multiValue[i].value;
+            }
+          } else {
+            qs += (qs ? '&' : '?') + k + (entry.value ? '=' + entry.value : '');
+          }
+        }
         return {
           statusCode: 301,
           statusDescription: 'Moved Permanently',
           headers: {
-            location: { value: 'https://${var.domain}/' }
+            location: { value: 'https://${var.domain}' + target + qs }
           }
         };
       }
 
       if (uri === '/') {
         request.uri = '/index.html';
-      } else if (uri.endsWith('/')) {
-        request.uri = uri + 'index.html';
       } else if (!uri.includes('.')) {
         request.uri = uri + '/index.html';
       }
