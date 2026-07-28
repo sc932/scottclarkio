@@ -19,14 +19,11 @@ const blog = defineCollection({
     updated: z.coerce.date().optional(),
     format: z.enum(["post", "video", "event", "thread"]).default("post"),
     author: z.string().trim().default("Scott Clark"),
-    pillar: z
-      .enum([
-        "optimization-thinking",
-        "startup-leadership",
-        "research-to-product",
-        "agentic-craft",
-      ])
-      .optional(),
+    // Two-value DISPLAY taxonomy (Scott, 2026-07-28 wave-1B review) — the
+    // vault hub keeps its finer pillar/* tags; ports map hub -> site at
+    // port time (mapping recorded in blog-grammar.md). Slug-form: the
+    // label derives via pillarLabel(), the ?pillar= URL key uses it raw.
+    pillar: z.enum(["startup-lessons", "building-things"]).optional(),
     kind: z.enum(["why", "how", "proof", "news"]).optional(),
     videoId: z
       .string()

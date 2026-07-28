@@ -23,10 +23,11 @@ export const navLinks = [
 ];
 
 // Blog listing header + meta description + feed subtitle. Provisional copy —
-// jam-able.
+// jam-able. (Rewritten 2026-07-28 with the pillar rename: the old line
+// enumerated the retired taxonomy.)
 export const blogTitle = "Writing";
 export const blogDescription =
-  "Essays from Scott Clark on optimization thinking, startup leadership, research to product, and the craft of working with agents.";
+  "Essays from Scott Clark on startup lessons and building things.";
 
 // Editorial third-person paragraph. ~70 words.
 export const lede = `Scott Clark is the co-founder and CEO of <strong><a href="https://distributional.com">Distributional</a></strong>, building <strong><a href="https://talariasci.com">Talaria Scientific</a></strong>, a multi-agent harness for computational science research. He was previously co-founder and CEO of <strong>SigOpt</strong>, a YC-and-a16z-backed Bayesian optimization platform acquired by <strong>Intel</strong> in 2020, where he then served as VP &amp; GM of AI and HPC supercomputing through 2023. He holds a PhD in applied mathematics and an MS in computer science from Cornell University, where he was a Department of Energy Computational Science Graduate Fellow.`;

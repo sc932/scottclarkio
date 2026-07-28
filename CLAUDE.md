@@ -86,14 +86,22 @@ This site doesn't live in a vacuum. It's one node in a connected set of projects
 | `~/dev/vault/Resources/Writing MOC.md` | Pillar taxonomy + writing infrastructure | Defines the 5 audience-facing pillars (see below). |
 | `~/dev/vault/Meta/Style Guide.md` | Voice DNA for everything written in Scott's name | **Open this alongside any blog drafting work.** |
 
-### The 5 content pillars (from Writing MOC)
-- `pillar/ai-reliability` — Distributional-relevant; the demo→prod gap.
-- `pillar/optimization-thinking` — book spine; optimization as a lens for everything.
-- `pillar/research-to-product` — turning academic work into things people use.
-- `pillar/startup-leadership` — founding, scaling, M&A, doing it again.
-- `pillar/technical-explainers` — math behind the magic; ML/BO/HPC accessible.
+### Content pillars — the site's display taxonomy (Scott, 2026-07-28)
 
-When the blog activates in Phase 2, posts should declare a pillar in frontmatter.
+The SITE's `pillar` enum is a two-value display taxonomy Scott set at the
+wave-1B review — it is what readers see (chips, breadcrumbs, `?pillar=`
+views, OG cards):
+
+- `startup-lessons` — the founder-arc pieces (founding, scaling, pivots, management).
+- `building-things` — the building-in-the-open pieces (methods, agents, research-to-product).
+
+The vault hub keeps its own finer-grained `pillar/*` tags (Writing MOC — the
+old 5-pillar list lives there); ports MAP hub → site at port time
+(startup-leadership and optimization-thinking → `startup-lessons`;
+research-to-product and agentic-craft → `building-things`, so far). The
+mapping record lives in vault `Projects/content_factory/blog-grammar.md`.
+Posts declare the SITE value in frontmatter; `pillarLabel()` derives the
+display label from the slug.
 
 ---
 
