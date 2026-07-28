@@ -1,0 +1,84 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="760" viewBox="0 0 1280 760" role="img" aria-labelledby="t d">
+  <title id="t">Written for two readers</title>
+  <desc id="d">Two source repos (content_finder and resume) feed one published site (scottclarkio), which emits two surfaces: HTML for people and a machine-readable stack for the agents they send. Facts flow one direction.</desc>
+  <defs>
+    <marker id="arr" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#14161C"/>
+    </marker>
+    <marker id="arrA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 1 L 9 5 L 0 9 z" fill="#C9762A"/>
+    </marker>
+  </defs>
+  <rect width="1280" height="760" fill="#F7F8FA"/>
+
+  <!-- Title -->
+  <text x="48" y="56" font-family="IBM Plex Sans" font-size="26" font-weight="600" fill="#14161C">Written for two readers</text>
+  <text x="48" y="82" font-family="IBM Plex Sans" font-size="15" font-style="italic" fill="#6B7280">the personal-site stack, as shipped; a conceptual sketch</text>
+
+  <!-- Source repo: content_finder -->
+  <rect x="48" y="150" width="252" height="128" rx="8" fill="#FFFFFF" stroke="#14161C" stroke-width="1.5"/>
+  <text x="68" y="182" font-family="IBM Plex Mono" font-size="17" font-weight="600" fill="#14161C">content_finder</text>
+  <text x="68" y="206" font-family="IBM Plex Sans" font-size="14.5" fill="#14161C">the public-facts dossier</text>
+  <text x="68" y="228" font-family="IBM Plex Sans" font-size="12.5" fill="#6B7280">(articles, transcripts, patents,</text>
+  <text x="68" y="245" font-family="IBM Plex Sans" font-size="12.5" fill="#6B7280">press + raw captures, cited)</text>
+
+  <!-- Source repo: resume -->
+  <rect x="48" y="370" width="252" height="128" rx="8" fill="#FFFFFF" stroke="#14161C" stroke-width="1.5"/>
+  <text x="68" y="402" font-family="IBM Plex Mono" font-size="17" font-weight="600" fill="#14161C">resume</text>
+  <text x="68" y="426" font-family="IBM Plex Sans" font-size="14.5" fill="#14161C">the bio source of truth</text>
+  <text x="68" y="448" font-family="IBM Plex Sans" font-size="12.5" fill="#6B7280">(ScottClark.md, the markdown twin</text>
+  <text x="68" y="465" font-family="IBM Plex Sans" font-size="12.5" fill="#6B7280">that builds the CV and PDF)</text>
+
+  <!-- Arrows sources -> site -->
+  <path d="M 300 214 C 360 214, 380 262, 444 288" fill="none" stroke="#14161C" stroke-width="1.75" marker-end="url(#arr)"/>
+  <path d="M 300 434 C 360 434, 380 386, 444 360" fill="none" stroke="#14161C" stroke-width="1.75" marker-end="url(#arr)"/>
+  <text x="374" y="318" font-family="IBM Plex Mono" font-size="12" fill="#6B7280" text-anchor="middle">markdown contracts</text>
+  <text x="374" y="335" font-family="IBM Plex Mono" font-size="11" fill="#6B7280" text-anchor="middle">CLAUDE.md / AGENTS.md</text>
+
+  <!-- Center: scottclarkio -->
+  <rect x="448" y="240" width="264" height="168" rx="8" fill="#FFFFFF" stroke="#14161C" stroke-width="2"/>
+  <text x="468" y="274" font-family="IBM Plex Mono" font-size="17" font-weight="600" fill="#14161C">scottclarkio</text>
+  <text x="468" y="298" font-family="IBM Plex Sans" font-size="14.5" fill="#14161C">the published surface</text>
+  <text x="468" y="320" font-family="IBM Plex Sans" font-size="12.5" fill="#6B7280">(Astro, static output,</text>
+  <text x="468" y="337" font-family="IBM Plex Sans" font-size="12.5" fill="#6B7280">no client-side JavaScript;</text>
+  <text x="468" y="354" font-family="IBM Plex Sans" font-size="12.5" fill="#6B7280">S3 + CloudFront, deployed</text>
+  <text x="468" y="371" font-family="IBM Plex Sans" font-size="12.5" fill="#6B7280">by an agent-tended pipeline)</text>
+
+  <!-- Arrows site -> stacks -->
+  <path d="M 712 288 C 740 268, 745 220, 772 198" fill="none" stroke="#14161C" stroke-width="1.75" marker-end="url(#arr)"/>
+  <path d="M 712 362 C 740 382, 745 430, 772 450" fill="none" stroke="#C9762A" stroke-width="2" marker-end="url(#arrA)"/>
+
+  <!-- Stack: for people -->
+  <rect x="776" y="120" width="292" height="150" rx="8" fill="#FFFFFF" stroke="#14161C" stroke-width="1.5"/>
+  <text x="796" y="152" font-family="IBM Plex Sans" font-size="16" font-weight="600" fill="#14161C">for people</text>
+  <text x="796" y="178" font-family="IBM Plex Sans" font-size="13.5" fill="#14161C">HTML pages, posts, a CV</text>
+  <text x="796" y="200" font-family="IBM Plex Sans" font-size="13.5" fill="#14161C">typography worth reading</text>
+  <text x="796" y="222" font-family="IBM Plex Sans" font-size="13.5" fill="#14161C">figures that carry the argument</text>
+  <text x="796" y="250" font-family="IBM Plex Sans" font-size="12.5" font-style="italic" fill="#6B7280">the surface you are reading now</text>
+
+  <!-- Stack: for agents (accent) -->
+  <rect x="776" y="380" width="292" height="226" rx="8" fill="#C9762A" fill-opacity="0.07" stroke="#C9762A" stroke-width="2.5"/>
+  <text x="796" y="412" font-family="IBM Plex Sans" font-size="16" font-weight="600" fill="#14161C">for agents</text>
+  <text x="796" y="438" font-family="IBM Plex Sans" font-size="13.5" fill="#14161C">a markdown twin of every page + post</text>
+  <text x="796" y="460" font-family="IBM Plex Sans" font-size="13.5" fill="#14161C">JSON-LD entity graph on every page</text>
+  <text x="796" y="482" font-family="IBM Plex Sans" font-size="13.5" fill="#14161C">llms.txt + llms-full.txt</text>
+  <text x="796" y="504" font-family="IBM Plex Sans" font-size="13.5" fill="#14161C">full-content RSS</text>
+  <text x="796" y="526" font-family="IBM Plex Sans" font-size="13.5" fill="#14161C">robots.txt: allow, by name</text>
+  <text x="796" y="548" font-family="IBM Plex Sans" font-size="13.5" fill="#14161C">Content-Signal: ai-train=yes</text>
+  <rect x="796" y="566" width="196" height="26" rx="13" fill="#C9762A"/>
+  <text x="894" y="584" font-family="IBM Plex Mono" font-size="12.5" font-weight="600" fill="#14161C" text-anchor="middle">THE NEW FRONT PAGE</text>
+
+  <!-- Arrows stacks -> readers -->
+  <path d="M 1068 195 L 1112 195" fill="none" stroke="#14161C" stroke-width="1.75" marker-end="url(#arr)"/>
+  <path d="M 1068 493 L 1112 493" fill="none" stroke="#C9762A" stroke-width="2" marker-end="url(#arrA)"/>
+
+  <!-- Reader chips -->
+  <rect x="1116" y="172" width="124" height="46" rx="23" fill="#FFFFFF" stroke="#14161C" stroke-width="1.5"/>
+  <text x="1178" y="200" font-family="IBM Plex Sans" font-size="14" fill="#14161C" text-anchor="middle">a person</text>
+  <rect x="1116" y="462" width="124" height="62" rx="10" fill="#FFFFFF" stroke="#C9762A" stroke-width="2"/>
+  <text x="1178" y="488" font-family="IBM Plex Sans" font-size="14" fill="#14161C" text-anchor="middle">the agent</text>
+  <text x="1178" y="507" font-family="IBM Plex Sans" font-size="14" fill="#14161C" text-anchor="middle">they sent</text>
+
+  <!-- Footnote -->
+  <text x="640" y="700" font-family="IBM Plex Sans" font-size="14" font-style="italic" fill="#6B7280" text-anchor="middle">one fact, one home: facts flow dossier &#8594; resume &#8594; site, never backward</text>
+</svg>
