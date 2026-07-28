@@ -2,7 +2,7 @@
 title: "Building this blog: Part II"
 description: >-
   How agents turned a decade-old blog backlog into a live site built for two readers: people, and the AI agents they send to read about you.
-date: 2026-05-05
+date: 2026-07-28T16:00:00Z
 format: post
 pillar: building-things
 kind: proof
@@ -10,21 +10,22 @@ kind: proof
 
 import Figure from "../../components/Figure.astro";
 
-{/* GENERATED from vault Writing/building-this-blog-part-ii.md v3.1 (2026-07-25,
-   referee round; pulled into production by Scott's 2026-07-25 order) by the
-   factory port (SPEC-blog-surfaces). The VAULT file is canonical: do not
-   hand-edit prose here; re-port at Scott's LOCK. `date` is the drafting date
-   until the reveal sets the real publish date (phase 5). Meta description =
-   the piece doc's canonical ## Meta description. Title = the doc's
-   recommended pick (#1) — confirm at lock. */}
+{/* GENERATED from vault Writing/building-this-blog-part-ii.md v4.1
+   (2026-07-28, his Q-comment rulings; status: ready, locked by his deploy
+   order) by the factory port (SPEC-blog-surfaces). The VAULT file is
+   canonical: do not hand-edit prose here. `date` is the REAL publish date
+   (2026-07-28; 16:00Z instant — Part II lists after the opener). Meta
+   description = the piece doc's canonical section. Port transform per the
+   deploy brief: Claude Code link -> the canonical
+   claude.com/product/claude-code (the vault form 301s one hop). */}
 
-Twelve years ago I published a post called ["Building this blog: Part I"](https://web.archive.org/web/20141025075605id_/http://www.scottclark.io:80/blog/2/building-this-blog%253A-part-i). There was never a Part II. This is Part II, twelve years late, and the reason it finally exists is also the reason it might be worth your time: agents changed the economics of owning your own corner of the web, right as owning one started to matter again.
+Twelve years ago I published a post on this domain called ["Building this blog: Part I"](https://web.archive.org/web/20141025075605/http://www.scottclark.io:80/blog/2/building-this-blog%253A-part-i). There was never a Part II. This is Part II, twelve years late, and the reason it finally exists is also the reason it might be worth your time: agents changed the economics of owning your own corner of the web, right as owning one started to matter again.
 
-When someone wants to know who you are now, they often don't search; they ask. A conference organizer asks a model whether you'd make a good speaker. An investor asks for a brief before a call. A hiring manager asks what you've actually shipped. The answer comes back assembled by an agent reading the public web on their behalf, and for that reader the front page isn't a search results page. It's whatever the agent can find, parse, and trust.
+When someone wants to know who you are now, they often don't search; they ask an AI, whether that is a web chat app or [Claude Code](https://claude.com/product/claude-code). A conference organizer asks a model whether you'd make a good speaker. An investor asks for a brief before a call. A hiring manager asks what you've actually shipped. The answer comes back assembled by an agent reading the public web on their behalf, and for that reader the front page isn't a search results page. It's whatever the agent can find, parse, and trust.
 
-I want those answers shaped by what I've actually written, ie by my own record rather than by whichever fragments of it leak through other people's platforms. Writing that lives only inside a walled garden is at the platform's mercy twice over: the feed decides which humans see it, and the crawler policy decides whether agents see it at all. Ask a model about someone whose whole record sits behind those walls and you get an answer stitched from press mentions and stale bios, an answer about them that nobody owns.
+I want those answers shaped by what I've actually written (ie by my own record rather than by whichever fragments of it leak through other people's platforms). Writing that lives only inside a walled garden is at the platform's mercy twice over: the feed decides which humans see it, and the crawler policy decides whether agents see it at all. Ask a model about someone whose whole record sits behind those walls and you get an answer stitched from press mentions and stale bios, an answer about them that they don't own.
 
-The alternative has a name in the same spirit as SEO. Call it AIO: optimizing your presence for the AI systems that read the web on people's behalf. It rhymes with early SEO, and the mechanics are simple: a canonical site you control, a markdown twin of every page so an agent gets clean full text instead of your layout, structured data so the answer engine doesn't have to guess, and a robots.txt that says yes. Whether or not AIO becomes a discipline with conferences and consultants, the mechanical version is a weekend of work, and the agents already fetch it.
+The alternative has a name in the same spirit as SEO. People are starting to call it AIO: optimizing your presence for the AI systems that read the web on people's behalf. It feels like early SEO, and the mechanics are simple: a canonical site you control, a markdown twin of every page so an agent gets clean full text instead of your layout, structured data so the answer engine doesn't have to guess, and a robots.txt that says yes. Whatever the discipline ends up being called (the SEO crowd already says GEO and AEO), the mechanical version is a few hours of work, and the agents people actually send already fetch it.
 
 Engineers have been told to own their own site for twenty years. Most of us never finish. I know because I'm most of us.
 
@@ -32,27 +33,27 @@ Engineers have been told to own their own site for twenty years. Most of us neve
 
 In 2014, while I was at Yelp, I built scottclark.io from scratch on Pyramid, because Yelp was standardizing on Pyramid and I wanted to learn it. I deployed it to DigitalOcean. I wrote exactly two posts. The second one was titled "Building this blog: Part I."
 
-What killed it was the maintenance tax. Every post required a context switch from research into web infrastructure: dependency upgrades, theme fights, deploy scripts. The site was supposed to be a writing surface and became a side project that ate the writing time. It was the woodshop problem: the first project in a new shop is always a workbench, and some of us sand the workbench for years and never build the furniture. My workbench had a comment system. It had two posts.
+What killed it was the maintenance tax. Every post required a context switch from research into web infrastructure: dependency upgrades, design, theme fights, deploy scripts. The site was supposed to be a writing surface and became a side project that ate the writing time. It was the woodshop problem: the first project in a new shop is always a workbench, and some of us sand the workbench for years and never build the furniture (and I tend to fall victim to yak shaving, bike shedding, and all the colloquial variants of this). My workbench had a comment system, but it only had two posts.
 
-So the site went dark, and the pattern held for a decade. My resume repo tells the same story in commit history: steady updates through 2016, then nine and a half years of nothing.
+So the site went dark, and the pattern held for a decade. My resume repo tells the same story in commit history: steady updates through 2016, then nine and a half years of nothing public.
 
 ## The unlock, and the new tax
 
-What changed isn't that web frameworks got easier. The frameworks have been good for years. What changed is that the scaffolding tax became an agent's problem: the dependency upgrades, the build pipeline, the infrastructure, the long tail of small decisions that used to stand between "I should write this down" and a live page.
+What changed isn't that web frameworks got easier. The frameworks have been good for years. What changed is that the scaffolding tax became an agent's problem: the dependency upgrades, the build pipeline, the infrastructure, the long tail of small decisions that used to stand between "I should write this down" and a live page. This was the same realization that led me to start [Talaria Scientific](https://talariasci.com/blog/why-im-building-talaria) to accelerate computational science research.
 
-Agents don't get you off the hook, though. They are very good at rapid prototyping, and there is still a lot of art and craft in making the prototype into the thing it was prototyping. Point an agent at "build me a personal site" and you get a generic landing page with rotating gradient blobs. What you actually owe the project is judgment: which tools do which jobs, what the contracts between them say, what stays open and what stays private, which way a fact propagates when it changes. The tax moved up a level, from scaffolding to composition, and composition is a much better use of the human.
+Agents don't get you off the hook, though. They are very good at rapid prototyping, and there is still a lot of art and craft in making the prototype into the thing it was prototyping. Point an agent at "build me a personal site" and you get a generic landing page with rotating gradient blobs. What you actually owe the project is judgment (or what many people are calling taste): which tools do which jobs, what the contracts between them say, what stays open and what stays private, which way a fact propagates when it changes. The tax moved up a level, from scaffolding to composition, and composition is a much better use of the human.
 
 Three repos came out of that judgment for me.
 
-**content_finder** is a small [Claude Code](https://claude.com/claude-code)-driven crawler that walks the public web for a person, verifies what it finds against stable identifiers, and produces a dossier: markdown files with citations and raw captures of every primary source. I ran it on myself first. The output is the closest I have to a verified record of my public existence: twelve years of articles, every podcast and talk transcript I could recover, patents, papers, and press, each with the raw artifact saved so nothing has to be re-derived.
+**[content_finder](https://github.com/sc932/content_finder)** is a small, still-pre-v0.1 Claude Code-driven crawler that walks the public web for a person, verifies what it finds against stable identifiers, and produces a dossier on yourself: markdown files with citations and raw captures of every primary source it can find on the internet. I ran it on myself first. The output is the closest I have to a verified record of my public existence: twelve years of articles, every podcast and talk transcript I could recover, patents, papers, and press, each with the raw artifact saved so nothing has to be re-derived.
 
-**resume** is my old LaTeX resume repo, modernized in a single April session after its long sleep. It now carries a markdown twin that is the source of truth for bio facts, a PDF build, and an AGENTS.md that defines the propagation order when a fact changes: dossier, then resume, then site, never the other direction.
+**resume** is my old LaTeX [resume repo](https://github.com/sc932/resume), modernized in a single April session after its long sleep. It now carries a markdown twin that is the source of truth for bio facts, a PDF build, and an AGENTS.md that defines the propagation order when a fact changes: dossier, then resume, then site, never the other direction.
 
-**scottclarkio** is the published surface: an Astro static site behind S3 and CloudFront, provisioned by Terraform, deployed by a GitHub Action on every push. It reads facts from the other two repos. And it ships the full agent-facing surface: a JSON-LD entity graph on every page, a markdown twin of every page and post, an [llms.txt](https://llmstxt.org) and a concatenated llms-full.txt, a full-content RSS feed, and a robots.txt that explicitly welcomes AI crawlers by name, with a Content-Signal line that says yes to search, yes to AI input, yes to training. Building in the open means being fine with getting baked into the models, and getting baked in is the goal, not a concession: whether a model learns about me at training time or looks me up at answer time, the record it finds should be the one I wrote.
+**scottclarkio** is the published surface [as a repo](https://github.com/sc932/scottclarkio): an Astro static site behind S3 and CloudFront, provisioned by Terraform, deployed by a GitHub Action on every push. It reads facts from the other two repos. And it ships the full agent-facing surface: a JSON-LD entity graph on every page, a markdown twin of every page and post, an [llms.txt](https://llmstxt.org) and a concatenated llms-full.txt, a full-content RSS feed, and a robots.txt that explicitly welcomes AI crawlers by name, with a Content-Signal line that says yes to search, yes to AI input, yes to training. Building in the open means being fine with getting baked into the models, and getting baked in is the goal, not a concession: whether a model learns about me at training time or looks me up at answer time, the record it finds should be the one I wrote.
 
 <Figure slug="building-this-blog-part-ii" name="fig1-two-readers" caption="A site written for two readers. The dossier repo holds verified public facts, the resume repo holds bio truth, and the site composes both into two surfaces: HTML for the person, and a machine-readable stack (markdown twins, an entity graph, llms.txt, a full-content feed) for the agent they sent. The connective tissue between repos is markdown contracts. Facts flow one direction." />
 
-The composition lesson is in the boundaries. Each repo does one job, none of them tries to be a CMS, and the connective tissue is markdown: CLAUDE.md and AGENTS.md files that tell the next agent session what's true, what to read first, and what not to touch. When a fact about me changes, I know exactly which repo to edit, and the rest follow. There is no client-side JavaScript on the site; the only script tags carry JSON-LD data. There's no analytics tracker either, just the CDN's own logs: fun isn't signal, and I don't need to peek at an experiment before it's complete.
+The composition lesson is in the boundaries. Each repo does one job, none of them tries to be a CMS, and the connective tissue is markdown: CLAUDE.md and AGENTS.md files that tell the next agent session what's true, what to read first, and what not to touch. When a fact about me changes, I know exactly which repo to edit, and the rest follow. There is no client-side JavaScript on the site; the only script tags carry JSON-LD data. There's no analytics tracker either, just the CDN's own logs: watching a live dashboard is fun, and fun isn't signal; I don't need to peek at an experiment on a minute-by-minute basis.
 
 ## What I didn't build
 
@@ -60,22 +61,22 @@ The list of what I didn't build matters more than it used to, because the old co
 
 I built content_finder because the artifact didn't exist: there was no off-the-shelf way to produce a verified, citable corpus of my own public footprint, so the only path to the dossier was the tool. Halfway through drafting a post, I also started designing a markdown collaborative-editing tool in my head, because pair-editing prose with an agent in a terminal has real friction. Then I caught myself: editors exist, and the artifact I was trying to ship was the post.
 
-When the marginal cost of building a tool approaches zero, "can I build it" stops being the question, and "should I build it for this artifact, in this moment" is the question that remains. That's an explore/exploit tradeoff at the tool layer, the same one I spent years on in Bayesian optimization. Exploit, ie use what exists, is still the right default for almost everything, but the reason changed: it used to be that building was too expensive, and now it's that your judgment is the scarce input and the backlog of artifacts is long. I built content_finder because I needed the dossier. I didn't build the editor because I needed the post.
+When the marginal cost of building a tool approaches zero, "can I build it" stops being the question, and "should I build it for this artifact, in this moment" is the question that remains. That's an explore/exploit tradeoff at the tool layer, the same one I spent years on in Bayesian optimization at SigOpt. Exploit, ie use what exists, is still the right default for almost everything, but the reason changed: it used to be that building (exploration) was too expensive, and now it's that your judgment is the scarce input and the backlog of artifacts is long. I built content_finder because I needed the dossier. I didn't build the editor because I just needed the post and Google Docs does just fine.
 
 ## It compounded
 
 The site turned out to be the trailhead, not the destination. This July, the same composition pattern shipped two more sites in one night: a company site with its own blog for [Talaria Scientific](https://talariasci.com), the company I'm building now, and a rebuilt [distributional.com](https://distributional.com) that restored years of the old company's technical archive at the original URLs. Every post on all three ships with the same agent-facing surface this site has. The same night, this site got the blog section you're reading, which is how a post titled Part II finally acquired a place to exist.
 
-The build discipline scaled with it. Before that July push went live, the diffs were reviewed by frontier models from three different labs, and the union of their findings, most found by only one of the three, became the fix list. How that review loop works is a post of its own; the short version is that agents wrote the estate, different agents attacked it, and I adjudicated.
+The build discipline scaled with it. Before these posts go live, the diffs are reviewed by frontier models from five different labs (Anthropic, OpenAI, xAI, Moonshot, and Thinking Machines), and the union of their findings, most found by only one of them, becomes the fix list. How that review loop works is a post of its own; the short version is that agents wrote the estate, different agents attacked it, and I adjudicated.
 
 ## The speed
 
 The receipts are what still surprise me.
 
-The resume repo is the cleanest one: regular commits through October 2016, then silence, then a single commit in April 2026 titled "Modernize resume; align CV/md; add AGENTS.md and fork guide" that did more than the previous five years combined. When the company pivoted, the resume, the CV, the PDF, and the site all updated the same afternoon, because a fact now has one home and agents carry it everywhere else.
+The resume repo is the cleanest one: regular commits through October 2016, then silence, then a single commit in April 2026 titled "Modernize resume; align CV/md; add AGENTS.md and fork guide" that did more than the previous five years combined. When the company [pivoted to Talaria Scientific](https://distributional.com/blog/distributional-is-now-talaria), the resume, the CV, the PDF, and the site all updated the same afternoon, because a fact now has one home and agents carry it everywhere else.
 
 This site went from first commit to live behind CloudFront in about ten weeks of part-time sessions, including the AWS infrastructure, the DNS migration, and the whole agent-facing surface. The AIO endpoints are the part I would never have gotten to alone; JSON-LD schema authoring is exactly the kind of yak-shaving that kills a research week, and it's exactly what an agent eats without complaint. On a normal weekday I have a handful of agent sessions open, and the one working on this site is rarely the one I'm watching.
 
-At the end of the day, the work I did is the work that was supposed to be there all along: every design decision, every fact, every line of editorial copy, every judgment about what not to build. What the agents ate was the tax that used to stop the project before that work could start.
+At the end of the day, the work I did is the work that was supposed to be there all along: every design decision, every fact, every editorial call, every judgment about what not to build. What the agents ate was the tax that used to stop the project before that work could start.
 
-In 2014 I wrote "Building this blog: Part I" and then went quiet for twelve years. This is Part II. It didn't feel 10x faster to make; it felt 100x faster, and somewhere in that gap is escape velocity: the difference between a backlog item that survives another decade and the post you're reading right now. Part III should take less than twelve years. If you've got a workbench of your own gathering dust, it might not need another decade.
+In 2014 I wrote "Building this blog: Part I" and then went quiet for twelve years. This is Part II. It didn't feel 10x faster to make; it felt 100x faster, and somewhere in that gap is escape velocity: the difference between a backlog item that survives another decade and the post you're reading right now. Part III should take less than twelve years. If you've got a workbench of your own gathering dust, it might not need another decade for you to own your slice of the web too.

@@ -34,6 +34,19 @@ locals {
         target = '/';
       }
 
+      // Legacy restorations (2026-07-28 blog launch, deploy-brief flourish):
+      // the 2014 "Building this blog: Part I" URL (raw colon + both encoded
+      // forms) 301s to Part II — the post's own origin story at Scott's
+      // original path; /feed.xml catches feed path-guessers.
+      if (target === '/blog/2/building-this-blog:-part-i' ||
+          target === '/blog/2/building-this-blog%3A-part-i' ||
+          target === '/blog/2/building-this-blog%253A-part-i') {
+        target = '/blog/building-this-blog-part-ii';
+      }
+      if (target === '/feed.xml') {
+        target = '/rss.xml';
+      }
+
       if (host !== '${var.domain}' || target !== uri) {
         // Preserve the query string on every 301 (estate rule; the drop
         // was this function's round-2 G1 gap).
