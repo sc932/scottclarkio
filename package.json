@@ -8,6 +8,7 @@
     "build": "astro build",
     "preview": "astro preview",
     "check:aio": "node scripts/aio-check.mjs",
+    "check:links": "node scripts/check-crosslinks.mjs",
     "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {

@@ -53,7 +53,9 @@ const cvPageSchema = buildProfilePageSchema({
               <div class="row-period">{row.period}</div>
               <div class="row-body">
                 <div class="row-head">
-                  <span class="row-org">{row.org}</span>
+                  <span class="row-org">
+                    {row.orgUrl ? <a href={row.orgUrl}>{row.org}</a> : row.org}
+                  </span>
                   <span class="row-title">{row.title}</span>
                 </div>
                 {list && (

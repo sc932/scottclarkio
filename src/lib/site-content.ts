@@ -4,6 +4,7 @@
 export interface ChronoRow {
   period: string;
   org: string;
+  orgUrl?: string; // estate cross-link: org name renders as a link on /cv when set
   title: string;
   body?: string; // HTML allowed; used for prose-style entries (e.g. education).
   bullets?: string[]; // HTML allowed per item; used for resume-style short bullets (home page).
@@ -28,7 +29,7 @@ export const blogDescription =
   "Essays from Scott Clark on optimization thinking, startup leadership, research to product, and the craft of working with agents.";
 
 // Editorial third-person paragraph. ~70 words.
-export const lede = `Scott Clark is the co-founder and CEO of <strong>Distributional</strong>, an enterprise AI reliability company backed by a16z and Two Sigma. He was previously co-founder and CEO of <strong>SigOpt</strong>, a YC-and-a16z-backed Bayesian optimization platform acquired by <strong>Intel</strong> in 2020, where he then served as VP &amp; GM of AI and HPC supercomputing through 2023. He holds a PhD in applied mathematics and an MS in computer science from Cornell University, where he was a Department of Energy Computational Science Graduate Fellow.`;
+export const lede = `Scott Clark is the co-founder and CEO of <strong><a href="https://distributional.com">Distributional</a></strong>, building <strong><a href="https://talariasci.com">Talaria Scientific</a></strong>, a multi-agent harness for computational science research. He was previously co-founder and CEO of <strong>SigOpt</strong>, a YC-and-a16z-backed Bayesian optimization platform acquired by <strong>Intel</strong> in 2020, where he then served as VP &amp; GM of AI and HPC supercomputing through 2023. He holds a PhD in applied mathematics and an MS in computer science from Cornell University, where he was a Department of Energy Computational Science Graduate Fellow.`;
 
 // Tight elevator-pitch byline. Prioritizes: multi-time founder, a16z+YC, exit (Intel), F100 exec, PhD.
 export const byline = `I build startups that bring AI research into production at enterprise scale.`;
@@ -66,16 +67,20 @@ export const experience: ChronoRow[] = [
   {
     period: "2023 — present",
     org: "Distributional",
+    orgUrl: "https://distributional.com",
     title: "Co-founder & CEO",
+    // Scott's wording (2026-07-23): Talaria first, pivot link on bullet 2,
+    // the raise on bullet 3. Facts from talariasci.com + the manifesto.
     bullets: [
-      "Analytics for agents, discovering behavioral signals in AI logs for continuous improvement",
-      "Built enterprise tooling for AI reliability with statistical testing and adaptive analytics",
-      "Led a remote team of 30. Raised $30M from a16z, Two Sigma, others over 2 rounds",
+      `Building <a href="https://talariasci.com">Talaria Scientific</a>: a multi-agent harness for computational science that turns a 10x researcher into a 100x researcher`,
+      `Built AI testing and agent analytic tools before <a href="https://distributional.com/blog/distributional-is-now-talaria">pivoting in July 2026</a>`,
+      `Raised $30M from a16z, Two Sigma Ventures, SV Angel, and others`,
     ],
     cvBullets: [
+      `Pivoted to <strong><a href="https://talariasci.com">Talaria Scientific</a></strong> in 2026 (same corporation, same investors, new mission): a multi-agent harness for computational science — scientist-in-the-loop agents with HPC as the guardrail, in private beta. <a href="https://distributional.com/blog/distributional-is-now-talaria">The announcement</a>.`,
       `Analytics for AI agents — discovering behavioral signals in agent trace data for continuous AI reliability. <strong>30-person team</strong>, <strong>$30M raised</strong> (Seed Dec 2023 led by <em>Andreessen Horowitz</em>; Series A Oct 2024 led by <em>Two Sigma Ventures</em>).`,
-      `Co-founders: Michael McCourt (CTO; multi-paper SigOpt-era co-author), David Rosales (COO), Nick Payton (CRO). 11-person founding team sourced from <em>Bloomberg</em>, <em>Google</em>, <em>Meta</em>, <em>Intel</em>, <em>SigOpt</em>, <em>Slack</em>, <em>Stripe</em>, <em>Uber</em>, <em>Yelp</em>.`,
-      `Product evolved 2023–2025 from pre-deployment AI-testing to production behavioral analytics for AI agents — turning raw trace data into actionable insights for AI teams.`,
+      `Co-founders: Michael McCourt (CTO through ~2025; multi-paper SigOpt-era co-author), David Rosales (COO), Nick Payton (CRO). 11-person founding team sourced from <em>Bloomberg</em>, <em>Google</em>, <em>Meta</em>, <em>Intel</em>, <em>SigOpt</em>, <em>Slack</em>, <em>Stripe</em>, <em>Uber</em>, <em>Yelp</em>.`,
+      `Product evolved 2023–2025 from pre-deployment AI-testing to production behavioral analytics for AI agents; sunset with the 2026 pivot to Talaria.`,
       `<strong>US Patent 12,505,027</strong> (2025, named inventor): anomaly detection in deployed AI applications.`,
     ],
   },
@@ -147,9 +152,15 @@ export const education: ChronoRow[] = [
   },
 ];
 
-export const pageTitle = "Scott Clark — Co-founder & CEO of Distributional. Cornell PhD.";
+export const pageTitle =
+  "Scott Clark — Co-founder & CEO of Distributional, building Talaria Scientific. Cornell PhD.";
 export const pageDescription =
-  "Scott Clark is the co-founder and CEO of Distributional, an enterprise AI reliability company. Previously co-founder and CEO of SigOpt (acquired by Intel 2020); VP and GM of AI and HPC supercomputing at Intel through 2023. PhD in Applied Mathematics from Cornell University.";
+  "Scott Clark is the co-founder and CEO of Distributional, building Talaria Scientific, a multi-agent harness for computational science research. Previously co-founder and CEO of SigOpt (acquired by Intel 2020); VP and GM of AI and HPC supercomputing at Intel through 2023. PhD in Applied Mathematics from Cornell University.";
+
+// The one-line identity used by BOTH the JSON-LD Person schema and
+// /llms.txt — one string so the two AIO surfaces can never drift.
+export const personDescription =
+  "Co-founder and CEO of Distributional, building Talaria Scientific: a multi-agent harness for computational science research. Previously co-founder & CEO of SigOpt (acquired by Intel 2020); VP & GM of AI and HPC supercomputing at Intel through 2023. PhD Applied Mathematics, Cornell University.";
 
 export const siteUrl = "https://scottclark.io";
 
@@ -166,15 +177,14 @@ export const personSchema = {
   familyName: "Clark",
   honorificSuffix: "Ph.D.",
   jobTitle: "Co-founder & CEO",
-  description:
-    "Co-founder and CEO of Distributional (enterprise AI reliability). Previously co-founder & CEO of SigOpt (acquired by Intel 2020); VP & GM of AI and HPC supercomputing at Intel through 2023. PhD Applied Mathematics, Cornell University.",
+  description: personDescription,
   url: siteUrl,
   image: `${siteUrl}/images/scott-clark.jpg`,
   email: "scott@scottclark.io",
   worksFor: {
     "@type": "Organization",
-    name: "Distributional, Inc.",
-    url: "https://distributional.com",
+    name: "Talaria Scientific",
+    url: "https://talariasci.com",
   },
   alumniOf: [
     {

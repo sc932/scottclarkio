@@ -23,3 +23,23 @@ export function htmlToMd(html: string): string {
     .replace(/&mdash;/g, "—")
     .replace(/&ndash;/g, "–");
 }
+
+// HTML → plain text: strip every tag and decode the named entities used in
+// this project. Used for structured-data (JSON-LD) fields, which must carry
+// plain prose rather than markup or markdown link syntax.
+export function htmlToText(html: string): string {
+  return html
+    .replace(/<[^>]+>/g, "")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&ldquo;/g, '"')
+    .replace(/&rdquo;/g, '"')
+    .replace(/&lsquo;/g, "'")
+    .replace(/&rsquo;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&mdash;/g, "—")
+    .replace(/&ndash;/g, "–");
+}

@@ -1,6 +1,6 @@
 title: "Distributional"
-description: "A modern platform for enterprise AI testing and production behavioral analytics. Distributional turns raw LLM and agent trace data into actionable insights, helping organizations make AI safe, reliable, and secure through automated testing, statistical analysis of data distributions, and continuous adaptive testing throughout the AI lifecycle. Founded July 2023; $30M raised from Andreessen Horowitz, Two Sigma Ventures, and others; serving multiple Fortune 500 customers."
-url: "https://www.distributional.com"
+description: 'Founded in 2023, <a href="https://distributional.com" target="_blank" rel="noopener">Distributional</a> built AI testing and agent behavioral-analytics tools for Fortune 500 enterprises: automated testing and statistical analysis of LLM and agent trace data for continuous AI reliability. In July 2026 it made a <a href="https://distributional.com/blog/distributional-is-now-talaria" target="_blank" rel="noopener">hard pivot</a> to <a href="https://talariasci.com" target="_blank" rel="noopener">Talaria Scientific</a> (same company, same investors), refocusing on a multi-agent harness for computational science. Raised $30M from Andreessen Horowitz, Two Sigma Ventures, and others.'
+url: "https://distributional.com"
 tags:
   - AI Testing
   - Behavioral Analytics

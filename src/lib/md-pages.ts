@@ -147,7 +147,7 @@ export async function renderTalksMd(): Promise<string> {
         .join(" · ");
       return `## ${t.data.title}\n\n**${date}** · ${t.data.event}${
         links ? `\n\n${links}` : ""
-      }\n\n${t.data.description}`;
+      }\n\n${htmlToMd(t.data.description)}`;
     })
     .join("\n\n");
   return `# Talks & Podcasts — Scott Clark
@@ -200,7 +200,7 @@ export async function renderProjectsMd(): Promise<string> {
       const tags = p.data.tags.length
         ? `\n\n*Tags:* ${p.data.tags.join(", ")}`
         : "";
-      return `### ${p.data.title}\n\n${p.data.description}${
+      return `### ${p.data.title}\n\n${htmlToMd(p.data.description)}${
         links ? `\n\n${links}` : ""
       }${tags}`;
     })
