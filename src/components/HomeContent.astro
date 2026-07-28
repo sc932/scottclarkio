@@ -75,6 +75,26 @@ const writingPosts = (await getPublishedPosts()).slice(0, 2);
       </div>
 
       <ul class="socials">
+        {/* Internal writings row (Scott, 2026-07-28): sits above the
+            profile links; deliberately NOT rel=me / u-url — it's site
+            navigation, not an h-card identity claim. */}
+        <li>
+          <a href="/blog">
+            <svg
+              class="icon"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.7"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+            </svg>
+            <span>writings</span>
+          </a>
+        </li>
         <li>
           <a href="https://github.com/sc932" rel="me noopener" class="u-url" target="_blank">
             <svg
