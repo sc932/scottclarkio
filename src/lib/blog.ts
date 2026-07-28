@@ -239,6 +239,8 @@ ${mdxBodyToPlainMd(post)}
 
 ---
 
+Follow me at [@DrScottClark](https://twitter.com/DrScottClark) to see new posts.
+
 Source: ${postUrl(post)} (Scott Clark)
 `;
 }

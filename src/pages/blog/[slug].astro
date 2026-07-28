@@ -118,6 +118,18 @@ const breadcrumbTrail = [
         {post.data.format !== "post" && (
           <span class="chip">{post.data.format}</span>
         )}
+        {/* Handle left of the name (Scott, 2026-07-28): the handle links X,
+            the name keeps its home/author link. */}
+        {post.data.author === "Scott Clark" && (
+          <a
+            class="byline"
+            href="https://twitter.com/DrScottClark"
+            rel="noopener"
+            target="_blank"
+          >
+            @DrScottClark
+          </a>
+        )}
         {
           post.data.author === "Scott Clark" ? (
             <a class="byline" href="/" rel="author">
@@ -133,6 +145,20 @@ const breadcrumbTrail = [
     <div class="prose">
       <Content />
     </div>
+
+    {/* Standing follow ask (Scott, 2026-07-28) — this site's analog of the
+        talaria post-end CTA. Rides the .md twin too (renderPostMd). */}
+    <p class="follow-cta">
+      Follow me at{" "}
+      <a
+        href="https://twitter.com/DrScottClark"
+        rel="noopener"
+        target="_blank"
+      >
+        @DrScottClark
+      </a>{" "}
+      to see new posts
+    </p>
 
     {
       related.length > 0 && (
@@ -359,6 +385,19 @@ const breadcrumbTrail = [
     font-size: 14px;
     line-height: 1.55;
     max-width: 680px;
+  }
+
+  /* Standing follow ask above Read next (Scott, 2026-07-28). */
+  .follow-cta {
+    margin: 48px 0 0;
+    font-size: 16px;
+    color: var(--mute);
+  }
+  .follow-cta a {
+    color: var(--ink);
+  }
+  .follow-cta a:hover {
+    color: var(--accent);
   }
 
   /* Read next — related cards above the utility crumbs (estate grammar,

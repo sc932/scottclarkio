@@ -399,14 +399,17 @@ const relMeLinks = [...personSchema.sameAs, `mailto:${personSchema.email}`];
         letter-spacing: -0.015em;
         margin: -8px 0 8px;
       }
-      .byline {
+      /* Scoped to the home hero (2026-07-28): the blog post meta row has its
+         own .byline (estate grammar) — the unscoped rule's 16px + bottom
+         margin leaked in and broke the meta row's vertical centering. */
+      .intro-text .byline {
         margin: 0 0 18px;
         color: var(--mute);
         font-size: 16px;
         line-height: 1.45;
       }
-      .byline a { color: var(--mute); }
-      .byline a:hover { color: var(--accent); }
+      .intro-text .byline a { color: var(--mute); }
+      .intro-text .byline a:hover { color: var(--accent); }
 
       .lede {
         margin: 0 0 18px;
