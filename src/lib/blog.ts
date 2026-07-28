@@ -50,6 +50,14 @@ export function pillarLabel(pillar: string): string {
     .join(" ");
 }
 
+/** Listing view with a pillar floated to the top (estate ruling, Scott
+ * 2026-07-25; `?pillar=` settled as this site's URL key at the 2026-07-28
+ * port — the pillar enum is already slug-form and is the site's own
+ * taxonomy vocabulary, where talaria's series needs slugifying): sort-only
+ * today — every post stays visible — and the SAME URL upgrades to a real
+ * filter once the corpus earns one. */
+export const pillarPath = (pillar: string) => `/blog?pillar=${pillar}`;
+
 // BlogPosting (+ VideoObject when format: video) JSON-LD node for a post page.
 // Author + publisher reference the site's canonical Person node — this Person
 // is the estate's ONE author identity; the company blogs point here too.
@@ -233,4 +241,14 @@ ${mdxBodyToPlainMd(post)}
 
 Source: ${postUrl(post)} (Scott Clark)
 `;
+}
+
+// Semantic title segments (Scott, 2026-07-24): split at the first ": " so
+// DISPLAY surfaces (cards, H1s, OG images) break after the colon, never
+// mid-phrase ("…Talaria / Scientific"). Data surfaces (frontmatter, JSON-LD
+// headline, twins, RSS) keep the raw title — this is layout, not content.
+export function titleParts(title: string): string[] {
+  const i = title.indexOf(": ");
+  if (i <= 0 || i + 2 >= title.length) return [title];
+  return [title.slice(0, i + 1), title.slice(i + 2)];
 }

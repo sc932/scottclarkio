@@ -2,6 +2,7 @@
 import "@fontsource-variable/source-serif-4";
 import "@fontsource-variable/ibm-plex-sans";
 import SiteLayout from "../../components/SiteLayout.astro";
+import TitleParts from "../../components/TitleParts.astro";
 import { v2Theme } from "../../lib/site-theme";
 import { blogTitle, blogDescription } from "../../lib/site-content";
 import {
@@ -30,29 +31,58 @@ const pageSchema = buildBlogIndexSchema(posts);
   <ol class="post-list">
     {
       posts.map((post) => (
-        <li class:list={["post-item", { pinned: post.data.pinned }]}>
-          <article>
-            {post.data.pinned && <p class="start-here">Start here</p>}
-            <h2>
-              <a href={postPath(post)}>{post.data.title}</a>
-            </h2>
-            <p class="meta">
-              <time datetime={post.data.date.toISOString().slice(0, 10)}>
-                {formatDate(post.data.date)}
-              </time>
-              {post.data.pillar && (
-                <span class="chip">{pillarLabel(post.data.pillar)}</span>
-              )}
-              {post.data.format !== "post" && (
-                <span class="chip">{post.data.format}</span>
-              )}
-            </p>
-            <p class="desc">{post.data.description}</p>
-          </article>
+        <li
+          class:list={["post-item", { pinned: post.data.pinned }]}
+          data-pillar={post.data.pillar}
+        >
+          {/* Whole card is the link (estate, Scott 2026-07-24): any click
+              opens the post — so no nested anchors inside (chips AND the
+              read-more button stay spans here; the pillar chip is only a
+              link on the post page). */}
+          <a class="card-link" href={postPath(post)}>
+            <article>
+              {post.data.pinned && <p class="start-here">Start here</p>}
+              <h2><TitleParts title={post.data.title} /></h2>
+              <p class="meta">
+                <time datetime={post.data.date.toISOString().slice(0, 10)}>
+                  {formatDate(post.data.date)}
+                </time>
+                {post.data.pillar && (
+                  <span class="chip">{pillarLabel(post.data.pillar)}</span>
+                )}
+                {post.data.format !== "post" && (
+                  <span class="chip">{post.data.format}</span>
+                )}
+              </p>
+              <p class="desc">{post.data.description}</p>
+              <p class="read-more-row" aria-hidden="true">
+                <span class="read-more">Read more&nbsp;&rarr;</span>
+              </p>
+            </article>
+          </a>
         </li>
       ))
     }
   </ol>
+
+  {/* Sort-only pillar view (estate ruling, Scott 2026-07-25; ?pillar= is
+      this site's URL key, settled at the 2026-07-28 port): ?pillar=<slug>
+      floats that pillar's rows to the top — every post stays visible (a
+      real filter arrives with a bigger corpus; post breadcrumbs + pillar
+      chips link here). Stable partition; no-JS keeps the default order. */}
+  <script is:inline data-pillar-sort>
+    (() => {
+      const slug = new URLSearchParams(location.search).get("pillar");
+      if (!slug) return;
+      const list = document.querySelector(".post-list");
+      if (!list) return;
+      const rows = [...list.children];
+      const lifted = rows.filter((r) => r.dataset.pillar === slug);
+      if (lifted.length === 0 || lifted.length === rows.length) return;
+      for (const row of lifted.concat(rows.filter((r) => !lifted.includes(r))))
+        list.append(row);
+    })();
+  </script>
 </SiteLayout>
 
 <style is:global>
@@ -62,14 +92,18 @@ const pageSchema = buildBlogIndexSchema(posts);
     padding: 0;
   }
   .post-item {
-    padding: 30px 0;
     border-bottom: 1px solid var(--ruleSoft);
-  }
-  .post-item:first-child {
-    padding-top: 0;
   }
   .post-item:last-child {
     border-bottom: none;
+  }
+  /* Row padding lives on the anchor so the whole visual row is clickable
+     (no dead strips between the link and the rule). */
+  .post-item .card-link {
+    padding: 30px 0;
+  }
+  .post-item:first-child .card-link {
+    padding-top: 0;
   }
   .start-here {
     font-family: var(--sans);
@@ -80,6 +114,16 @@ const pageSchema = buildBlogIndexSchema(posts);
     color: var(--accent);
     margin: 0 0 8px;
   }
+  /* Fully-clickable rows: the anchor wraps the card. Affordance = title
+     accent on hover + the read-more button each row carries (Scott,
+     2026-07-24: descs read as static one-liners, worst on mobile where
+     rule-separated rows didn't read as multiple clickable cards). Rows stay
+     fill-free — rules are the depth grammar; the button is the click cue. */
+  .card-link {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+  }
   .post-item h2 {
     font-family: var(--serif);
     font-weight: 500;
@@ -87,9 +131,10 @@ const pageSchema = buildBlogIndexSchema(posts);
     line-height: 1.2;
     letter-spacing: -0.008em;
     margin: 0 0 8px;
+    transition: color 0.15s ease;
   }
-  .post-item h2 a {
-    text-decoration: none;
+  .card-link:hover h2 {
+    color: var(--accent);
   }
   .post-item .meta {
     display: flex;
@@ -117,5 +162,27 @@ const pageSchema = buildBlogIndexSchema(posts);
     font-size: 16px;
     line-height: 1.6;
     max-width: 660px;
+  }
+  /* Read-more ghost button (estate, Scott 2026-07-24): aria-hidden span
+     inside the whole-card anchor, never a nested link. */
+  .read-more-row {
+    display: flex;
+    justify-content: flex-end;
+    margin: 16px 0 0;
+  }
+  .read-more {
+    font-family: var(--sans);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    border-radius: 6px;
+    padding: 8px 14px;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .card-link:hover .read-more {
+    background: var(--accent);
+    color: #fff;
   }
 </style>

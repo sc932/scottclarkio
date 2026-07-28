@@ -10,6 +10,7 @@ import {
   getPublishedPosts,
   formatDate,
   pillarLabel,
+  titleParts,
   type Post,
 } from "../../../lib/blog";
 
@@ -95,10 +96,14 @@ export const GET: APIRoute = async ({ props }) => {
         marginTop: 44,
         marginBottom: 40,
       }),
+      // Colon titles break after the colon, never mid-phrase (Scott,
+      // 2026-07-24): each segment renders as its own row; a segment longer
+      // than the canvas still wraps internally within its row.
       el(
         "div",
         {
           display: "flex",
+          flexDirection: "column",
           fontFamily: "Source Serif 4",
           fontSize: titleSize,
           fontWeight: 600,
@@ -107,7 +112,7 @@ export const GET: APIRoute = async ({ props }) => {
           letterSpacing: "-0.01em",
           maxWidth: 1000,
         },
-        title,
+        titleParts(title).map((part) => el("div", { display: "flex" }, part)),
       ),
       el("div", { display: "flex", flexGrow: 1 }),
       el(

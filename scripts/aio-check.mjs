@@ -202,9 +202,17 @@ for (const file of htmlFiles) {
   if (scriptCount > 0) {
     const facadeOk =
       isPostPage && scriptCount === 1 && html.includes('class="yt-facade"');
-    if (!facadeOk)
+    // The blog listing ships exactly ONE first-party script: the ?pillar=
+    // sort-only view (estate ruling 2026-07-25; ?pillar= is this site's URL
+    // key, settled at the 2026-07-28 port). Marker-pinned so any other
+    // script still blows the budget.
+    const pillarSortOk =
+      rel === "blog/index.html" &&
+      scriptCount === 1 &&
+      html.includes("<script data-pillar-sort>");
+    if (!facadeOk && !pillarSortOk)
       failures.push(
-        `${rel}: ${scriptCount} non-JSON-LD <script>(s) — only the single YouTube facade script may ship (round-2 S24)`,
+        `${rel}: ${scriptCount} non-JSON-LD <script>(s) — only the YouTube facade (post pages) or the pillar-sort script (blog listing) may ship (round-2 S24; pillar-sort 2026-07-28)`,
       );
   }
   const nonScript = nonLd.replace(/<script[\s\S]*?<\/script>/gi, "");

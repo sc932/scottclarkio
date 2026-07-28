@@ -3,11 +3,16 @@ import "@fontsource-variable/source-serif-4";
 import "@fontsource-variable/ibm-plex-sans";
 import { render } from "astro:content";
 import SiteLayout from "../../components/SiteLayout.astro";
+import TitleParts from "../../components/TitleParts.astro";
 import { v2Theme } from "../../lib/site-theme";
+import { siteUrl } from "../../lib/site-content";
 import {
   getPublishedPosts,
   buildBlogPostingSchema,
   postOgImage,
+  postPath,
+  postUrl,
+  pillarPath,
   formatDate,
   pillarLabel,
   type Post,
@@ -24,6 +29,30 @@ interface Props {
 const { post } = Astro.props;
 const { Content } = await render(post);
 const pageSchema = buildBlogPostingSchema(post);
+
+// "Read next" (estate grammar, Scott 2026-07-24): two related posts at the
+// end of every post. With a small corpus this is a complete clique (listing
+// order); revisit with a real relevance pick once there are 6+ posts.
+const related = (await getPublishedPosts())
+  .filter((p) => p.id !== post.id)
+  .slice(0, 2);
+
+// Visible trail + its JSON-LD twin (SiteLayout builds the BreadcrumbList
+// from this so the two never drift). The H1 is the current node. The root
+// crumb names the publication — "Writing", matching the nav label and the
+// feed identity ("Writing by Scott Clark").
+const breadcrumbTrail = [
+  { name: "Writing", item: `${siteUrl}/blog` },
+  ...(post.data.pillar
+    ? [
+        {
+          name: pillarLabel(post.data.pillar),
+          item: `${siteUrl}${pillarPath(post.data.pillar)}`,
+        },
+      ]
+    : []),
+  { name: post.data.title, item: postUrl(post) },
+];
 ---
 
 <SiteLayout
@@ -42,11 +71,29 @@ const pageSchema = buildBlogPostingSchema(post);
         : post.data.author,
   }}
   pageSchema={pageSchema}
+  breadcrumbTrail={breadcrumbTrail}
 >
   <article class="post">
     <header class="post-head">
-      <p class="crumb"><a href="/blog">Writing</a></p>
-      <h1>{post.data.title}</h1>
+      {/* Breadcrumbs (estate ruling, Scott 2026-07-25): publication root /
+          pillar / — the H1 below is the current node. The pillar crumb opens
+          the listing with that pillar floated to the top (sort-only until
+          the corpus earns a real filter). */}
+      <nav class="crumb" aria-label="Breadcrumb">
+        <a href="/blog">Writing</a>
+        <span class="sep" aria-hidden="true">/</span>
+        {
+          post.data.pillar && (
+            <>
+              <a href={pillarPath(post.data.pillar)}>
+                {pillarLabel(post.data.pillar)}
+              </a>
+              <span class="sep" aria-hidden="true">/</span>
+            </>
+          )
+        }
+      </nav>
+      <h1><TitleParts title={post.data.title} /></h1>
       <p class="meta">
         <time datetime={post.data.date.toISOString().slice(0, 10)}>
           {formatDate(post.data.date)}
@@ -61,8 +108,12 @@ const pageSchema = buildBlogPostingSchema(post);
             </span>
           )
         }
+        {/* Pillar chip mirrors the breadcrumb's target (estate ruling,
+            2026-07-25): the sort-first listing view. */}
         {post.data.pillar && (
-          <span class="chip">{pillarLabel(post.data.pillar)}</span>
+          <a class="chip" href={pillarPath(post.data.pillar)}>
+            {pillarLabel(post.data.pillar)}
+          </a>
         )}
         {post.data.format !== "post" && (
           <span class="chip">{post.data.format}</span>
@@ -82,6 +133,30 @@ const pageSchema = buildBlogPostingSchema(post);
     <div class="prose">
       <Content />
     </div>
+
+    {
+      related.length > 0 && (
+        <section class="related">
+          <h2 class="related-label">Read next</h2>
+          <div class="related-grid">
+            {related.map((r) => (
+              <a class="rel-card" href={postPath(r)}>
+                <h3><TitleParts title={r.data.title} /></h3>
+                <p class="rel-meta">
+                  <time datetime={r.data.date.toISOString().slice(0, 10)}>
+                    {formatDate(r.data.date)}
+                  </time>
+                  {r.data.pillar && (
+                    <span class="rel-chip">{pillarLabel(r.data.pillar)}</span>
+                  )}
+                </p>
+                <p class="rel-desc">{r.data.description}</p>
+              </a>
+            ))}
+          </div>
+        </section>
+      )
+    }
 
     <footer class="post-end">
       <p>
@@ -110,9 +185,15 @@ const pageSchema = buildBlogPostingSchema(post);
     text-transform: uppercase;
     font-weight: 500;
     font-size: 12px;
+    white-space: nowrap; /* narrow viewports break between crumbs only */
   }
   .post-head .crumb a:hover {
     color: var(--accent);
+  }
+  .post-head .crumb .sep {
+    margin: 0 5px;
+    color: var(--soft);
+    font-size: 12px;
   }
   .post-head h1 {
     font-family: var(--serif);
@@ -154,6 +235,15 @@ const pageSchema = buildBlogPostingSchema(post);
     border: 1px solid var(--rule);
     border-radius: 999px;
     padding: 2px 10px;
+  }
+  /* Pillar chip doubles as a link to the sort-first listing view. */
+  a.chip {
+    text-decoration: none;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  a.chip:hover {
+    color: var(--accent);
+    border-color: var(--accent);
   }
 
   /* Long-form reading column. */
@@ -231,6 +321,21 @@ const pageSchema = buildBlogPostingSchema(post);
     margin: 40px 0;
   }
 
+  /* Plain markdown images (rasters the inline-SVG Figure lane can't carry)
+     stay bounded to the column on the same plate language as Figure —
+     hairline border, never a shadow; white mat. */
+  .prose img {
+    display: block;
+    box-sizing: border-box;
+    max-width: 100%;
+    height: auto;
+    margin: 24px 0;
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 12px;
+  }
+
   /* Figures: white plate + hairline border (never a shadow — rules are the
      estate's only depth vocabulary). */
   .post-figure {
@@ -256,6 +361,80 @@ const pageSchema = buildBlogPostingSchema(post);
     max-width: 680px;
   }
 
+  /* Read next — related cards above the utility crumbs (estate grammar,
+     Scott 2026-07-24). Same plate language: hairline border, never a
+     shadow; the whole card is one anchor. */
+  .related {
+    margin-top: 48px;
+  }
+  .related-label {
+    font-family: var(--sans);
+    font-weight: 500;
+    font-size: 12px;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--soft);
+    margin: 0 0 16px;
+  }
+  .related-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px;
+  }
+  .rel-card {
+    display: block;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.55);
+    padding: 18px 20px;
+    transition: border-color 0.15s ease;
+  }
+  .rel-card:hover {
+    border-color: var(--accent);
+    color: inherit;
+  }
+  .rel-card h3 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 20px;
+    line-height: 1.22;
+    letter-spacing: -0.006em;
+    margin: 0 0 8px;
+    transition: color 0.15s ease;
+  }
+  .rel-card:hover h3 {
+    color: var(--accent);
+  }
+  .rel-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    font-family: var(--sans);
+    font-size: 12.5px;
+    color: var(--mute);
+    margin: 0 0 8px;
+  }
+  .rel-chip {
+    font-family: var(--sans);
+    font-size: 10.5px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--soft);
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    padding: 1px 8px;
+  }
+  .rel-desc {
+    font-size: 14.5px;
+    line-height: 1.55;
+    color: var(--mute);
+    margin: 0;
+  }
+
   .post-end {
     margin-top: 56px;
     padding-top: 20px;
@@ -276,6 +455,9 @@ const pageSchema = buildBlogPostingSchema(post);
     }
     .prose {
       font-size: 17px;
+    }
+    .related-grid {
+      grid-template-columns: 1fr;
     }
   }
 </style>

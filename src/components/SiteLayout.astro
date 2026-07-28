@@ -4,6 +4,7 @@ import {
   personSchema,
   websiteSchema,
   buildBreadcrumbList,
+  buildBreadcrumbFromTrail,
   siteUrl,
 } from "../lib/site-content";
 import { footerSocials } from "../lib/social-icons";
@@ -40,6 +41,9 @@ interface Props {
   article?: { published: string; modified?: string; author: string } | null;
   /** Optional page-specific JSON-LD entity (ProfilePage, CollectionPage, etc.) appended to the @graph. */
   pageSchema?: object | null;
+  /** Explicit breadcrumb trail (post pages): the visible crumbs and the
+   * JSON-LD BreadcrumbList share this ONE source (estate ruling, 2026-07-25). */
+  breadcrumbTrail?: Array<{ name: string; item: string }> | null;
   /** Optional path to preload as image (for above-the-fold LCP), e.g. "/images/scott-clark.jpg". */
   preloadImage?: string | null;
 }
@@ -61,6 +65,7 @@ const {
   ogImageAlt = null,
   article = null,
   pageSchema = null,
+  breadcrumbTrail = null,
   preloadImage = null,
 } = Astro.props;
 
@@ -84,7 +89,9 @@ const stripContext = <T extends { "@context"?: unknown }>(node: T) => {
   const { "@context": _ctx, ...rest } = node;
   return rest;
 };
-const breadcrumbList = buildBreadcrumbList(canonicalPath);
+const breadcrumbList = breadcrumbTrail
+  ? buildBreadcrumbFromTrail(breadcrumbTrail)
+  : buildBreadcrumbList(canonicalPath);
 const jsonLdGraph = {
   "@context": "https://schema.org",
   "@graph": [

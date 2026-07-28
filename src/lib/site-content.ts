@@ -333,3 +333,25 @@ export function buildBreadcrumbList(pathname: string) {
     itemListElement: items,
   };
 }
+
+/** BreadcrumbList from an explicit trail (post pages): Home + the given
+ * nodes. The visible crumbs and this structured trail share ONE source —
+ * the page's breadcrumbTrail prop — so the two never drift (estate ruling,
+ * Scott 2026-07-25). */
+export function buildBreadcrumbFromTrail(
+  trail: Array<{ name: string; item: string }>,
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: `${siteUrl}/` },
+      ...trail.map((t, i) => ({
+        "@type": "ListItem",
+        position: i + 2,
+        name: t.name,
+        item: t.item,
+      })),
+    ],
+  };
+}

@@ -1,0 +1,24 @@
+---
+// Semantic title wrapping (Scott, 2026-07-24): when a title carries a colon
+// subtitle ("Distributional's next chapter: Talaria Scientific"), a needed
+// line break must land after the colon, never mid-phrase ("…Talaria /
+// Scientific"). Each segment is an inline-block so it wraps as a unit; on a
+// wide viewport the title still renders as one line. Display-only — data
+// surfaces keep the raw title string.
+import { titleParts } from "../lib/blog";
+interface Props {
+  title: string;
+}
+const parts = titleParts(Astro.props.title);
+---
+
+{/* Explicit " " separator: Astro trims the whitespace between expressions,
+    and adjacent inline-blocks with no text node between them would render
+    "chapter:Talaria". */}
+{parts.map((part, i) => <>{i > 0 && " "}<span class="tpart">{part}</span></>)}
+
+<style>
+  .tpart {
+    display: inline-block;
+  }
+</style>
