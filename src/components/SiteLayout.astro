@@ -441,6 +441,99 @@ const relMeLinks = [...personSchema.sameAs, `mailto:${personSchema.email}`];
         border-bottom: 1px solid var(--rule);
       }
 
+      /* Shared post-card grammar (estate plate language: hairline border,
+         never a shadow; the whole card is one anchor). Used by the blog
+         post pages' "Read next" block AND the home Writing cards (Scott,
+         2026-07-28) — lifted here from blog/[slug].astro so the two stay
+         one family. */
+      .related {
+        margin-top: 48px;
+      }
+      .related-label {
+        font-family: var(--sans);
+        font-weight: 500;
+        font-size: 12px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        color: var(--soft);
+        margin: 0 0 16px;
+      }
+      .related-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 14px;
+      }
+      .rel-card {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        border: 1px solid var(--rule);
+        border-radius: 4px;
+        background: rgba(255, 255, 255, 0.55);
+        padding: 18px 20px;
+        transition: border-color 0.15s ease;
+      }
+      .rel-card:hover {
+        border-color: var(--accent);
+        color: inherit;
+      }
+      .rel-card h3 {
+        font-family: var(--serif);
+        font-weight: 500;
+        font-size: 20px;
+        line-height: 1.22;
+        letter-spacing: -0.006em;
+        margin: 0 0 8px;
+        transition: color 0.15s ease;
+      }
+      .rel-card:hover h3 {
+        color: var(--accent);
+      }
+      .rel-meta {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        font-family: var(--sans);
+        font-size: 12.5px;
+        color: var(--mute);
+        margin: 0 0 8px;
+      }
+      .rel-chip {
+        font-family: var(--sans);
+        font-size: 10.5px;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--soft);
+        border: 1px solid var(--rule);
+        border-radius: 999px;
+        padding: 1px 8px;
+      }
+      .rel-desc {
+        font-size: 14.5px;
+        line-height: 1.55;
+        color: var(--mute);
+        margin: 0;
+      }
+      /* Quiet all-writing link under the home cards (post-end vocabulary). */
+      .all-writing {
+        margin: 16px 0 0;
+        font-size: 14.5px;
+      }
+      .all-writing a {
+        color: var(--mute);
+        text-decoration: none;
+      }
+      .all-writing a:hover {
+        color: var(--accent);
+      }
+      @media (max-width: 720px) {
+        .related-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+
       /* Chronological rows */
       .rows { list-style: none; padding: 0; margin: 0; }
       .row {

@@ -10,6 +10,13 @@ import {
   buildProfilePageSchema,
 } from "../lib/site-content";
 import SiteLayout from "./SiteLayout.astro";
+import TitleParts from "./TitleParts.astro";
+import {
+  getPublishedPosts,
+  postPath,
+  formatDate,
+  pillarLabel,
+} from "../lib/blog";
 
 interface Props {
   bg: string;
@@ -31,6 +38,12 @@ const homePageSchema = buildProfilePageSchema({
   name: "Scott Clark — Home",
   description: pageDescription,
 });
+
+// Home Writing cards (Scott, 2026-07-28): the top two posts by listing
+// order (pinned-first, then newest) on the Read-next card grammar. The
+// index.md twin mirrors this section (renderHomeMd, same slice). Revisit
+// with a curated pick if the corpus outgrows "top two".
+const writingPosts = (await getPublishedPosts()).slice(0, 2);
 ---
 
 <SiteLayout
@@ -179,6 +192,33 @@ const homePageSchema = buildProfilePageSchema({
       </ul>
     </div>
   </section>
+
+  {
+    writingPosts.length > 0 && (
+      <section class="block">
+        <h2 class="block-label">Writing</h2>
+        <div class="related-grid">
+          {writingPosts.map((p) => (
+            <a class="rel-card" href={postPath(p)}>
+              <h3><TitleParts title={p.data.title} /></h3>
+              <p class="rel-meta">
+                <time datetime={p.data.date.toISOString().slice(0, 10)}>
+                  {formatDate(p.data.date)}
+                </time>
+                {p.data.pillar && (
+                  <span class="rel-chip">{pillarLabel(p.data.pillar)}</span>
+                )}
+              </p>
+              <p class="rel-desc">{p.data.description}</p>
+            </a>
+          ))}
+        </div>
+        <p class="all-writing">
+          <a href="/blog">All writing &rarr;</a>
+        </p>
+      </section>
+    )
+  }
 
   <section class="block">
     <h2 class="block-label">Experience</h2>

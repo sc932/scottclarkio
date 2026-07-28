@@ -265,6 +265,8 @@ src/
                         and font-stack props via define:vars.
     HomeContent.astro   Home page body (intro grid: photo + name + byline + lede +
                         3 bullets, social row with inline monochrome SVG icons,
+                        Writing cards block (top-2 posts, Read-next card grammar,
+                        mirrored in the index.md twin — Scott 2026-07-28),
                         experience block, education block). Wraps SiteLayout.
   content/              Content collections — articles/ projects/ publications/ talks/
   content.config.ts     Zod schemas for content collections.

@@ -24,6 +24,12 @@ import {
   selectedTalks,
 } from "./cv-content";
 import { htmlToMd } from "./md-helpers";
+import {
+  getPublishedPosts,
+  postUrl,
+  formatDate,
+  pillarLabel,
+} from "./blog";
 
 function rowToMd(row: ChronoRow, useCvBullets = false): string {
   const list = useCvBullets
@@ -41,6 +47,25 @@ function rowToMd(row: ChronoRow, useCvBullets = false): string {
 }
 
 export async function renderHomeMd(): Promise<string> {
+  // Mirrors the home page's Writing cards (same top-two slice) so the twin
+  // and the HTML never drift; links go to the posts' markdown twins.
+  const writingPosts = (await getPublishedPosts()).slice(0, 2);
+  const writingSection = writingPosts.length
+    ? `## Writing
+
+Recent essays (all: ${siteUrl}/blog; markdown index: ${siteUrl}/blog.md):
+
+${writingPosts
+  .map(
+    (p) =>
+      `- [${p.data.title}](${postUrl(p)}.md) (${formatDate(p.data.date)}${
+        p.data.pillar ? `, ${pillarLabel(p.data.pillar)}` : ""
+      }): ${p.data.description}`,
+  )
+  .join("\n")}
+
+`
+    : "";
   return `# Scott Clark
 
 > ${byline}
@@ -53,7 +78,7 @@ ${homeBullets
   .map((b) => `**${b.label}.** ${htmlToMd(b.html)}`)
   .join("\n\n")}
 
-## Experience
+${writingSection}## Experience
 
 ${experience.map((r) => rowToMd(r, false)).join("\n\n")}
 
