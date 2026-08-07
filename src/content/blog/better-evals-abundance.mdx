@@ -1,0 +1,256 @@
+---
+title: "How Better Evals Can Bring Abundance through Accelerated Scientific Discovery"
+description: "My five-minute lightning talk from the Agentic AI Summit at UC Berkeley: why evals are the hinge between AI and scientific abundance, how two failed products taught me where that hinge breaks, and what I'm building because of it. Video, slides, and a slide-by-slide walkthrough."
+date: 2026-08-06T17:00:00Z
+format: video
+pillar: building-things
+kind: why
+videoId: "PLACEHOLDER"
+videoDuration: "PT5M34S"
+videoPoster: "/images/blog/better-evals-abundance/poster.jpg"
+---
+
+import YouTubeFacade from "../../components/YouTubeFacade.astro";
+
+{/* GENERATED-DRAFT from vault Writing/better-evals-abundance.md v0.1
+   (2026-08-06). The VAULT file is canonical: do not hand-edit prose here;
+   posts re-port at Scott's LOCK. This is the FIRST talk-recap-format post
+   (blog-grammar.md § Talk-recap format) and the post that OPENS the video
+   lane on this site.
+
+   DEPLOY PLACEHOLDERS (all must be replaced before this lands on main —
+   the deploy checklist rides the vault piece note's "Next up"):
+   - videoId "PLACEHOLDER" -> the real YouTube id after Scott uploads
+     ~/Videos/agentic-ai-summit-2026/scott-clark-better-evals-agentic-ai-summit-2026.mp4
+   - videoUploadDate frontmatter -> add at upload
+   - date -> the real publish instant at deploy
+   - public/images/blog/better-evals-abundance/slide-*.png -> real renders
+     from the deck PDF export (deck 1DXltmtBioWwJ-gG9gpuGPw6nOaSwIbt9wk4U8_SUMoE)
+   - public/images/blog/better-evals-abundance/poster.jpg -> keep the
+     livestream frame or swap for the title-slide render (Scott's pick)
+   - public/slides/better-evals-abundance.pdf -> the real deck export */}
+
+On August 2 I gave a five-minute lightning talk in the agent evaluation
+session of the Agentic AI Summit at UC Berkeley. The argument: evals are the
+hinge between AI and real scientific abundance. I have spent 20 years working
+on versions of that hinge, I watched two products fail on it, and
+[Talaria Scientific](https://talariasci.com) is what I am building because of
+it. The video is below; after it, the short version in prose, then the whole
+talk slide by slide.
+
+<YouTubeFacade id="PLACEHOLDER" title="How Better Evals Can Bring Abundance through Accelerated Scientific Discovery (Agentic AI Summit 2026)" posterSrc="/images/blog/better-evals-abundance/poster.jpg" />
+
+Prefer to page through the deck itself? [Download the slides (PDF)](/slides/better-evals-abundance.pdf).
+
+## The short version
+
+Abundance through AI, in my mind, means new scientific discoveries: the kind
+that lead to new materials and more efficient energy, and from there to
+advances in medicine, aerospace, and more. It means living in a sci-fi
+future. The real promise of AI is improving quality of life, not just
+replacing repetitive work. And I believe that for the first time, we can
+meaningfully accelerate science with AI.
+
+I have been trying to solve versions of this problem for the last 20 years,
+with varying degrees of success. In grad school, whatever the field I was in
+(finite elements, protein folding, quantum mechanics, metagenome assembly),
+the final step was always parameter tuning. We jokingly called it grad
+student descent: the least tenured person in the group, up late turning knobs
+in a high dimensional space, chasing a slightly better graph. Solving that
+problem more generally became my thesis, and then my first company. SigOpt
+was Bayesian optimization as a service: given an eval, find the parameters
+that make it go up. Over seven years we tuned recommender systems at Netflix,
+fraud models at Amex, early RL systems at OpenAI, and models at hedge funds
+managing about a trillion dollars, plus hundreds of academic papers through
+our free program. In 2020 I sold the company to Intel.
+
+Somewhere in there I realized I was only solving half the problem. The best
+thing about a black box optimizer is that it will optimize any eval you tell
+it to. The worst part about a black box optimizer is that it will optimize
+exactly the eval you tell it to. You can build a very accurate fraud detector,
+when only 1% of transactions are fraud, by predicting that nothing is fraud.
+That gap between the eval you wrote and the thing you actually care about is
+a big part of why we are still a long way from typing /goal solve stable
+fusion containment into anything.
+
+I started [Distributional](https://distributional.com) in 2023 to attack that
+gap head on, with high dimensional statistical tests for chaotic and
+non-stationary AI systems. It failed: people didn't know what to test, didn't
+have the data before deployment, and shipped to production anyway. We pivoted
+to post-production agent analytics, finding
+[the evals you aren't monitoring for](https://distributional.com/blog/distributional-is-now-talaria).
+That failed too: a good idea, but a feature, not a product. I still believe
+both approaches are obvious and inevitable; we just never crossed from
+[vision-market fit to product-market fit](/blog/make-all-new-mistakes-faster).
+
+So now I am doing what you should do when you have a problem: solving the
+version I care about most. Talaria Scientific is a multi-agent,
+multi-foundation-model harness for computational science research, built
+around domain-specific evals and guardrails rooted in real physics and math.
+The point is to spin the what-if flywheel faster: work that took me six
+months in grad school, done in six hours. It is in private beta now, it will
+be open source at NeurIPS, and it will always be free for open science.
+
+## The talk, slide by slide
+
+Each slide, with what I said over it, lightly cleaned up from the livestream
+transcript. The deck is also [downloadable as a PDF](/slides/better-evals-abundance.pdf).
+
+![Title slide: How Better Evals can Bring Abundance through Accelerated Scientific Discovery. Scott Clark, Founder and CEO.](/images/blog/better-evals-abundance/slide-01.png)
+
+My name is Scott Clark. I'm co-founder and CEO of Distributional, and I'm
+building Talaria Scientific. This talk is about how you get better abundance.
+
+### What abundance with AI actually means
+
+![Slide: what abundance with AI actually means, a four-step build from new scientific discoveries to living in a scifi future.](/images/blog/better-evals-abundance/slide-02.png)
+
+In my mind it's better scientific discoveries, which lead to new materials
+and more efficient energy, which lead to better medicine and more efficient
+ways to travel. It basically means living in a sci-fi future.
+
+### The real promise of abundance through AI
+
+![Slide: improving quality of life, not just replacing repetitive work.](/images/blog/better-evals-abundance/slide-03.png)
+
+It's less about how we get rid of more white-collar jobs, and more about how
+we improve people's quality of life.
+
+### The pieces are finally falling into place
+
+![Slide: we can now meaningfully accelerate science with AI.](/images/blog/better-evals-abundance/slide-04.png)
+
+I believe that for the first time, we are able to meaningfully accelerate
+scientific discovery with AI. The last few months have unlocked quite a bit
+of capability.
+
+### A culmination of my life's work
+
+![Slide: I have been trying to solve this problem for the last 20 years of my career, with varying degrees of success.](/images/blog/better-evals-abundance/slide-05.png)
+
+This has been a passion of mine for a long time. I've been trying to solve
+this problem for the last 20 years of my career, with varying degrees of
+success.
+
+### Grad school: solving the same problem over and over
+
+![Slide: grad school timeline across Oregon State, UC Davis, Max Planck, Cornell, Los Alamos, and Berkeley Lab. Whatever the field, the final step was always parameter tuning.](/images/blog/better-evals-abundance/slide-06.png)
+
+Every group I worked with, from protein folding to quantum mechanics
+simulation to metagenome assembly, ended with the same problem. We'd build
+something great, and then we'd need to tune it: knobs, levers,
+hyperparameters, whatever you want to call them. If you could make the
+benchmarks slightly better, you got a better paper. We jokingly called this
+grad student descent, because it was usually the grad students sitting up
+late, tuning knobs in a high dimensional space. People applied smart
+techniques to it (simulated annealing, genetic algorithms, local methods),
+but I fell in love with Bayesian optimization, and it became the core of my
+PhD thesis: methods for efficient optimization, given an eval.
+
+### SigOpt: optimize everything
+
+![Slide: SigOpt, Bayesian optimization as a service, with the founding, building, and scaling timeline.](/images/blog/better-evals-abundance/slide-07.png)
+
+That thesis became SigOpt, Bayesian optimization as a service, started in
+2014. Over seven years we worked with Netflix tuning recommender systems,
+Amex tuning fraud systems, OpenAI tuning their early RL systems back when
+they were a nonprofit lab, hedge funds managing about a trillion dollars, and
+several hundred academics who used our free program on everything from
+materials design to drug discovery. After I sold the company to Intel in
+2020, we tuned everything from chip design to benchmaxxing MLPerf, back when
+that was the number everyone was overfitting to.
+
+### Learning I was only solving half the problem
+
+![Slide: the optimizer worked, except when it didn't. It overfit, or optimized the wrong thing.](/images/blog/better-evals-abundance/slide-08.png)
+
+It worked really well, except when it didn't. It would always optimize
+exactly what you gave it. Customers would come back and say: you made that
+number go up, but some other number went down.
+
+### The problem with optimizers
+
+![Slide: the best thing about a black box optimizer is that it will optimize any eval you tell it to. The worst part is that it will optimize exactly the eval you tell it to.](/images/blog/better-evals-abundance/slide-09.png)
+
+The best thing about a black box optimizer is that it will optimize any eval
+you tell it to. The worst part about a black box optimizer is that it will
+optimize exactly the eval you tell it to. You can build a very accurate fraud
+detector, when only 1% of your transactions are fraud, by predicting that
+nothing is fraud.
+
+### We are still a long way from /goal solve
+
+![Slide: we are still a long way from typing goal solve stable fusion containment.](/images/blog/better-evals-abundance/slide-10.png)
+
+We're a long way from saying: goal, solve stable fusion containment. Or solve
+cancer. And even if the model came back with something, how could we trust
+it? That's the other side of the coin. You need to optimize these systems,
+and you need to trust them.
+
+### Have a problem? Start a startup!
+
+![Slide: Distributional attempt one, pre-production AI testing, 2023 to 2025. It failed, with the three reasons.](/images/blog/better-evals-abundance/slide-11.png)
+
+That's what I set out to do with Distributional in 2023. I attacked it in the
+most complex mathematical way possible: high dimensional statistical tests
+for chaotic and non-stationary AI systems. It failed. Nobody likes tests.
+People didn't know what to test, they didn't have the data before deployment,
+and everybody was YOLOing models into production anyway.
+
+### Have a problem? Pivot!
+
+![Slide: Distributional attempt two, post-production agent analytics, 2025 to 2026. It also failed: a feature, not a product.](/images/blog/better-evals-abundance/slide-12.png)
+
+So I pivoted the company. This is what you do: you're failing, pivot.
+Analytics. Catch the evals that are sneaking through your system, find the
+patterns in behavior that say here is the unknown unknown, the eval you
+should have written. This also failed. It's a really good idea, but it's more
+of a feature than a product. Let alone a business, or a startup.
+
+### Have a problem? Solve the version you care about
+
+![Slide: the third column, a computational science harness for 2026 and beyond, with domain-specific evals and guardrails rooted in physics and math.](/images/blog/better-evals-abundance/slide-13.png)
+
+So now I'm applying everything I've done in the last 20 years to attack the
+scientific problem: how do we accelerate science? Talaria is a multi-agent,
+multi-foundation-model harness for computational science research,
+focused on what actually matters: bespoke evals that know physics, that know
+the scientific research process, that know how to do hypothesis validation.
+
+### From idea to tested result
+
+![Slide: the workflow figure from the Talaria manifesto, from idea to tested result.](/images/blog/better-evals-abundance/slide-14.png)
+
+With that in place, you can spin the flywheel of a what-if machine faster and
+faster. Work that used to take me six months in grad school takes six hours
+instead.
+
+### Come find me
+
+![Slide: positioning, and the ask.](/images/blog/better-evals-abundance/slide-15.png)
+
+We're building this in the open. It's going to be open sourced at NeurIPS,
+and there's a private beta right now. I would love to chat if you're building
+anything computational science related.
+
+### Thank you
+
+![Slide: thank you, with links and QR codes. Private beta signups, open source launch at NeurIPS 2026, always free for open science.](/images/blog/better-evals-abundance/slide-16.png)
+
+Private beta signups are open at talariasci.com. Open source launch at
+NeurIPS 2026. Always free for open science.
+
+## If you're building in this space
+
+If you're working on world models, materials, aerospace, computational
+physics, or optimization, I would love to hear from you:
+[talariasci.com](https://talariasci.com). The longer version of the
+Distributional story is in
+[Making New Mistakes Faster as a Second-Time Founder](/blog/make-all-new-mistakes-faster),
+and the full case for what we're building is in
+[the Talaria manifesto](https://talariasci.com/blog/why-im-building-talaria).
+
+*Recorded at the Agentic AI Summit 2026 (UC Berkeley RDI), Compass Stage,
+August 2, 2026. Thanks to the summit crew for the livestream; the
+[full session stream](https://www.youtube.com/watch?v=1UrriPJRSPU&t=10369s)
+has my talk at 2:52:49.*

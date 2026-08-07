@@ -16,10 +16,13 @@ const SITE_URL = "https://scottclark.io";
 // "all" = whole file; "blog-body" = blog pages only, <head> stripped (for
 // sites whose pre-existing chrome uses em-dashes deliberately).
 const PLAIN_ASCII_SCOPE = "blog-body";
-// The video lane is TOOTH-PARKED: no published `format: video` post until the
-// feed-safe facade rewrite + self-hosted posters land (sol S10/S22,
-// 2026-07-23; vault SPEC-blog-surfaces). Flip only with that work done.
-const VIDEO_LANE_OPEN = false;
+// Video lane OPENED 2026-08-06 (talk-recap format, blog-grammar.md): the
+// feed-safe facade rewrite lives in rss.xml.ts feedifyHtml and posters are
+// self-hosted via videoPoster/posterSrc — both were the parked-tooth
+// requirements (sol S10/S22, 2026-07-23). With the lane open, the teeth
+// INVERT: post pages must not hotlink i.ytimg.com, local <img> srcs must
+// exist in dist, and a published video post must actually embed the facade.
+const VIDEO_LANE_OPEN = true;
 // Debts are EXACT-pinned (sol S20): count drift in EITHER direction fails —
 // up is a regression, down means the debt cleared and the pin must go.
 const KNOWN_DEBTS = [];
@@ -358,6 +361,27 @@ for (const file of htmlFiles) {
     for (const m of html.matchAll(/data-png="([^"]+)"/g))
       if (!existsSync(join(DIST, m[1].replace(/^\//, ""))))
         failures.push(`${rel}: figure PNG twin missing: ${m[1]}`);
+    // Video-lane-open teeth (2026-08-06, talk-recap format): self-hosted
+    // media only — no i.ytimg.com hotlinks anywhere on a post page (poster
+    // img AND VideoObject thumbnailUrl both live in the html); a published
+    // video post must actually embed its facade.
+    if (VIDEO_LANE_OPEN) {
+      if (html.includes("i.ytimg.com"))
+        failures.push(
+          `${rel}: i.ytimg.com hotlink — the open video lane requires self-hosted posters (videoPoster frontmatter + posterSrc on the facade)`,
+        );
+      const sfm = srcMeta.get(slug);
+      if (sfm?.format === "video" && !html.includes('class="yt-facade"'))
+        failures.push(`${rel}: format video but no facade embed on the page`);
+    }
+    // Every root-relative <img> on a post page must exist in dist — covers
+    // slide-walkthrough images and self-hosted posters the same way the
+    // data-png check covers Figure twins.
+    for (const m of html.matchAll(/<img[^>]+src="(\/[^"]+)"/g)) {
+      const p = decodeURIComponent(m[1].split("?")[0]).replace(/^\//, "");
+      if (!existsSync(join(DIST, p)))
+        failures.push(`${rel}: local <img> missing from dist: ${m[1]}`);
+    }
   }
 }
 if (htmlFiles.length && distPosts.length && !sawNoopener)

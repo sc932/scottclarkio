@@ -90,7 +90,12 @@ export function buildBlogPostingSchema(post: Post) {
       "@type": "VideoObject",
       name: post.data.title,
       description: post.data.description,
-      thumbnailUrl: `https://i.ytimg.com/vi/${post.data.videoId}/hqdefault.jpg`,
+      // Self-hosted poster when the post carries one (video-lane-open
+      // requirement on this site); YouTube-hosted fallback for parked-lane
+      // compatibility with the shared grammar.
+      thumbnailUrl: post.data.videoPoster
+        ? `${siteUrl}${post.data.videoPoster}`
+        : `https://i.ytimg.com/vi/${post.data.videoId}/hqdefault.jpg`,
       uploadDate: (post.data.videoUploadDate ?? post.data.date).toISOString(),
       contentUrl: `https://www.youtube.com/watch?v=${post.data.videoId}`,
       embedUrl: `https://www.youtube-nocookie.com/embed/${post.data.videoId}`,

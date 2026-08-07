@@ -4,20 +4,27 @@
 // button (zero third-party script). On click: swaps in the youtube-nocookie
 // iframe with autoplay. Keeps LCP/INP clean per the facade pattern.
 // Usage in MDX (single-line, self-closing — the .md twin rewrite depends on
-// this exact shape): <YouTubeFacade id="..." title="..." />
+// this exact shape): <YouTubeFacade id="..." title="..." posterSrc="..." />
 interface Props {
   /** YouTube video id (the 11-char id, not a URL). */
   id: string;
   title: string;
-  /** Poster quality. Default hqdefault: it exists for EVERY video, while
-   * maxresdefault 404s for many — opt in per-post when known good (sol S22). */
+  /** Self-hosted poster path (/images/blog/<slug>/poster.jpg by convention).
+   * Required in practice on THIS site since the video lane opened
+   * (2026-08-06): the aio-check tooth fails any post page that hotlinks
+   * i.ytimg.com. The YouTube-hosted fallback below stays for parked-lane
+   * repos (estate grammar). */
+  posterSrc?: string;
+  /** Poster quality for the YouTube-hosted fallback. Default hqdefault: it
+   * exists for EVERY video, while maxresdefault 404s for many — opt in
+   * per-post when known good (sol S22). */
   poster?: "maxresdefault" | "hqdefault";
 }
-const { id, title, poster = "hqdefault" } = Astro.props;
+const { id, title, posterSrc, poster = "hqdefault" } = Astro.props;
 if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
   throw new Error(`YouTubeFacade: invalid YouTube video id: ${id}`);
 }
-const posterUrl = `https://i.ytimg.com/vi/${id}/${poster}.jpg`;
+const posterUrl = posterSrc ?? `https://i.ytimg.com/vi/${id}/${poster}.jpg`;
 const embedUrl = `https://www.youtube-nocookie.com/embed/${id}?autoplay=1`;
 const watchUrl = `https://www.youtube.com/watch?v=${id}`;
 ---

@@ -5,15 +5,18 @@ date: 2026-07-23
 format: video
 videoId: "dQw4w9WgXcQ"
 videoDuration: "PT3M33S"
+videoPoster: "/images/blog/video-fixture/poster.jpg"
 draft: true
 ---
 
 import YouTubeFacade from "../../components/YouTubeFacade.astro";
 
 This draft exists so the `format: video` schema path is exercised by every
-build (zod parses draft entries too) while the video lane itself is
-tooth-parked: the AIO gate fails any PUBLISHED video post until the feed-safe
-facade rewrite and self-hosted posters land (sol S10/S22, 2026-07-23; see the
-vault SPEC-blog-surfaces). `draft: true` keeps this out of every surface.
+build (zod parses draft entries too), including the `videoPoster` field the
+lane-open teeth rely on. The video lane OPENED on this site 2026-08-06
+(feed-safe facade rewrite in rss.xml.ts + self-hosted posters — the parked
+tooth's requirements, sol S10/S22 2026-07-23; format contract in
+blog-grammar.md § Talk-recap format). `draft: true` keeps this fixture out
+of every surface; the poster path above is schema-only and ships no file.
 
 <YouTubeFacade id="dQw4w9WgXcQ" title="Video lane fixture" />

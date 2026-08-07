@@ -31,6 +31,11 @@ const blog = defineCollection({
       .optional(),
     videoDuration: z.string().optional(),
     videoUploadDate: z.coerce.date().optional(),
+    // Self-hosted poster for the facade + VideoObject thumbnail — the
+    // video-lane-open requirement (2026-08-06): published post pages must
+    // not hotlink i.ytimg.com (aio-check tooth). Convention:
+    // /images/blog/<slug>/poster.jpg.
+    videoPoster: z.string().startsWith("/images/blog/").optional(),
     sourceUrl: z.string().url().optional(),
     pinned: z.boolean().default(false),
     draft: z.boolean().default(false),
