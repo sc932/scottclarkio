@@ -373,6 +373,14 @@ for (const file of htmlFiles) {
       const sfm = srcMeta.get(slug);
       if (sfm?.format === "video" && !html.includes('class="yt-facade"'))
         failures.push(`${rel}: format video but no facade embed on the page`);
+      // The draft-port convention uses videoId "PLACEHOLDER" — deliberately
+      // 11 chars, so the zod regex passes it. That means only THIS tooth
+      // stands between a forgotten placeholder and a live dead embed
+      // (wrap-attack catch, 2026-08-07).
+      if (/embed\/PLACEHOLDER|watch\?v=PLACEHOLDER/.test(html))
+        failures.push(
+          `${rel}: videoId is still the PLACEHOLDER sentinel — replace with the real YouTube id before this page can ship`,
+        );
     }
     // Every root-relative <img> on a post page must exist in dist — covers
     // slide-walkthrough images and self-hosted posters the same way the
