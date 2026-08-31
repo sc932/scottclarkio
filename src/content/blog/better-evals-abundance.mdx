@@ -1,7 +1,7 @@
 ---
-title: "How Better Evals Can Bring Abundance through Accelerated Scientific Discovery"
+title: "How Better Evals Can Bring Abundance through Accelerated Scientific Discovery (talk recap)"
 description: "My five-minute lightning talk from the Agentic AI Summit at UC Berkeley: why evals are the hinge between AI and scientific abundance, how two failed products taught me where that hinge breaks, and what I'm building because of it. Video, slides, and a slide-by-slide walkthrough."
-date: 2026-08-31T17:00:00Z
+date: 2026-08-31T20:00:00Z
 format: video
 pillar: building-things
 kind: why
@@ -13,11 +13,11 @@ videoPoster: "/images/blog/better-evals-abundance/poster.jpg"
 
 import YouTubeFacade from "../../components/YouTubeFacade.astro";
 
-{/* GENERATED-PORT from vault Writing/better-evals-abundance.md v0.5
-   (2026-08-31, reception panel closed; BEV-RP1..RP11 pending Scott's rulings —
-   re-port if any adopt). The VAULT file is canonical: do not hand-edit prose
-   here. Video = Berkeley RDI's own published cut (2026-08-12, 5:38).
-   date: flips to the real publish instant if deploy slips past 2026-08-31. */}
+{/* GENERATED-PORT from vault Writing/better-evals-abundance.md v0.6
+   (2026-08-31 — Scott's rulings executed: all BEV-RP adopts folded, title
+   carries the (talk recap) suffix per his call). The VAULT file is canonical:
+   do not hand-edit prose here. Video = Berkeley RDI's own published cut
+   (2026-08-12, 5:38). Shipped 2026-08-31 on his explicit deploy/push consent. */}
 
 On August 2, 2026, I gave a five-minute lightning talk at the Agentic AI
 Summit at UC Berkeley. The argument: better evals are the hinge between AI
@@ -39,9 +39,9 @@ Want to learn more about Talaria Scientific? Read
 
 Abundance through AI, in my mind, means new scientific discoveries: the kind
 that leads to new materials and more efficient energy, and from there to
-advances in medicine, aerospace, and more. It means living in a sci-fi
+advances in medicine and aerospace. It means living in a sci-fi
 future. The real promise of AI is improving quality of life (not just
-replacing repetitive work). And I believe that for the first time, we can
+replacing white-collar jobs). And I believe that for the first time, we can
 meaningfully accelerate science with AI.
 
 In grad school, the final step of any project was always parameter tuning,
@@ -52,9 +52,9 @@ space, chasing a slightly better result. Solving that problem more generally
 became my thesis, and then my first company. SigOpt was Bayesian optimization
 as a service: given an eval, find the parameters that make it go up. Over
 seven years we tuned recommender systems at Netflix, fraud models at Amex,
-early RL systems at OpenAI, and models at hedge funds managing about a
-trillion dollars, plus hundreds of academics through our free program. In
-2020 I sold the company to Intel.
+early RL systems at OpenAI, and models at hedge funds collectively managing
+about a trillion dollars, plus hundreds of academics who used our free
+program. In 2020 I sold the company to Intel.
 
 Somewhere in there I realized I was only solving half the problem, and I said
 it on stage the way I have said it for a decade: "The best thing about a
@@ -71,18 +71,20 @@ gap head-on as an AI testing company, with high dimensional statistical tests
 for chaotic and non-stationary AI systems. It failed: people didn't know what
 to test, didn't have the data before deployment, and shipped to production
 anyway. We pivoted to post-production agent analytics, finding
-[the evals you aren't monitoring for](https://distributional.com/blog/distributional-is-now-talaria).
+[the evals you should have written](https://distributional.com/blog/distributional-is-now-talaria).
 That failed too: a good idea, but more of a feature than a product. I still
 believe both approaches are obvious and inevitable; we just never crossed
 from [vision-market fit to product-market fit](/blog/make-all-new-mistakes-faster).
 
 So now I am doing what you should do when you have a problem: solving the
-version I care about most. Talaria Scientific is a multi-agent,
-multi-foundation-model harness for computational science research, built
-around domain-specific evals and guardrails rooted in real physics and math.
-The point is to spin the what-if flywheel faster: work that took me six
-months in grad school, done in six hours. It is in private beta now, it will
-be open source at NeurIPS, and it will always be free for open science.
+version I care about most. Talaria Scientific
+([Distributional's next chapter](https://distributional.com/blog/distributional-is-now-talaria))
+is a multi-agent, multi-foundation-model harness for computational science
+research, built around domain-specific evals and guardrails rooted in real
+physics and math. The point is to spin the what-if flywheel faster: work that
+took me six months in grad school, done in six hours. It is in private beta
+now, it will be open source at NeurIPS 2026, and it will always be free for
+open science.
 
 ## The talk, slide by slide
 
