@@ -1,87 +1,80 @@
 ---
 title: "How Better Evals Can Bring Abundance through Accelerated Scientific Discovery"
 description: "My five-minute lightning talk from the Agentic AI Summit at UC Berkeley: why evals are the hinge between AI and scientific abundance, how two failed products taught me where that hinge breaks, and what I'm building because of it. Video, slides, and a slide-by-slide walkthrough."
-date: 2026-08-06T17:00:00Z
+date: 2026-08-31T17:00:00Z
 format: video
 pillar: building-things
 kind: why
-videoId: "PLACEHOLDER"
-videoDuration: "PT5M34S"
+videoId: "1VO7hdEgSeo"
+videoDuration: "PT5M38S"
+videoUploadDate: 2026-08-12
 videoPoster: "/images/blog/better-evals-abundance/poster.jpg"
 ---
 
 import YouTubeFacade from "../../components/YouTubeFacade.astro";
 
-{/* GENERATED-DRAFT from vault Writing/better-evals-abundance.md v0.1
-   (2026-08-06). The VAULT file is canonical: do not hand-edit prose here;
-   posts re-port at Scott's LOCK. This is the FIRST talk-recap-format post
-   (blog-grammar.md § Talk-recap format) and the post that OPENS the video
-   lane on this site.
+{/* GENERATED-PORT from vault Writing/better-evals-abundance.md v0.5
+   (2026-08-31, reception panel closed; BEV-RP1..RP11 pending Scott's rulings —
+   re-port if any adopt). The VAULT file is canonical: do not hand-edit prose
+   here. Video = Berkeley RDI's own published cut (2026-08-12, 5:38).
+   date: flips to the real publish instant if deploy slips past 2026-08-31. */}
 
-   DEPLOY PLACEHOLDERS (all must be replaced before this lands on main —
-   the deploy checklist rides the vault piece note's "Next up"):
-   - videoId "PLACEHOLDER" -> the real YouTube id after Scott uploads
-     ~/Videos/agentic-ai-summit-2026/scott-clark-better-evals-agentic-ai-summit-2026.mp4
-   - videoUploadDate frontmatter -> add at upload
-   - date -> the real publish instant at deploy
-   - public/images/blog/better-evals-abundance/slide-*.png -> real renders
-     from the deck PDF export (deck 1DXltmtBioWwJ-gG9gpuGPw6nOaSwIbt9wk4U8_SUMoE)
-   - public/images/blog/better-evals-abundance/poster.jpg -> keep the
-     livestream frame or swap for the title-slide render (Scott's pick)
-   - public/slides/better-evals-abundance.pdf -> the real deck export */}
+On August 2, 2026, I gave a five-minute lightning talk at the Agentic AI
+Summit at UC Berkeley. The argument: better evals are the hinge between AI
+and real scientific abundance. I have spent 20 years working on versions of
+this problem, and [Talaria Scientific](https://talariasci.com) is the
+culmination of that work. The video is below; after it, the summary, then the
+whole talk slide by slide.
 
-On August 2 I gave a five-minute lightning talk in the agent evaluation
-session of the Agentic AI Summit at UC Berkeley. The argument: evals are the
-hinge between AI and real scientific abundance. I have spent 20 years working
-on versions of that hinge, I watched two products fail on it, and
-[Talaria Scientific](https://talariasci.com) is what I am building because of
-it. The video is below; after it, the short version in prose, then the whole
-talk slide by slide.
-
-<YouTubeFacade id="PLACEHOLDER" title="How Better Evals Can Bring Abundance through Accelerated Scientific Discovery (Agentic AI Summit 2026)" posterSrc="/images/blog/better-evals-abundance/poster.jpg" />
+<YouTubeFacade id="1VO7hdEgSeo" title="How Better Evals Can Bring Abundance through Accelerated Scientific Discovery (Agentic AI Summit 2026)" posterSrc="/images/blog/better-evals-abundance/poster.jpg" />
 
 Prefer to page through the deck itself? [Download the slides (PDF)](/slides/better-evals-abundance.pdf).
 
-## The short version
+Want to learn more about Talaria Scientific? Read
+[why I am building Talaria](https://talariasci.com/blog/why-im-building-talaria),
+[how it works](https://talariasci.com/blog/the-talaria-architecture), and
+[what this unlocks](https://talariasci.com/blog/the-right-model-for-the-job).
+
+## The summary
 
 Abundance through AI, in my mind, means new scientific discoveries: the kind
-that lead to new materials and more efficient energy, and from there to
+that leads to new materials and more efficient energy, and from there to
 advances in medicine, aerospace, and more. It means living in a sci-fi
-future. The real promise of AI is improving quality of life, not just
-replacing repetitive work. And I believe that for the first time, we can
+future. The real promise of AI is improving quality of life (not just
+replacing repetitive work). And I believe that for the first time, we can
 meaningfully accelerate science with AI.
 
-I have been trying to solve versions of this problem for the last 20 years,
-with varying degrees of success. In grad school, whatever the field I was in
-(finite elements, protein folding, quantum mechanics, metagenome assembly),
-the final step was always parameter tuning. We jokingly called it grad
-student descent: the least tenured person in the group, up late turning knobs
-in a high dimensional space, chasing a slightly better graph. Solving that
-problem more generally became my thesis, and then my first company. SigOpt
-was Bayesian optimization as a service: given an eval, find the parameters
-that make it go up. Over seven years we tuned recommender systems at Netflix,
-fraud models at Amex, early RL systems at OpenAI, and models at hedge funds
-managing about a trillion dollars, plus hundreds of academic papers through
-our free program. In 2020 I sold the company to Intel.
+In grad school, the final step of any project was always parameter tuning,
+whether I was working on finite elements, protein folding, quantum mechanics,
+or metagenome assembly. We jokingly called it grad student descent: the least
+tenured person in the group, up late turning knobs in a high dimensional
+space, chasing a slightly better result. Solving that problem more generally
+became my thesis, and then my first company. SigOpt was Bayesian optimization
+as a service: given an eval, find the parameters that make it go up. Over
+seven years we tuned recommender systems at Netflix, fraud models at Amex,
+early RL systems at OpenAI, and models at hedge funds managing about a
+trillion dollars, plus hundreds of academics through our free program. In
+2020 I sold the company to Intel.
 
-Somewhere in there I realized I was only solving half the problem. The best
-thing about a black box optimizer is that it will optimize any eval you tell
-it to. The worst part about a black box optimizer is that it will optimize
-exactly the eval you tell it to. You can build a very accurate fraud detector,
-when only 1% of transactions are fraud, by predicting that nothing is fraud.
-That gap between the eval you wrote and the thing you actually care about is
-a big part of why we are still a long way from typing /goal solve stable
-fusion containment into anything.
+Somewhere in there I realized I was only solving half the problem, and I said
+it on stage the way I have said it for a decade: "The best thing about a
+black box optimizer is that it will optimize any eval you tell it to. The
+worst part about a black box optimizer is that it will optimize exactly the
+eval you tell it to." When only 1% of transactions are fraud, you can build a
+very accurate fraud detector by predicting that nothing is fraud. That gap
+between the eval you wrote and the outcome you care about is a big part of
+why we are still a long way from typing `/goal solve stable fusion
+containment` into anything.
 
 I started [Distributional](https://distributional.com) in 2023 to attack that
-gap head on, with high dimensional statistical tests for chaotic and
-non-stationary AI systems. It failed: people didn't know what to test, didn't
-have the data before deployment, and shipped to production anyway. We pivoted
-to post-production agent analytics, finding
+gap head-on as an AI testing company, with high dimensional statistical tests
+for chaotic and non-stationary AI systems. It failed: people didn't know what
+to test, didn't have the data before deployment, and shipped to production
+anyway. We pivoted to post-production agent analytics, finding
 [the evals you aren't monitoring for](https://distributional.com/blog/distributional-is-now-talaria).
-That failed too: a good idea, but a feature, not a product. I still believe
-both approaches are obvious and inevitable; we just never crossed from
-[vision-market fit to product-market fit](/blog/make-all-new-mistakes-faster).
+That failed too: a good idea, but more of a feature than a product. I still
+believe both approaches are obvious and inevitable; we just never crossed
+from [vision-market fit to product-market fit](/blog/make-all-new-mistakes-faster).
 
 So now I am doing what you should do when you have a problem: solving the
 version I care about most. Talaria Scientific is a multi-agent,
@@ -93,17 +86,17 @@ be open source at NeurIPS, and it will always be free for open science.
 
 ## The talk, slide by slide
 
-Each slide, with what I said over it, lightly cleaned up from the livestream
-transcript. The deck is also [downloadable as a PDF](/slides/better-evals-abundance.pdf).
+Each slide below carries what I said over it, lightly cleaned up from the
+livestream transcript.
 
 ![Title slide: How Better Evals Can Bring Abundance through Accelerated Scientific Discovery. Scott Clark, Founder and CEO, with the Distributional and Talaria Scientific logos.](/images/blog/better-evals-abundance/slide-01.png)
 
 My name is Scott Clark. I'm co-founder and CEO of Distributional, and I'm
 building Talaria Scientific. This talk is about how you get better abundance.
 
-### What abundance with AI actually means
+### What abundance with AI means
 
-![Slide: what abundance with AI actually means, a four-step build from new scientific discoveries to living in a scifi future.](/images/blog/better-evals-abundance/slide-02.png)
+![Slide: what abundance with AI means, a four-step build from new scientific discoveries to living in a scifi future.](/images/blog/better-evals-abundance/slide-02.png)
 
 In my mind it's better scientific discoveries, which lead to new materials
 and more efficient energy, which lead to better medicine and more efficient
@@ -178,7 +171,7 @@ optimize exactly the eval you tell it to. You can build a very accurate fraud
 detector, when only 1% of your transactions are fraud, by predicting that
 nothing is fraud.
 
-### We are still a long way from /goal solve
+### We are still a long way from `/goal solve`
 
 ![Slide: we are still a long way from typing goal solve stable fusion containment.](/images/blog/better-evals-abundance/slide-10.png)
 
@@ -207,7 +200,7 @@ production anyway.
 
 So I pivoted the company. This is what you do: you're failing, pivot.
 Analytics. Catch the evals that are sneaking through your system, find the
-patterns in behavior that say here is the unknown unknown, the eval you
+patterns in behavior that say, "this is the unknown unknown," the eval you
 should have written.
 
 ![Slide: the pivot slide grayed out with It failed stamped over it. A feature, not a product, let alone a business or a startup.](/images/blog/better-evals-abundance/slide-14.png)
@@ -249,10 +242,11 @@ physics, or optimization, I would love to hear from you:
 [talariasci.com](https://talariasci.com). The longer version of the
 Distributional story is in
 [Making New Mistakes Faster as a Second-Time Founder](/blog/make-all-new-mistakes-faster),
-and the full case for what we're building is in
-[the Talaria manifesto](https://talariasci.com/blog/why-im-building-talaria).
+and the full case for what we're building is in the
+[Talaria manifesto](https://talariasci.com/blog/why-im-building-talaria).
 
-*Recorded at the Agentic AI Summit 2026 (UC Berkeley RDI), Compass Stage,
-August 2, 2026. Thanks to the summit crew for the livestream; the
-[full session stream](https://www.youtube.com/watch?v=1UrriPJRSPU&t=10369s)
-has my talk at 2:52:49.*
+*Recorded at the [Agentic AI Summit 2026](https://rdi.berkeley.edu/events/agentic-ai-summit-2026)
+(UC Berkeley RDI), Compass Stage, August 2, 2026. Thanks to the summit crew
+for the livestream; the
+[full session stream](https://www.youtube.com/watch?v=1UrriPJRSPU&t=9785s)
+has my talk at 2:43:05.*

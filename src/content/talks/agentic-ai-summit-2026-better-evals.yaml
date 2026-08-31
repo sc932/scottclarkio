@@ -1,7 +1,6 @@
-# videoUrl: add the YouTube watch URL when Scott uploads the spliced cut
-# (deploy checklist rides vault Writing/better-evals-abundance.md "Next up").
 title: "How Better Evals Can Bring Abundance through Accelerated Scientific Discovery"
 event: "Agentic AI Summit 2026, UC Berkeley"
 date: 2026-08-02
+videoUrl: "https://www.youtube.com/watch?v=1VO7hdEgSeo"
 slidesUrl: "/slides/better-evals-abundance.pdf"
 description: "Five-minute lightning talk in the agent evaluation and benchmarks session: evals as the hinge between AI and scientific abundance, the grad-student-descent arc from SigOpt through two failed products, and the computational science harness now being built on those lessons. Recap with video and slide-by-slide walkthrough at /blog/better-evals-abundance."
