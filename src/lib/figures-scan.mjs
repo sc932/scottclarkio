@@ -28,7 +28,7 @@ export function figureId(name) {
 
 // Astro decodes an MDX attribute once when it renders the page; the machine
 // surfaces (manifest, JSON-LD, <desc>) must carry the same text (glmflash r1 F6).
-const decodeEntities = (s) =>
+export const decodeEntities = (s) =>
   s.replace(/&(amp|lt|gt|quot|apos|#39);/g, (_m, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'" })[e]);
 const attr = (attrs, k) => {
   const v = attrs.match(new RegExp(`\\b${k}="([^"]*)"`))?.[1];
@@ -51,7 +51,8 @@ function maskCode(body) {
 export function scanBody(slug, body) {
   const out = [];
   const src = maskCode(body);
-  const re = /<Figure\s+([^>]*?)\/>|!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+  // The <Figure> attribute body may contain ">" inside a quoted value (fable r1 F13).
+  const re = /<Figure\s+((?:[^>"]|"[^"]*")*?)\/>|!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
   let m;
   while ((m = re.exec(src))) {
     if (m[1] !== undefined) {
@@ -61,6 +62,7 @@ export function scanBody(slug, body) {
       if (!name) continue;
       out.push({
         post: slug,
+        assetSlug: figSlug,
         kind: "svg",
         name,
         id: figureId(name),
@@ -78,12 +80,19 @@ export function scanBody(slug, body) {
       if (!url.startsWith("/") || url.startsWith("//")) continue;
       const file = basename(url);
       const name = file.slice(0, file.length - extname(file).length);
+      // The caption rehype adopts: the next non-blank line, italic-only, on its
+      // own, <= 400 chars (grok r1 F8 — the machine surfaces must agree with
+      // the page).
+      const after = src.slice(m.index + m[0].length);
+      const nxt = after.match(/^[ \t]*\n\s*\n([^\n]+)\n(?:\s*\n|$)/);
+      const ital = nxt?.[1]?.trim().match(/^(\*|_)(?!\1)(.+)\1$/);
+      const caption = ital && ital[2].length <= 400 ? ital[2] : "";
       out.push({
         post: slug,
         kind: "raster",
         name,
-        id: figureId(name),
-        caption: "",
+        id: figureId(file), // the FULL filename — the same input rehype uses (astra r1 F6)
+        caption,
         alt: decodeEntities(m[2] ?? ""),
         src: url,
         svgSource: null,
@@ -92,11 +101,12 @@ export function scanBody(slug, body) {
     }
   }
   const seen = new Set();
-  for (const f of out) {
+  out.forEach((f, i) => {
     if (seen.has(f.id))
       throw new Error(`figures: duplicate deep-link id "${f.id}" in post ${slug} (rename one asset)`);
     seen.add(f.id);
-  }
+    f.ordinal = i + 1; // 1-based position among the post's figures (label fallback for alt-less images)
+  });
   return out;
 }
 

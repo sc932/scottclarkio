@@ -31,7 +31,7 @@ import {
   pillarLabel,
 } from "./blog";
 import { figuresTitle, figuresDescription, figuresText, figureAttribution } from "./site-content";
-import { getFigures, attributionFor } from "./figures";
+import { getFigures, attributionFor, figureLabel } from "./figures";
 
 function rowToMd(row: ChronoRow, useCvBullets = false): string {
   const list = useCvBullets
@@ -330,8 +330,8 @@ export async function renderFiguresMd(): Promise<string> {
       const items = group
         .map((f) => {
           const a = attributionFor(f);
-          const label = f.caption || f.alt || f.name;
-          return `- [${label}](${f.pageUrl}) — ${f.kind === "svg" ? "SVG" : "image"}: ${f.downloadUrl} (${"\u00a9"} ${a.year} ${a.holder})`;
+          const label = figureLabel(f);
+          return `- [${label}](${f.pageUrl}) - ${f.kind === "svg" ? "SVG" : "image"}: ${f.downloadUrl} (${"\u00a9"} ${a.year} ${a.holder})`;
         })
         .join("\n");
       return `## ${first.postTitle}\n\n${first.pageUrl.split("#")[0]}\n\n${items}`;

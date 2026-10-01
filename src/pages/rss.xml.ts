@@ -18,15 +18,15 @@ function feedifyHtml(html: string): string {
       /<figure class="post-figure"[^>]*data-png="([^"]+)"[^>]*>[\s\S]*?<figcaption[^>]*>([\s\S]*?)<\/figcaption>\s*<\/figure>/g,
       (_m, png, caption) => {
         const cap = String(caption)
-          .replace(/<a class="fig-anchor[^"]*"[^>]*>[\s\S]*?<\/a>\s*/g, "")
+          .replace(/<a\s[^>]*class="[^"]*\bfig-anchor\b[^"]*"[^>]*>[\s\S]*?<\/a>\s*/g, "")
           .trim();
         const alt = cap.replace(/<[^>]+>/g, "");
         return `<figure><img src="${siteUrl}${png}" alt="${alt}" /><figcaption>${cap}</figcaption></figure>`;
       },
     )
     // Markdown-image figures (rehype-figure-focus): unwrap to a plain figure.
-    .replace(/<a class="fig-open"[^>]*>([\s\S]*?)<span class="fig-expand"[^>]*><\/span><\/a>/g, "$1")
-    .replace(/<a class="fig-anchor[^"]*"[^>]*>[\s\S]*?<\/a>\s*/g, "")
+    .replace(/<a\s[^>]*class="[^"]*\bfig-open\b[^"]*"[^>]*>([\s\S]*?)<span\s[^>]*class="[^"]*\bfig-expand\b[^"]*"[^>]*>\s*<\/span>\s*<\/a>/g, "$1")
+    .replace(/<a\s[^>]*class="[^"]*\bfig-anchor\b[^"]*"[^>]*>[\s\S]*?<\/a>\s*/g, "")
     // YouTubeFacade -> feed-safe anchor-wrapped poster (the sol S10 tooth:
     // no yt-facade/button/iframe/script markup may reach the feed). Astro's
     // scoped-style pass injects data-astro-cid-* into the tag, so match the

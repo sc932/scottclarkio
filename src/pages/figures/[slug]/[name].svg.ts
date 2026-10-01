@@ -9,9 +9,11 @@ import { getFigures, attributedSvg } from "../../../lib/figures";
 
 export async function getStaticPaths() {
   const figs = await getFigures();
+  const seen = new Set<string>();
   return figs
     .filter((f) => f.kind === "svg")
-    .map((fig) => ({ params: { slug: fig.post, name: fig.name }, props: { fig } }));
+    .filter((f) => (seen.has(f.download) ? false : (seen.add(f.download), true)))
+    .map((fig) => ({ params: { slug: fig.assetSlug ?? fig.post, name: fig.name }, props: { fig } }));
 }
 
 export const GET: APIRoute = async ({ props }) => {

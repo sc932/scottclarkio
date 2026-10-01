@@ -77,8 +77,10 @@ const download = `/figures/${slug}/${name}.svg`;
       <span class="fig-expand" aria-hidden="true"></span>
     </a>
   </div>
-  <figcaption id={`${id}-caption`}>
-    <a class="fig-anchor" href={`#${id}`}><span class="sr-only">Link to this figure</span></a>
-    {caption}
+  {/* The anchor's name is its aria-label (the CSS-counter "Figure N." is not
+      exposed to AT); the figure's name is the caption text alone (fable r1 F5). */}
+  <figcaption>
+    <a class="fig-anchor" href={`#${id}`} aria-label="Link to this figure"></a>
+    <span class="fig-cap" id={`${id}-caption`}>{caption}</span>
   </figcaption>
 </figure>

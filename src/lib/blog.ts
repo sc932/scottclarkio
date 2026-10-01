@@ -163,7 +163,7 @@ export function mdxBodyToPlainMd(post: Post): string {
   body = body.replace(/\{\/\*[\s\S]*?\*\/\}\n?/g, "");
   const attr = (attrs: string, k: string) =>
     attrs.match(new RegExp(`${k}="([^"]*)"`))?.[1];
-  body = body.replace(/<Figure\s+([^>]*?)\/>/g, (m, attrs) => {
+  body = body.replace(/<Figure\s+((?:[^>"]|"[^"]*")*?)\/>/g, (m, attrs) => {
     const slug = attr(attrs, "slug");
     const name = attr(attrs, "name");
     const caption = attr(attrs, "caption") ?? "";

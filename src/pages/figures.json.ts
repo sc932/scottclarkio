@@ -10,7 +10,7 @@ export const GET: APIRoute = async () => {
   const body = {
     site: siteUrl,
     publisher: figureAttribution.publisher,
-    attribution: `Figures are © ${figureAttribution.holder} and the work of ${figureAttribution.creator}; each download carries its attribution line and the link to its source post.`,
+    attribution: `Figures are © ${figureAttribution.holder} and the work of ${figureAttribution.creator}; house diagrams download as SVGs carrying an attribution footer and the link to their source post, other images as the original files.`,
     index: `${siteUrl}/figures`,
     count: figs.length,
     figures: figs.map((f) => {

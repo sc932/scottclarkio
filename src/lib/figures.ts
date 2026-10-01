@@ -7,13 +7,16 @@ import { readFileSync } from "node:fs";
 import { parseFrontmatter } from "@astrojs/markdown-remark";
 import { siteUrl, figureAttribution } from "./site-content";
 import { getPublishedPosts, postUrl, type Post } from "./blog";
-import { scanBody, figureId } from "./figures-scan.mjs";
+import { scanBody, figureId, decodeEntities } from "./figures-scan.mjs";
 import { attributeSvg } from "./figure-attribution.mjs";
 
 export { figureId };
 
 export interface Figure {
   post: string;
+  /** Post whose assets directory holds the SVG (usually the post itself). */
+  assetSlug?: string;
+  ordinal?: number;
   postTitle: string;
   postDate: Date;
   postUpdated?: Date;
@@ -69,9 +72,10 @@ export const getPostFigures = (post: Post) => figuresOf(post);
 
 /** Attribution inputs for one figure — the same values the gate recomputes. */
 export function attributionFor(fig: Figure) {
-  const svgTitle = fig.svgSource
-    ? figureSvgRaw(fig).match(/<title\b[^>]*>([\s\S]*?)<\/title>/)?.[1]?.trim()
-    : undefined;
+  // The SVG <title> is XML text — decode it, or esc() double-escapes it in
+  // the derivative's dc:title (fable r1 F10).
+  const rawTitle = fig.svgSource ? figureSvgRaw(fig).match(/<title\b[^>]*>([\s\S]*?)<\/title>/)?.[1]?.trim() : undefined;
+  const svgTitle = rawTitle === undefined ? undefined : decodeEntities(rawTitle);
   return {
     holder: figureAttribution.holder,
     publisher: figureAttribution.publisher,
@@ -95,6 +99,11 @@ export function attributedSvg(fig: Figure) {
   return r;
 }
 
+/** Human label: caption, else alt, else an ordinal within its post — never a
+ * raw file name (the archive's alt-less screenshots; fable r1 F9). */
+export const figureLabel = (fig: Figure) =>
+  fig.caption || fig.alt || `Image ${fig.ordinal ?? ""} from ${fig.postTitle}`.replace("  ", " ");
+
 /** Download filename offered by the focus view (`<a download>`). */
 export const downloadName = (fig: Figure) =>
   `${fig.post}-${fig.name}${fig.kind === "svg" ? ".svg" : fig.download.slice(fig.download.lastIndexOf("."))}`;
@@ -106,12 +115,13 @@ export function figureImageObject(fig: Figure) {
   return {
     "@type": "ImageObject",
     "@id": fig.pageUrl,
-    name: fig.caption || fig.alt || fig.name,
+    name: figureLabel(fig),
     ...(fig.caption && { caption: fig.caption, description: fig.caption }),
     contentUrl: fig.downloadUrl,
     ...(fig.kind === "svg" && { thumbnailUrl: fig.srcUrl, encodingFormat: "image/svg+xml" }),
     url: fig.pageUrl,
-    creator: { "@type": "Person", name: a.creator, url: "https://scottclark.io" },
+    // ONE identity per entity: reference the site graph's own node (fable r1 F4).
+    creator: figureAttribution.creatorNode,
     copyrightNotice: `© ${a.year} ${a.holder}`,
     copyrightYear: a.year,
     creditText: figureAttribution.publisher,

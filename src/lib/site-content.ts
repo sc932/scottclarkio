@@ -367,16 +367,18 @@ export const figureAttribution = {
   /** Publisher / credit line (the public name of this site). */
   publisher: "Scott Clark",
   siteName: "Scott Clark",
-  /** Author of the figures. */
+  /** Author of the figures (+ the schema.org type and canonical URL). */
   creator: "Scott Clark",
+  /** The JSON-LD creator — a reference to the site graph's own node. */
+  creatorNode: { "@id": "https://scottclark.io/#person" },
 };
 // /figures (2026-10-01): the index of every figure the blog renders.
 export const figuresTitle = "Figures";
 export const figuresDescription =
-  "Every diagram and figure from Scott Clark's writing, each linked to the essay it comes from and downloadable as a vector SVG that carries its attribution.";
+  "Every diagram and image from Scott Clark's writing, linked to its source essay. House diagrams download as attributed SVGs; other images download in their original format.";
 export const figuresText = {
   intro:
-    "Diagrams from the essays, in one place. Open any figure to zoom and pan, follow the link to read it in context, or download the SVG. Each download carries its copyright line and the link back to its source essay bottom-right.",
+    "Diagrams and images from the essays, in one place. Open any figure to zoom and pan, follow the link to read it in context, or download it. House diagrams download as SVGs with a copyright line and the link back to their source essay bottom-right; other images download as the original files.",
   attribution:
-    "Figures are the work of Scott Clark and are copyright Scott Clark. When you reuse one, keep the attribution line intact and link to the source essay.",
+    "Figures are the work of Scott Clark and are copyright Scott Clark. Each download carries its attribution and the link to its source essay.",
 };

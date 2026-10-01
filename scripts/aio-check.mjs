@@ -10,7 +10,7 @@
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseFrontmatter } from "@astrojs/markdown-remark";
-import { scanFigures } from "../src/lib/figures-scan.mjs";
+import { scanFigures, decodeEntities as decodeXmlEntities } from "../src/lib/figures-scan.mjs";
 import { attributeSvg } from "../src/lib/figure-attribution.mjs";
 
 // ---- per-repo config ----
@@ -211,6 +211,10 @@ function checkFigures(rel, html, slug) {
       failures.push(`${rel}: figure ${f.id} has no self-link anchor to #${f.id}`);
     if (!/aria-label="Open figure/.test(open[0]))
       failures.push(`${rel}: figure ${f.id} fig-open link lacks its accessible name`);
+    // The page shows a caption iff the scan has one (the machine surfaces
+    // carry the scan's caption — grok r1 F8).
+    if (exp && Boolean(exp.caption) !== /<figcaption\b/.test(f.body))
+      failures.push(`${rel}: figure ${f.id} caption presence differs between the page and the scan`);
   }
 }
 
@@ -243,20 +247,31 @@ for (const file of htmlFiles) {
     /<script[^>]*type="application\/ld\+json"[\s\S]*?<\/script>/g,
     "",
   );
-  const scriptCount = (nonLd.match(/<script[\s>]/gi) ?? []).length;
-  // First-party scripts, each keyed by the markup only its own page emits:
-  // the YouTube facade (post pages), the series-sort (blog listing), and the
-  // figure-focus view (any page rendering figures: posts + /figures,
-  // 2026-10-01). A page may carry exactly the scripts its markers call for —
-  // one each, nothing else (round-2 S24; listing sort).
-  const allowed = [
-    isPostPage && html.includes('class="yt-facade"'),
-    rel === "blog/index.html" && html.includes("<script data-pillar-sort>"),
-    html.includes("<dialog class=\"figfocus\"") && /<figure\b(?=[^>]*\bclass="post-figure)[^>]*\bdata-figure="fig-/.test(html),
-  ].filter(Boolean).length;
-  if (scriptCount !== allowed)
+  // First-party scripts, pinned by SHAPE (fable r1 F3 — a count against
+  // markers let any script impersonate a licensed one): each licensed script
+  // must match its own compiled form, inline or as the one hashed /_astro/
+  // module Astro emits past vite's inline limit (fable r1 F2); nothing else
+  // may ship. Licensed: the YouTube facade (post pages), the listing sort
+  // (blog index), the figure-focus view (pages with figures, 2026-10-01).
+  const scriptTags = nonLd.match(/<script[\s>][\s\S]*?<\/script>/gi) ?? [];
+  const moduleCarries = (tag, needle) => {
+    if (tag.includes(needle)) return true;
+    const src = tag.match(/\bsrc="([^"]+)"/)?.[1];
+    if (!src || !src.startsWith("/_astro/")) return false;
+    const p = join(DIST, src.replace(/^\//, ""));
+    return existsSync(p) && readFileSync(p, "utf8").includes(needle);
+  };
+  const figMarker =
+    html.includes('<dialog class="figfocus"') && /<figure\b(?=[^>]*\bclass="post-figure)[^>]*\bdata-figure="fig-/.test(html);
+  const licensed = [
+    isPostPage && html.includes('class="yt-facade"') ? (t) => /^<script type="module"/.test(t) && moduleCarries(t, "yt-facade") : null,
+    rel === "blog/index.html" && html.includes("<script data-pillar-sort>") ? (t) => t.startsWith("<script data-pillar-sort>") : null,
+    figMarker ? (t) => /^<script type="module"/.test(t) && moduleCarries(t, "figfocus") : null,
+  ].filter(Boolean);
+  const unmatched = scriptTags.filter((t) => !licensed.some((ok) => ok(t)));
+  if (scriptTags.length !== licensed.length || unmatched.length)
     failures.push(
-      `${rel}: ${scriptCount} non-JSON-LD <script>(s) but ${allowed} first-party script(s) licensed by the page's markup (facade / listing sort / figure focus)`,
+      `${rel}: ${scriptTags.length} non-JSON-LD <script>(s) vs ${licensed.length} licensed shape(s) (facade / listing sort / figure focus)${unmatched.length ? `; unmatched: ${unmatched.map((t) => t.slice(0, 80)).join(" | ")}` : ""}`,
     );
   // Figure focus contract (2026-10-01): a page with figures ships the focus
   // view; a page without them must not.
@@ -702,7 +717,8 @@ if (existsSync(SVG_SRC)) {
         continue;
       }
       const raw = readFileSync(f.svgSource, "utf8");
-      const title = raw.match(/<title\b[^>]*>([\s\S]*?)<\/title>/)?.[1]?.trim();
+      const rawTitle = raw.match(/<title\b[^>]*>([\s\S]*?)<\/title>/)?.[1]?.trim();
+      const title = rawTitle === undefined ? undefined : decodeXmlEntities(rawTitle);
       const date = asDate(f.postDate);
       const { svg, backgroundExtended } = attributeSvg(raw, {
         holder: figureAttribution.holder,
@@ -764,9 +780,13 @@ if (existsSync(SVG_SRC)) {
   if (!existsSync(manifestPath)) failures.push("figures: /figures.json did not build");
   else {
     const m = JSON.parse(readFileSync(manifestPath, "utf8"));
-    const ids = new Set((m.figures ?? []).map((f) => `${f.post?.slug}#${f.id}`));
-    if (!eqSets(ids, new Set(figuresExpected.map((f) => `${f.post}#${f.id}`))))
-      failures.push("figures: /figures.json figure set != the scan");
+    // Identities AND URLs, exact and duplicate-free (astra r1 F8).
+    const actual = (m.figures ?? []).map((f) => JSON.stringify([f.post?.slug, f.id, f.url, f.download]));
+    const expected = figuresExpected.map((f) =>
+      JSON.stringify([f.post, f.id, `${SITE_URL}/blog/${f.post}#${f.id}`, `${SITE_URL}${f.download}`]),
+    );
+    if (m.count !== expected.length || actual.length !== expected.length || new Set(actual).size !== actual.length || !eqSets(new Set(actual), new Set(expected)))
+      failures.push("figures: /figures.json identities or URLs != the scan (or duplicates)");
   }
   const twinPath = join(DIST, "figures.md");
   if (!existsSync(twinPath)) failures.push("figures: /figures.md twin did not build");

@@ -11,7 +11,7 @@ import {
   figuresDescription,
   figuresText,
 } from "../../lib/site-content";
-import { getFigures, figureImageObject, downloadName, attributionFor } from "../../lib/figures";
+import { getFigures, figureImageObject, downloadName, attributionFor, figureLabel } from "../../lib/figures";
 import { formatDate } from "../../lib/blog";
 
 // /figures (2026-10-01) — the index of every figure the blog renders, grouped
@@ -78,7 +78,7 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
           <div class="figures-grid">
             {group.map((f) => {
               const a = attributionFor(f);
-              const label = f.caption || f.alt || f.name;
+              const label = figureLabel(f);
               return (
                 <figure class="post-figure figures-card" id={`${f.post}--${f.id}`} data-figure={f.id} aria-labelledby={`${f.post}--${f.id}-caption`}>
                   <div class="fig-panel">
@@ -88,12 +88,12 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
                       data-download={downloadName(f)}
                       aria-label={`Open figure: ${label}`}
                     >
-                      <img src={f.src} alt={label} loading="lazy" decoding="async" />
+                      <img src={f.src} alt={f.alt || label} loading="lazy" decoding="async" />
                       <span class="fig-expand" aria-hidden="true" />
                     </a>
                   </div>
-                  <figcaption id={`${f.post}--${f.id}-caption`}>
-                    <span class="fig-cap">{f.caption || f.alt}</span>
+                  <figcaption>
+                    <span class="fig-cap" id={`${f.post}--${f.id}-caption`}>{label}</span>
                     <span class="figures-links">
                       <a href={`${postHref}#${f.id}`}>In the post</a>
                       <a href={f.download} download={downloadName(f)}>
@@ -110,7 +110,7 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
       );
     })}
   </article>
-  <FigureFocus />
+  {figures.length > 0 && <FigureFocus />}
 </SiteLayout>
 
 <style is:global>

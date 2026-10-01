@@ -6,15 +6,17 @@
 // enhancement over the `a.fig-open` links Figure.astro and
 // rehype-figure-focus.mjs emit — with JS off the links open the image itself.
 // Included ONCE per page that renders figures ([slug].astro, /figures); the
-// AIO gate allows exactly this script (marker: data-figfocus) on exactly
-// those pages. Dependency-free by design (the estate ships no JS libraries).
+// AIO gate licenses exactly this script — by SHAPE (the compiled module that
+// carries "figfocus", inline or as one hashed /_astro/ module) on exactly the
+// pages whose markup carries <dialog class="figfocus"> + a data-figure figure.
+// Dependency-free by design (the estate ships no JS libraries).
 // Zoom is LAYOUT zoom (the image's width), not a CSS transform: browsers
 // re-rasterize an SVG <img> at its layout size, so the diagram stays crisp at
 // 8x; pan is the stage's own scroll position, so one model serves mouse,
 // touch and keyboard.
 ---
 
-<dialog class="figfocus" id="figfocus" aria-label="Figure focus view" data-figfocus>
+<dialog class="figfocus" id="figfocus" aria-labelledby="figfocus-caption" data-figfocus>
   <div class="figfocus-bar">
     <p class="figfocus-caption" id="figfocus-caption"></p>
     <div class="figfocus-tools" role="group" aria-label="Figure tools">
@@ -28,7 +30,7 @@
     </div>
   </div>
   <div class="figfocus-stage" tabindex="0" aria-describedby="figfocus-caption">
-    <img class="figfocus-img" alt="" decoding="async" />
+    <img class="figfocus-img" alt="" decoding="async" draggable="false" />
   </div>
 </dialog>
 
@@ -54,15 +56,18 @@
     let suppressDbl = 0;
     let backPending = false;
     let lockY = 0;
+    let prevRestoration: ScrollRestoration = "auto";
 
     // Zoom about a stage point (px,py in stage client coords); pan = scroll.
-    const apply = (z: number, px?: number, py?: number) => {
+    // dx/dy: how far the anchor point itself moved since the last call (a
+    // pinch's midpoint) — translate first, then scale (astra r1 F3).
+    const apply = (z: number, px?: number, py?: number, dx = 0, dy = 0) => {
       z = Math.min(MAX, Math.max(MIN, z));
       const r = z / zoom;
       const ax = px ?? stage.clientWidth / 2;
       const ay = py ?? stage.clientHeight / 2;
-      const sl = (stage.scrollLeft + ax) * r - ax;
-      const st = (stage.scrollTop + ay) * r - ay;
+      const sl = (stage.scrollLeft + ax - dx) * r - ax;
+      const st = (stage.scrollTop + ay - dy) * r - ay;
       zoom = z;
       img.style.width = `${Math.round(fitW * zoom)}px`;
       stage.scrollLeft = sl;
@@ -76,8 +81,15 @@
       const cx = oldW ? (stage.scrollLeft + stage.clientWidth / 2) / oldW : 0;
       const cy = oldW ? (stage.scrollTop + stage.clientHeight / 2) / oldW : 0;
       fitW = Math.max(1, stage.clientWidth);
-      const newW = Math.round(fitW * zoom);
+      let newW = Math.round(fitW * zoom);
       img.style.width = `${newW}px`;
+      // A tall figure grows a classic vertical scrollbar AFTER the first
+      // measure; re-measure so "fit" never leaves a horizontal one (grok r1 F15).
+      if (stage.scrollHeight > stage.clientHeight && stage.clientWidth !== fitW) {
+        fitW = Math.max(1, stage.clientWidth);
+        newW = Math.round(fitW * zoom);
+        img.style.width = `${newW}px`;
+      }
       if (oldW) {
         stage.scrollLeft = cx * newW - stage.clientWidth / 2;
         stage.scrollTop = cy * newW - stage.clientHeight / 2;
@@ -102,27 +114,36 @@
       dl.href = a.href;
       dl.download = a.dataset.download ?? "";
       dl.textContent = /\.svg(\?|$)/i.test(a.href) ? "Download SVG" : "Download image";
+      // Every open owns ONE history entry — also when the page was reached
+      // via this very deep link, or Back would leave the page (astra r1 F1).
+      // Push BEFORE the body lock: the lock clamps window.scrollY to 0 and the
+      // browser persists that into the entry being left, so Back-on-close
+      // would restore the TOP of the page (fable r1 F1). Scroll restoration is
+      // ours while the dialog is open.
+      lockY = window.scrollY;
+      pushed = false;
+      if (figId) {
+        history.pushState({ figfocus: figId }, "", `#${figId}`);
+        pushed = true;
+      }
+      prevRestoration = history.scrollRestoration;
+      history.scrollRestoration = "manual";
       // iOS Safari scrolls the page behind a modal despite overflow:hidden on
       // html — pin the body and restore the offset on close (glmfull r1 F10).
-      lockY = window.scrollY;
       document.documentElement.classList.add("figfocus-open");
       document.body.style.top = `-${lockY}px`;
-      dlg.showModal();
+      if (!dlg.open) dlg.showModal();
       zoom = 1;
       refit();
       stage.scrollTo(0, 0);
       zoomOut.value = "100%";
-      pushed = false;
-      if (figId && location.hash !== `#${figId}`) {
-        history.pushState({ figfocus: figId }, "", `#${figId}`);
-        pushed = true;
-      }
       stage.focus({ preventScroll: true });
     };
     dlg.addEventListener("close", () => {
       document.documentElement.classList.remove("figfocus-open");
       document.body.style.top = "";
       window.scrollTo(0, lockY);
+      history.scrollRestoration = prevRestoration;
       img.removeAttribute("src");
       if (pushed && !viaHistory) {
         backPending = true;
@@ -190,6 +211,8 @@
     const ptrs = new Map<number, { x: number; y: number }>();
     let pinch0 = 0;
     let zoom0 = 1;
+    let pinchX = 0;
+    let pinchY = 0;
     let lastX = 0;
     let lastY = 0;
     let lastTap = 0;
@@ -204,6 +227,8 @@
         const [a, b] = [...ptrs.values()];
         pinch0 = Math.hypot(a.x - b.x, a.y - b.y) || 1;
         zoom0 = zoom;
+        pinchX = (a.x + b.x) / 2;
+        pinchY = (a.y + b.y) / 2;
       } else {
         lastX = e.clientX;
         lastY = e.clientY;
@@ -217,7 +242,11 @@
       if (ptrs.size === 2) {
         const [a, b] = [...ptrs.values()];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
-        apply((zoom0 * d) / pinch0, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+        const mx = (a.x + b.x) / 2;
+        const my = (a.y + b.y) / 2;
+        apply((zoom0 * d) / pinch0, mx - r.left, my - r.top, mx - pinchX, my - pinchY);
+        pinchX = mx;
+        pinchY = my;
       } else {
         stage.scrollLeft -= e.clientX - lastX;
         stage.scrollTop -= e.clientY - lastY;
@@ -245,6 +274,8 @@
         } else lastTap = now;
       }
     };
+    // The browser's own image drag would cancel the pan (astra r1 F2).
+    stage.addEventListener("dragstart", (e) => e.preventDefault());
     stage.addEventListener("pointerup", lift);
     stage.addEventListener("pointercancel", lift);
     // `dblclick` is a MouseEvent on every engine (no pointerType): gate it by
@@ -313,7 +344,7 @@
     width: 100%;
   }
   .figfocus {
-    width: 100vw;
+    width: 100%;
     height: 100vh;
     height: 100dvh;
     max-width: none;
@@ -412,6 +443,9 @@
     width: 100%;
     max-width: none;
     height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+    -webkit-touch-callout: none;
   }
   @media (max-width: 640px) {
     .figfocus-bar {

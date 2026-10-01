@@ -127,15 +127,12 @@ export default function rehypeFigureFocus() {
         const anchor = (extraClass) => ({
           type: "element",
           tagName: "a",
-          properties: { className: ["fig-anchor", ...(extraClass ? [extraClass] : [])], href: `#${id}` },
-          children: [
-            {
-              type: "element",
-              tagName: "span",
-              properties: { className: ["sr-only"] },
-              children: [{ type: "text", value: "Link to this figure" }],
-            },
-          ],
+          properties: {
+            className: ["fig-anchor", ...(extraClass ? [extraClass] : [])],
+            href: `#${id}`,
+            ariaLabel: "Link to this figure",
+          },
+          children: [],
         });
         const open = {
           type: "element",
@@ -175,8 +172,11 @@ export default function rehypeFigureFocus() {
                   {
                     type: "element",
                     tagName: "figcaption",
-                    properties: { id: `${id}-caption` },
-                    children: [anchor(null), { type: "text", value: " " }, ...captionChildren],
+                    children: [
+                      anchor(null),
+                      { type: "text", value: " " },
+                      { type: "element", tagName: "span", properties: { className: ["fig-cap"], id: `${id}-caption` }, children: captionChildren },
+                    ],
                   },
                 ]
               : []),

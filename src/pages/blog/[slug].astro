@@ -403,6 +403,11 @@ const breadcrumbTrail = [
     counter-increment: figure;
     scroll-margin-top: 72px;
   }
+  /* Only captioned figures carry a visible "Figure N." — captionless images
+     don't count, so the labels run 1, 2, 3 without gaps (fable r1 F6). */
+  .post-figure--img:not([aria-labelledby]) {
+    counter-increment: none;
+  }
   .post-figure .fig-open {
     position: relative;
     display: block;
@@ -459,8 +464,12 @@ const breadcrumbTrail = [
      (5.7:1 on white), clear of the expand bracket bottom-right (glmflash r1 F2). */
   .fig-anchor--corner {
     position: absolute;
-    left: 10px;
-    bottom: 6px;
+    left: 4px;
+    bottom: 0;
+    display: grid;
+    place-items: center;
+    min-width: 24px;
+    min-height: 24px;
     font-size: 13px;
     line-height: 1;
     color: var(--mute);
