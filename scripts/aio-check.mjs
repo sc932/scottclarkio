@@ -184,7 +184,9 @@ for (const f of figuresExpected) {
   if (!figuresByPost.has(f.post)) figuresByPost.set(f.post, []);
   figuresByPost.get(f.post).push(f);
 }
-const figureRe = /<figure class="post-figure[^"]*" id="(fig-[^"]+)"[^>]*>([\s\S]*?)<\/figure>/g;
+// Attribute-order agnostic (deepseek r1 F2): class and id may serialize in
+// either order; the body is everything to the closing tag.
+const figureRe = /<figure\b(?=[^>]*\bclass="post-figure[^"]*")[^>]*\bid="(fig-[^"]+)"[^>]*>([\s\S]*?)<\/figure>/g;
 function checkFigures(rel, html, slug) {
   const expected = figuresByPost.get(slug) ?? [];
   const found = [...html.matchAll(figureRe)].map((m) => ({ id: m[1], body: m[2] }));
@@ -196,7 +198,7 @@ function checkFigures(rel, html, slug) {
     );
   for (const f of found) {
     const exp = expected.find((e) => e.id === f.id);
-    const open = f.body.match(/<a class="fig-open" href="([^"]+)"[^>]*>/);
+    const open = f.body.match(/<a\b(?=[^>]*\bclass="fig-open")[^>]*\bhref="([^"]+)"[^>]*>/);
     if (!open) {
       failures.push(`${rel}: figure ${f.id} has no fig-open link`);
       continue;
@@ -250,7 +252,7 @@ for (const file of htmlFiles) {
   const allowed = [
     isPostPage && html.includes('class="yt-facade"'),
     rel === "blog/index.html" && html.includes("<script data-pillar-sort>"),
-    html.includes("<dialog class=\"figfocus\"") && /<figure class="post-figure[^"]*" id="fig-/.test(html),
+    html.includes("<dialog class=\"figfocus\"") && /<figure\b(?=[^>]*\bclass="post-figure)[^>]*\bid="fig-/.test(html),
   ].filter(Boolean).length;
   if (scriptCount !== allowed)
     failures.push(
@@ -258,7 +260,7 @@ for (const file of htmlFiles) {
     );
   // Figure focus contract (2026-10-01): a page with figures ships the focus
   // view; a page without them must not.
-  const figCount = (html.match(/<figure class="post-figure[^"]*" id="fig-/g) ?? []).length;
+  const figCount = (html.match(/<figure\b(?=[^>]*\bclass="post-figure)[^>]*\bid="fig-/g) ?? []).length;
   if (figCount > 0 && !html.includes('<dialog class="figfocus"'))
     failures.push(`${rel}: ${figCount} figure(s) but no figure-focus view`);
   if (figCount === 0 && html.includes('<dialog class="figfocus"'))
@@ -593,7 +595,7 @@ if (distPosts.length) {
 for (const bad of ["&lt;Figure", "&lt;YouTubeFacade", 'src=&quot;/'])
   if (rssXml.includes(bad)) failures.push(`rss.xml contains ${bad} (unrendered/unabsolutized)`);
 // Feed-safety tooth (sol S10): facade markup must never reach the feed.
-for (const bad of ["yt-facade", "<button", "&lt;button", "<iframe", "&lt;iframe", "data-png="])
+for (const bad of ["yt-facade", "<button", "&lt;button", "<iframe", "&lt;iframe", "data-png=", "fig-open", "fig-anchor", "fig-expand", "figfocus", "<dialog", "&lt;dialog"])
   if (rssXml.includes(bad))
     failures.push(`rss.xml contains "${bad}" — facade markup is not feed-safe (sol S10)`);
 
@@ -717,7 +719,7 @@ if (existsSync(SVG_SRC)) {
         failures.push(`figures: ${f.download} lacks the attribution footer (holder + deep link)`);
       if (!built.includes("<dc:source>") || !built.includes("<dc:rights>"))
         failures.push(`figures: ${f.download} lacks Dublin Core metadata`);
-      if (/<script\b|\son[a-z]+\s*=/i.test(built)) failures.push(`figures: ${f.download} carries script/handlers`);
+      if (/<script\b|<foreignObject\b|\son[a-z]+\s*=/i.test(built)) failures.push(`figures: ${f.download} carries script/handlers/foreignObject`);
     } else if (!existsSync(join(DIST, f.download.replace(/^\//, "")))) {
       failures.push(`figures: image ${f.download} (post ${f.post}) did not build`);
     }

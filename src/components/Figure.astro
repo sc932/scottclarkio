@@ -32,6 +32,11 @@ const svgs = import.meta.glob("/src/assets/blog/**/*.svg", {
 const key = `/src/assets/blog/${slug}/${name}.svg`;
 const raw = svgs[key];
 if (!raw) throw new Error(`Figure SVG not found: ${key}`);
+// The controlled grammar always carries a caption (the "Figure N." self-link
+// lives in it); a captionless image is a MARKDOWN image (rehype-figure-focus
+// puts its anchor in the plate corner) — fail loud rather than emit an empty
+// figcaption (inkling r1 F2).
+if (!caption || !caption.trim()) throw new Error(`Figure ${slug}/${name}: caption is required`);
 
 // a11y: mark the root element as an image with an accessible name.
 // Full attribute escaping (integrity, not XSS — SVGs and captions are

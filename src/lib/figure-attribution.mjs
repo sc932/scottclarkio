@@ -20,7 +20,7 @@ const esc = (s) =>
 export function svgCanvas(raw) {
   const root = raw.match(/<svg\b[^>]*>/);
   if (!root) throw new Error("attributeSvg: no <svg> root");
-  const vb = root[0].match(/\bviewBox="\s*([-\d.]+)[ ,]+([-\d.]+)[ ,]+([-\d.]+)[ ,]+([-\d.]+)\s*"/);
+  const vb = root[0].match(/\bviewBox=["']\s*([-\d.]+)[ ,]+([-\d.]+)[ ,]+([-\d.]+)[ ,]+([-\d.]+)\s*["']/);
   if (vb) return { root: root[0], x: +vb[1], y: +vb[2], w: +vb[3], h: +vb[4] };
   const w = root[0].match(/\bwidth="([\d.]+)"/)?.[1];
   const h = root[0].match(/\bheight="([\d.]+)"/)?.[1];
@@ -52,12 +52,12 @@ export function attributeSvg(raw, opts) {
 
   // 1. Grow the canvas.
   let root = c.root.replace(
-    /\bviewBox="[^"]*"/,
-    `viewBox="${c.x} ${c.y} ${c.w} ${newH}"`,
+    /\bviewBox=["'][^"']*["']/,
+    () => `viewBox="${c.x} ${c.y} ${c.w} ${newH}"`,
   );
   if (!/\bviewBox=/.test(root)) root = root.replace(/<svg\b/, `<svg viewBox="0 0 ${c.w} ${newH}"`);
   root = root.replace(/\s(?:width|height)="[^"]*"/g, "");
-  let out = raw.replace(c.root, root);
+  let out = raw.replace(c.root, () => root); // function form: a `$` in an attribute is inert (glmflash r1 F4)
 
   // 2. Extend the first full-canvas background rect (if any) over the band.
   const rectRe = /<rect\b[^>]*>/g;
@@ -69,13 +69,18 @@ export function attributeSvg(raw, opts) {
       const v = r.match(new RegExp(`\\b${k}="([^"]*)"`))?.[1];
       return v === undefined ? d : v;
     };
+    // The background is the rect at the canvas ORIGIN with the canvas size
+    // (numeric equality, deepseek r1 F8 — a stray 0,0 rect on a shifted canvas
+    // must not pass).
+    const w = String(num("width", ""));
+    const h = String(num("height", ""));
     const full =
-      [String(c.x), "0"].includes(String(num("x", c.x))) &&
-      [String(c.y), "0"].includes(String(num("y", c.y))) &&
-      [String(c.w), "100%"].includes(String(num("width", ""))) &&
-      [String(c.h), "100%"].includes(String(num("height", "")));
+      Number(num("x", c.x)) === c.x &&
+      Number(num("y", c.y)) === c.y &&
+      (Number(w) === c.w || w === "100%") &&
+      (Number(h) === c.h || h === "100%");
     if (full) {
-      const grown = r.replace(/\bheight="[^"]*"/, `height="${newH}"`);
+      const grown = r.replace(/\bheight="[^"]*"/, () => `height="${newH}"`);
       out = out.slice(0, m.index) + grown + out.slice(m.index + r.length);
       extended = true;
       break;

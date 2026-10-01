@@ -26,7 +26,14 @@ export function figureId(name) {
   return `fig-${base}`;
 }
 
-const attr = (attrs, k) => attrs.match(new RegExp(`\\b${k}="([^"]*)"`))?.[1];
+// Astro decodes an MDX attribute once when it renders the page; the machine
+// surfaces (manifest, JSON-LD, <desc>) must carry the same text (glmflash r1 F6).
+const decodeEntities = (s) =>
+  s.replace(/&(amp|lt|gt|quot|apos|#39);/g, (_m, e) => ({ amp: "&", lt: "<", gt: ">", quot: '"', apos: "'", "#39": "'" })[e]);
+const attr = (attrs, k) => {
+  const v = attrs.match(new RegExp(`\\b${k}="([^"]*)"`))?.[1];
+  return v === undefined ? undefined : decodeEntities(v);
+};
 
 /** Strip fenced code + inline code so sample markup never counts as a figure
  * (the same masking the twin renderer uses). */
@@ -73,7 +80,7 @@ export function scanBody(slug, body) {
         name,
         id: figureId(name),
         caption: "",
-        alt: m[2] ?? "",
+        alt: decodeEntities(m[2] ?? ""),
         src: url,
         svgSource: null,
         download: url,

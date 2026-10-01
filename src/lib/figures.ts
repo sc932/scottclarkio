@@ -109,6 +109,8 @@ export function figureImageObject(fig: Figure) {
     copyrightNotice: `© ${a.year} ${a.holder}`,
     copyrightYear: a.year,
     creditText: figureAttribution.publisher,
-    isPartOf: { "@id": fig.pageUrl.split("#")[0] },
+    // The post's BlogPosting node is `<post url>#article` (blog.ts) — a bare
+    // URL would dangle (glmflash r1 F3).
+    isPartOf: { "@id": `${fig.pageUrl.split("#")[0]}#article` },
   };
 }

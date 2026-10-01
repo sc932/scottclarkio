@@ -38,6 +38,27 @@ export function imageSize(file) {
       }
       if (chunk === "VP8X") return { width: b.readUIntLE(24, 3) + 1, height: b.readUIntLE(27, 3) + 1 };
     }
+    // AVIF (ISOBMFF): the primary item's `ispe` property — meta (a FullBox) ->
+    // iprp -> ipco -> ispe; ambiguous (two differing boxes) -> null.
+    if (b.length > 16 && b.toString("ascii", 4, 8) === "ftyp" && /avif|avis|mif1/.test(b.toString("ascii", 8, 16))) {
+      const found = [];
+      const walk = (start, end) => {
+        let i = start;
+        while (i + 8 <= end) {
+          let sz = b.readUInt32BE(i);
+          const type = b.toString("ascii", i + 4, i + 8);
+          let hdr = 8;
+          if (sz === 1) { sz = Number(b.readBigUInt64BE(i + 8)); hdr = 16; } else if (sz === 0) sz = end - i;
+          if (sz < hdr) return;
+          if (type === "ispe" && i + hdr + 12 <= b.length) found.push([b.readUInt32BE(i + hdr + 4), b.readUInt32BE(i + hdr + 8)]);
+          if (type === "meta" || type === "iprp" || type === "ipco") walk(i + hdr + (type === "meta" ? 4 : 0), Math.min(i + sz, end));
+          i += sz;
+        }
+      };
+      walk(0, b.length);
+      const uniq = [...new Set(found.map((d) => d.join("x")))];
+      return uniq.length === 1 ? { width: found[0][0], height: found[0][1] } : null;
+    }
     if (b[0] === 0xff && b[1] === 0xd8) {
       let i = 2;
       while (i + 9 < b.length) {
@@ -88,9 +109,12 @@ export default function rehypeFigureFocus() {
         let j = i + 1;
         while (j < kids.length && kids[j].type === "text" && !kids[j].value.trim()) j++;
         const next = kids[j];
+        // Convention: an italic-only paragraph right after an image IS its
+        // caption; a long italic passage is prose, not a caption (cap 400
+        // chars — inkling r1 F3).
         if (isEl(next, "p")) {
           const ni = next.children.filter((c) => !(c.type === "text" && !c.value.trim()));
-          if (ni.length === 1 && isEl(ni[0], "em")) captionChildren = ni[0].children;
+          if (ni.length === 1 && isEl(ni[0], "em") && text(ni[0]).length <= 400) captionChildren = ni[0].children;
         }
         const dims = imageSize(join(process.cwd(), "public", decodeURIComponent(src)));
         img.properties = {

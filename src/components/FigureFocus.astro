@@ -50,6 +50,8 @@
     let opener: HTMLElement | null = null;
     let pushed = false;
     let viaHistory = false;
+    let lastPointerType = "";
+    let suppressDbl = 0;
 
     // Zoom about a stage point (px,py in stage client coords); pan = scroll.
     const apply = (z: number, px?: number, py?: number) => {
@@ -65,9 +67,19 @@
       stage.scrollTop = st;
       zoomOut.value = `${Math.round(zoom * 100)}%`;
     };
+    // Re-fit on resize/rotation keeping the stage's center point on the same
+    // spot of the figure (deepseek r1 F4).
     const refit = () => {
+      const oldW = parseFloat(img.style.width) || 0;
+      const cx = oldW ? (stage.scrollLeft + stage.clientWidth / 2) / oldW : 0;
+      const cy = oldW ? (stage.scrollTop + stage.clientHeight / 2) / oldW : 0;
       fitW = Math.max(1, stage.clientWidth);
-      img.style.width = `${Math.round(fitW * zoom)}px`;
+      const newW = Math.round(fitW * zoom);
+      img.style.width = `${newW}px`;
+      if (oldW) {
+        stage.scrollLeft = cx * newW - stage.clientWidth / 2;
+        stage.scrollTop = cy * newW - stage.clientHeight / 2;
+      }
     };
 
     const open = (a: HTMLAnchorElement) => {
@@ -80,6 +92,9 @@
       cap.textContent = text.replace(/^\s*Link to this figure\s*/, "").trim() || alt;
       img.alt = alt;
       img.removeAttribute("style");
+      img.onerror = () => {
+        cap.textContent = "The image failed to load.";
+      };
       img.src = a.href;
       dl.href = a.href;
       dl.download = a.dataset.download ?? "";
@@ -128,7 +143,10 @@
       else if (act === "close") dlg.close();
     });
     linkBtn.addEventListener("click", async () => {
-      const url = `${location.origin}${location.pathname}#${figId}`;
+      // Prefer the figure's in-post deep link (the /figures cards carry one);
+      // on a post the fallback is that same URL (glmflash r1 F10).
+      const inPost = opener?.closest("figure")?.querySelector<HTMLAnchorElement>(`a[href$="#${figId}"]:not(.fig-anchor)`);
+      const url = inPost ? new URL(inPost.getAttribute("href") ?? "", location.origin).href : `${location.origin}${location.pathname}#${figId}`;
       try {
         await navigator.clipboard.writeText(url);
         linkBtn.textContent = "Copied";
@@ -157,6 +175,7 @@
     const rectOf = () => stage.getBoundingClientRect();
     stage.addEventListener("pointerdown", (e) => {
       if (e.button !== 0) return;
+      lastPointerType = e.pointerType;
       stage.setPointerCapture(e.pointerId);
       ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
       if (ptrs.size === 2) {
@@ -200,13 +219,17 @@
           const r = rectOf();
           apply(zoom > 1.01 ? 1 : 2.5, e.clientX - r.left, e.clientY - r.top);
           lastTap = 0;
+          suppressDbl = Date.now();
         } else lastTap = now;
       }
     };
     stage.addEventListener("pointerup", lift);
     stage.addEventListener("pointercancel", lift);
+    // `dblclick` is a MouseEvent on every engine (no pointerType): gate it by
+    // the last pointer type + the touch detector's timestamp (deepseek r1 F1,
+    // glmflash r1 F1).
     stage.addEventListener("dblclick", (e) => {
-      if ((e as MouseEvent).detail && (e as PointerEvent).pointerType === "touch") return;
+      if (lastPointerType === "touch" || Date.now() - suppressDbl < 700) return;
       const r = rectOf();
       apply(zoom > 1.01 ? 1 : 2.5, e.clientX - r.left, e.clientY - r.top);
     });

@@ -455,14 +455,15 @@ const breadcrumbTrail = [
   .fig-anchor:hover {
     color: var(--accent);
   }
+  /* Captionless images: the deep-link "#" sits bottom-LEFT at full --mute
+     (5.7:1 on white), clear of the expand bracket bottom-right (glmflash r1 F2). */
   .fig-anchor--corner {
     position: absolute;
-    right: 8px;
+    left: 10px;
     bottom: 6px;
     font-size: 13px;
     line-height: 1;
     color: var(--mute);
-    opacity: 0.6;
   }
   .fig-anchor--corner::before {
     content: "#";
