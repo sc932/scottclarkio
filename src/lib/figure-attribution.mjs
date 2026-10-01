@@ -1,7 +1,8 @@
 // figure-attribution.mjs — compose the DOWNLOADABLE version of a house SVG
-// figure: the committed drawing plus an attribution footer (copyright line +
-// the figure's deep-link URL, bottom-right) and machine-readable Dublin Core
-// metadata. The inline page copy stays clean; the focus view and the
+// figure: the committed drawing plus a footer band carrying the CAPTION
+// (wrapped, left-aligned — Scott, 2026-10-01: "The download should include the
+// caption") and an attribution line (copyright + the figure's deep-link URL,
+// bottom-right), plus machine-readable Dublin Core metadata. The inline page copy stays clean; the focus view and the
 // download serve this derivative (built by src/pages/figures/[slug]/[name].svg.ts,
 // verified byte-for-byte by the AIO gate through this same function).
 //
@@ -31,6 +32,30 @@ export function svgCanvas(raw) {
 /** Footer type size in user units: ~1% of the canvas width, clamped so the
  * line stays legible on narrow figures and quiet on wide ones. */
 export const footerFontSize = (w) => Math.min(18, Math.max(11, Math.round(w / 95)));
+/** Caption type size: larger than the attribution line (~1.4 % of the width). */
+export const captionFontSize = (w) => Math.min(24, Math.max(13, Math.round(w / 70)));
+
+/** Greedy word wrap for SVG <text> (no auto-wrap in SVG): DejaVu Sans averages
+ * ~0.58 em per glyph; 0.6 keeps every line inside the padding. */
+export function wrapCaption(text, maxWidth, fontSize) {
+  const perLine = Math.max(8, Math.floor(maxWidth / (fontSize * 0.6)));
+  const lines = [];
+  let line = "";
+  for (const word of String(text).split(/\s+/).filter(Boolean)) {
+    if (!line) line = word;
+    else if ((line + " " + word).length <= perLine) line += " " + word;
+    else {
+      lines.push(line);
+      line = word;
+    }
+    while (line.length > perLine) {
+      lines.push(line.slice(0, perLine));
+      line = line.slice(perLine);
+    }
+  }
+  if (line) lines.push(line);
+  return lines;
+}
 
 /**
  * @param raw   committed SVG source (the inline-page copy)
@@ -44,8 +69,12 @@ export function attributeSvg(raw, opts) {
   const display = opts.display ?? url.replace(/^https?:\/\//, "");
   const c = svgCanvas(raw);
   const fs = footerFontSize(c.w);
-  const band = Math.round(fs * 2.4);
   const pad = Math.round(fs * 1.2);
+  const fsC = captionFontSize(c.w);
+  const lineH = Math.round(fsC * 1.35);
+  const captionLines = opts.caption ? wrapCaption(opts.caption, c.w - 2 * pad, fsC) : [];
+  // Band: top padding + caption block + attribution line + bottom padding.
+  const band = Math.round(fs * 2.4) + (captionLines.length ? captionLines.length * lineH + Math.round(fsC * 0.6) : 0);
   const newH = c.h + band;
   if (/\bid="fig-attribution"/.test(raw))
     throw new Error("attributeSvg: source already carries id fig-attribution");
@@ -57,6 +86,9 @@ export function attributeSvg(raw, opts) {
   );
   if (!/\bviewBox=/.test(root)) root = root.replace(/<svg\b/, `<svg viewBox="0 0 ${c.w} ${newH}"`);
   root = root.replace(/\s(?:width|height)="[^"]*"/g, "");
+  // Explicit dimensions (= the viewBox): image consumers read exact intrinsic
+  // sizes (the focus view's fit math), and the file opens at natural size.
+  root = root.replace(/<svg\b/, () => `<svg width="${c.w}" height="${newH}"`);
   let out = raw.replace(c.root, () => root); // function form: a `$` in an attribute is inert (glmflash r1 F4)
 
   // 2. Extend the first full-canvas background rect (if any) over the band.
@@ -119,12 +151,18 @@ export function attributeSvg(raw, opts) {
     out = out.slice(0, at) + desc + meta + out.slice(at);
   }
 
-  // 4. The footer band: hairline + one right-aligned line, URL as a live link.
+  // 4. The footer band: hairline, the caption (wrapped, left-aligned, the
+  //    house title slate), then one right-aligned attribution line with the
+  //    URL as a live link.
   const y = c.y + c.h;
   const baseline = y + band - Math.round(fs * 0.85);
+  const captionText = captionLines
+    .map((ln, i) => `<text x="${c.x + pad}" y="${y + pad + Math.round(fsC * 0.9) + i * lineH}" font-size="${fsC}" fill="#334155">${esc(ln)}</text>`)
+    .join("");
   const footer =
     `<g id="fig-attribution" font-size="${fs}" fill="#6b7280">` +
     `<line x1="${c.x}" y1="${y + 0.5}" x2="${c.x + c.w}" y2="${y + 0.5}" stroke="#e5e7eb" stroke-width="1"/>` +
+    captionText +
     `<text x="${c.x + c.w - pad}" y="${baseline}" text-anchor="end">` +
     `${esc(`© ${year} ${holder}`)}  ·  ` +
     `<a href="${esc(url)}"><tspan fill="#4b5563">${esc(display)}</tspan></a>` +
@@ -132,5 +170,5 @@ export function attributeSvg(raw, opts) {
   const close = out.lastIndexOf("</svg>");
   if (close < 0) throw new Error("attributeSvg: no </svg>");
   out = out.slice(0, close) + footer + "\n" + out.slice(close);
-  return { svg: out, width: c.w, height: newH, band, fontSize: fs, backgroundExtended: extended };
+  return { svg: out, width: c.w, height: newH, band, fontSize: fs, captionLines: captionLines.length, backgroundExtended: extended };
 }

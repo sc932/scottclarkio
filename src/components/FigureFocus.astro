@@ -1,37 +1,40 @@
 ---
 // Figure focus (2026-10-01) — the in-page focus view for every figure on a
-// page: full width, zoom (buttons, ctrl/cmd+wheel = trackpad pinch, touch
-// pinch, double-tap), pan (drag, touch, scroll), download (the attributed
-// SVG for house figures), copy-link, Esc/Back closes. Progressive
-// enhancement over the `a.fig-open` links Figure.astro and
-// rehype-figure-focus.mjs emit — with JS off the links open the image itself.
+// page. Default = the WHOLE figure fitted to the screen (both axes, centered);
+// zoom runs from 25 % to 800 % of that fit (buttons, ctrl/cmd+wheel = trackpad
+// pinch, touch pinch, double-tap), pan by drag / touch / scroll; the full
+// caption sits under the stage, readable; download (the attributed SVG with
+// the caption burned in, for house figures), copy-link, Esc/Back close.
+// Scott's review folds (2026-10-01): fit means fit, minus works below fit,
+// the caption is never clipped, the download carries the caption.
+// The stage shows the CLEAN figure: the page's inline <svg> is cloned (vector
+// at every zoom, no fetch; ids suffixed so url(#…) refs stay unambiguous) or
+// the raster <img>; the download link points at the derivative.
+// Progressive enhancement over the `a.fig-open` links Figure.astro and
+// rehype-figure-focus.mjs emit — with JS off the links open the download.
 // Included ONCE per page that renders figures ([slug].astro, /figures); the
-// AIO gate licenses exactly this script — by SHAPE (the compiled module that
+// AIO gate licenses exactly this script by SHAPE (the compiled module that
 // carries "figfocus", inline or as one hashed /_astro/ module) on exactly the
 // pages whose markup carries <dialog class="figfocus"> + a data-figure figure.
-// Dependency-free by design (the estate ships no JS libraries).
-// Zoom is LAYOUT zoom (the image's width), not a CSS transform: browsers
-// re-rasterize an SVG <img> at its layout size, so the diagram stays crisp at
-// 8x; pan is the stage's own scroll position, so one model serves mouse,
-// touch and keyboard.
+// Dependency-free by design (the estate ships no JS libraries). Zoom is
+// LAYOUT zoom (the element's width/height), pan is the stage's own scroll;
+// when the figure is smaller than the stage it centers via margin:auto.
 ---
 
 <dialog class="figfocus" id="figfocus" aria-labelledby="figfocus-caption" data-figfocus>
   <div class="figfocus-bar">
-    <p class="figfocus-caption" id="figfocus-caption"></p>
     <div class="figfocus-tools" role="group" aria-label="Figure tools">
       <button type="button" data-act="out" aria-label="Zoom out" title="Zoom out (-)">&minus;</button>
       <output class="figfocus-zoom" aria-live="polite" aria-label="Zoom level">100%</output>
       <button type="button" data-act="in" aria-label="Zoom in" title="Zoom in (+)">+</button>
-      <button type="button" data-act="fit" title="Fit to width (0)">Fit</button>
+      <button type="button" data-act="fit" title="Fit the whole figure on screen (0)">Fit</button>
       <a class="figfocus-dl" href="#" download>Download SVG</a>
       <button type="button" data-act="link" title="Copy a link to this figure">Copy link</button>
       <button type="button" data-act="close" aria-label="Close" title="Close (Esc)">&times;</button>
     </div>
   </div>
-  <div class="figfocus-stage" tabindex="0" aria-describedby="figfocus-caption">
-    <img class="figfocus-img" alt="" decoding="async" draggable="false" />
-  </div>
+  <div class="figfocus-stage" tabindex="0" aria-describedby="figfocus-caption"></div>
+  <p class="figfocus-caption" id="figfocus-caption"></p>
 </dialog>
 
 <script>
@@ -39,15 +42,18 @@
   if (dlg && typeof dlg.showModal === "function") {
     const q = <T extends Element>(s: string) => dlg.querySelector(s) as T;
     const stage = q<HTMLElement>(".figfocus-stage");
-    const img = q<HTMLImageElement>(".figfocus-img");
     const cap = q<HTMLElement>(".figfocus-caption");
     const zoomOut = q<HTMLOutputElement>(".figfocus-zoom");
     const dl = q<HTMLAnchorElement>(".figfocus-dl");
     const linkBtn = q<HTMLButtonElement>('[data-act="link"]');
-    const MIN = 1;
+    const MIN = 0.25;
     const MAX = 8;
-    let zoom = 1;
-    let fitW = 1;
+    const PAD = 16;
+    let el: HTMLElement | null = null; // the stage content (svg clone or img)
+    let natW = 1;
+    let natH = 1;
+    let fitScale = 1; // css px per intrinsic unit when the whole figure fits
+    let zoom = 1; // relative to the fit: 1 = whole figure on screen
     let figId = "";
     let opener: HTMLElement | null = null;
     let pushed = false;
@@ -58,68 +64,111 @@
     let lockY = 0;
     let prevRestoration: ScrollRestoration = "auto";
 
-    // Zoom about a stage point (px,py in stage client coords); pan = scroll.
-    // dx/dy: how far the anchor point itself moved since the last call (a
-    // pinch's midpoint) — translate first, then scale (astra r1 F3).
+    const dims = () => ({ w: natW * fitScale * zoom, h: natH * fitScale * zoom });
+    const margins = (w: number, h: number) => ({
+      ml: Math.max(0, (stage.clientWidth - w) / 2),
+      mt: Math.max(0, (stage.clientHeight - h) / 2),
+    });
+    const size = () => {
+      if (!el) return;
+      const { w, h } = dims();
+      el.style.width = `${Math.round(w)}px`;
+      el.style.height = `${Math.round(h)}px`;
+    };
+    const computeFit = () => {
+      fitScale = Math.max(0.001, Math.min((stage.clientWidth - 2 * PAD) / natW, (stage.clientHeight - 2 * PAD) / natH));
+    };
+    // Zoom about a stage point (px,py in stage client coords); dx/dy = how far
+    // that anchor itself moved since the last call (a pinch's midpoint).
+    // Content coordinates account for the centering margins on both sides.
     const apply = (z: number, px?: number, py?: number, dx = 0, dy = 0) => {
       z = Math.min(MAX, Math.max(MIN, z));
       const r = z / zoom;
+      const { w: w0, h: h0 } = dims();
+      const { ml: ml0, mt: mt0 } = margins(w0, h0);
       const ax = px ?? stage.clientWidth / 2;
       const ay = py ?? stage.clientHeight / 2;
-      const sl = (stage.scrollLeft + ax - dx) * r - ax;
-      const st = (stage.scrollTop + ay - dy) * r - ay;
+      const cx = stage.scrollLeft + ax - ml0 - dx;
+      const cy = stage.scrollTop + ay - mt0 - dy;
       zoom = z;
-      img.style.width = `${Math.round(fitW * zoom)}px`;
-      stage.scrollLeft = sl;
-      stage.scrollTop = st;
+      size();
+      const { w: w1, h: h1 } = dims();
+      const { ml: ml1, mt: mt1 } = margins(w1, h1);
+      stage.scrollLeft = cx * r + ml1 - ax;
+      stage.scrollTop = cy * r + mt1 - ay;
       zoomOut.value = `${Math.round(zoom * 100)}%`;
     };
-    // Re-fit on resize/rotation keeping the stage's center point on the same
-    // spot of the figure (deepseek r1 F4).
+    // Re-fit on resize/rotation keeping the stage's center on the same spot.
     const refit = () => {
-      const oldW = parseFloat(img.style.width) || 0;
-      const cx = oldW ? (stage.scrollLeft + stage.clientWidth / 2) / oldW : 0;
-      const cy = oldW ? (stage.scrollTop + stage.clientHeight / 2) / oldW : 0;
-      fitW = Math.max(1, stage.clientWidth);
-      let newW = Math.round(fitW * zoom);
-      img.style.width = `${newW}px`;
-      // A tall figure grows a classic vertical scrollbar AFTER the first
-      // measure; re-measure so "fit" never leaves a horizontal one (grok r1 F15).
-      if (stage.scrollHeight > stage.clientHeight && stage.clientWidth !== fitW) {
-        fitW = Math.max(1, stage.clientWidth);
-        newW = Math.round(fitW * zoom);
-        img.style.width = `${newW}px`;
+      if (!el) return;
+      const { w: w0, h: h0 } = dims();
+      const { ml: ml0, mt: mt0 } = margins(w0, h0);
+      const cx = (stage.scrollLeft + stage.clientWidth / 2 - ml0) / w0;
+      const cy = (stage.scrollTop + stage.clientHeight / 2 - mt0) / h0;
+      computeFit();
+      size();
+      const { w: w1, h: h1 } = dims();
+      const { ml: ml1, mt: mt1 } = margins(w1, h1);
+      stage.scrollLeft = cx * w1 + ml1 - stage.clientWidth / 2;
+      stage.scrollTop = cy * h1 + mt1 - stage.clientHeight / 2;
+    };
+    const ready = () => {
+      zoom = 1;
+      computeFit();
+      size();
+      stage.scrollTo(0, 0);
+      zoomOut.value = "100%";
+    };
+    // Clone the page's inline svg with every id suffixed (url(#…)/href refs too).
+    const cloneSvg = (svg: SVGElement): SVGElement | null => {
+      const ids = [...svg.querySelectorAll("[id]")].map((n) => n.id).filter(Boolean);
+      let html = svg.outerHTML;
+      for (const id of ids) {
+        const e = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        html = html
+          .replace(new RegExp(`\\bid="${e}"`, "g"), `id="${id}-ff"`)
+          .replace(new RegExp(`url\\(#${e}\\)`, "g"), `url(#${id}-ff)`)
+          .replace(new RegExp(`href="#${e}"`, "g"), `href="#${id}-ff"`);
       }
-      if (oldW) {
-        stage.scrollLeft = cx * newW - stage.clientWidth / 2;
-        stage.scrollTop = cy * newW - stage.clientHeight / 2;
-      }
+      const doc = new DOMParser().parseFromString(html, "image/svg+xml");
+      const root = doc.documentElement;
+      if (!root || root.nodeName === "parsererror" || root.querySelector("parsererror")) return null;
+      return document.importNode(root, true) as unknown as SVGElement;
+    };
+    // "Figure N." = the figure's ordinal among the page's CAPTIONED figures
+    // (the same rule as the caption labels' CSS counter).
+    const figureLabel = (fig: Element | null) => {
+      if (!fig || !fig.closest(".prose")) return "";
+      const captioned = [...document.querySelectorAll("figure.post-figure")].filter(
+        (f) => !f.classList.contains("post-figure--img") || f.hasAttribute("aria-labelledby"),
+      );
+      const n = captioned.indexOf(fig);
+      return n >= 0 ? `Figure ${n + 1}.` : "";
     };
 
     const open = (a: HTMLAnchorElement) => {
       const fig = a.closest("figure");
       figId = fig?.id ?? "";
       opener = a;
-      const inner = a.querySelector("svg, img");
-      const alt = inner?.getAttribute("aria-label") ?? inner?.getAttribute("alt") ?? "";
-      // /figures cards wrap the caption text in .fig-cap (the links follow it).
-      const text = fig?.querySelector(".fig-cap")?.textContent ?? fig?.querySelector("figcaption")?.textContent ?? "";
-      cap.textContent = text.replace(/^\s*Link to this figure\s*/, "").trim() || alt;
-      img.alt = alt;
-      img.removeAttribute("style");
-      img.onerror = () => {
-        cap.textContent = "The image failed to load.";
-      };
-      img.src = a.href;
+      const svgEl = a.querySelector("svg");
+      const imgEl = a.querySelector("img");
+      const alt = svgEl?.getAttribute("aria-label") ?? imgEl?.getAttribute("alt") ?? "";
+      const text = (fig?.querySelector(".fig-cap")?.textContent ?? "").trim() || alt;
+      const label = figureLabel(fig);
+      cap.replaceChildren();
+      if (label) {
+        const b = document.createElement("strong");
+        b.textContent = label;
+        cap.append(b, " ");
+      }
+      cap.append(text);
       dl.href = a.href;
       dl.download = a.dataset.download ?? "";
       dl.textContent = /\.svg(\?|$)/i.test(a.href) ? "Download SVG" : "Download image";
       // Every open owns ONE history entry — also when the page was reached
-      // via this very deep link, or Back would leave the page (astra r1 F1).
-      // Push BEFORE the body lock: the lock clamps window.scrollY to 0 and the
-      // browser persists that into the entry being left, so Back-on-close
-      // would restore the TOP of the page (fable r1 F1). Scroll restoration is
-      // ours while the dialog is open.
+      // via this very deep link, or Back would leave the page. Push BEFORE
+      // the body lock: the lock clamps window.scrollY to 0 and the browser
+      // would persist that into the entry being left.
       lockY = window.scrollY;
       pushed = false;
       if (figId) {
@@ -128,15 +177,41 @@
       }
       prevRestoration = history.scrollRestoration;
       history.scrollRestoration = "manual";
-      // iOS Safari scrolls the page behind a modal despite overflow:hidden on
-      // html — pin the body and restore the offset on close (glmfull r1 F10).
       document.documentElement.classList.add("figfocus-open");
       document.body.style.top = `-${lockY}px`;
       if (!dlg.open) dlg.showModal();
-      zoom = 1;
-      refit();
-      stage.scrollTo(0, 0);
-      zoomOut.value = "100%";
+      // Content: the clean inline svg (vector) or the raster image.
+      stage.replaceChildren();
+      el = null;
+      const clone = svgEl ? cloneSvg(svgEl) : null;
+      if (clone) {
+        const vb = (clone.getAttribute("viewBox") ?? "").trim().split(/[\s,]+/).map(Number);
+        natW = vb.length === 4 && vb[2] > 0 ? vb[2] : svgEl!.clientWidth || 1;
+        natH = vb.length === 4 && vb[3] > 0 ? vb[3] : svgEl!.clientHeight || 1;
+        clone.removeAttribute("role");
+        clone.setAttribute("aria-hidden", "true");
+        clone.classList.add("figfocus-img");
+        el = clone as unknown as HTMLElement;
+        stage.append(el);
+        ready();
+      } else {
+        const img = new Image();
+        img.className = "figfocus-img";
+        img.alt = alt;
+        img.draggable = false;
+        img.decoding = "async";
+        img.onerror = () => {
+          cap.textContent = "The image failed to load.";
+        };
+        img.onload = () => {
+          natW = img.naturalWidth || 1;
+          natH = img.naturalHeight || 1;
+          ready();
+        };
+        img.src = imgEl?.currentSrc || imgEl?.src || a.href;
+        el = img;
+        stage.append(el);
+      }
       stage.focus({ preventScroll: true });
     };
     dlg.addEventListener("close", () => {
@@ -144,7 +219,8 @@
       document.body.style.top = "";
       window.scrollTo(0, lockY);
       history.scrollRestoration = prevRestoration;
-      img.removeAttribute("src");
+      stage.replaceChildren();
+      el = null;
       if (pushed && !viaHistory) {
         backPending = true;
         history.back();
@@ -155,7 +231,7 @@
     });
     window.addEventListener("popstate", () => {
       // A back() we queued at close may land after another figure opened —
-      // re-pin that figure's hash instead of closing it (glmfull r1 F4).
+      // re-pin that figure's hash instead of closing it.
       if (backPending) {
         backPending = false;
         if (dlg.open) {
@@ -186,8 +262,7 @@
       else if (act === "close") dlg.close();
     });
     linkBtn.addEventListener("click", async () => {
-      // Prefer the figure's in-post deep link (the /figures cards carry one);
-      // on a post the fallback is that same URL (glmflash r1 F10).
+      // Prefer the figure's in-post deep link (the /figures cards carry one).
       const inPost = opener?.closest("figure")?.querySelector<HTMLAnchorElement>(`a[href$="#${figId}"]:not(.fig-anchor)`);
       const url = inPost ? new URL(inPost.getAttribute("href") ?? "", location.origin).href : `${location.origin}${location.pathname}#${figId}`;
       try {
@@ -206,8 +281,8 @@
       e.preventDefault();
     });
 
-    // Pointers: one = drag-pan (any pointer type; touch-action none on the
-    // stage keeps the browser out), two = pinch about the midpoint.
+    // Pointers: one = drag-pan (touch-action none on the stage keeps the
+    // browser out), two = pinch about the moving midpoint.
     const ptrs = new Map<number, { x: number; y: number }>();
     let pinch0 = 0;
     let zoom0 = 1;
@@ -274,13 +349,12 @@
         } else lastTap = now;
       }
     };
-    // The browser's own image drag would cancel the pan (astra r1 F2).
+    // The browser's own image drag would cancel the pan.
     stage.addEventListener("dragstart", (e) => e.preventDefault());
     stage.addEventListener("pointerup", lift);
     stage.addEventListener("pointercancel", lift);
     // `dblclick` is a MouseEvent on every engine (no pointerType): gate it by
-    // the last pointer type + the touch detector's timestamp (deepseek r1 F1,
-    // glmflash r1 F1).
+    // the last pointer type + the touch detector's timestamp.
     stage.addEventListener("dblclick", (e) => {
       if (lastPointerType === "touch" || Date.now() - suppressDbl < 700) return;
       const r = rectOf();
@@ -301,8 +375,7 @@
       { passive: false },
     );
     // WebKit GestureEvents: iOS — keep a pinch from zooming the page; macOS
-    // Safari — a trackpad pinch arrives HERE (not as ctrl+wheel), so zoom by
-    // its scale about the gesture point (glmfull r1 F11).
+    // Safari — a trackpad pinch arrives HERE (not as ctrl+wheel).
     let g0 = 1;
     stage.addEventListener("gesturestart", (e) => {
       e.preventDefault();
@@ -322,18 +395,6 @@
 </script>
 
 <style is:global>
-  /* Screen-reader-only text (the caption anchors' accessible name). */
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
   html.figfocus-open {
     overflow: hidden;
   }
@@ -367,29 +428,16 @@
   .figfocus-bar {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px 24px;
-    padding: 10px 16px;
+    justify-content: flex-end;
+    padding: 8px 12px;
     border-bottom: 1px solid var(--rule);
-    flex-wrap: wrap;
-  }
-  .figfocus-caption {
-    margin: 0;
-    flex: 1 1 320px;
-    min-width: 0;
-    color: var(--mute);
-    font-size: 14px;
-    line-height: 1.45;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    flex: 0 0 auto;
   }
   .figfocus-tools {
     display: flex;
     align-items: center;
     gap: 6px;
-    flex: 0 0 auto;
+    flex-wrap: wrap;
   }
   .figfocus-tools button,
   .figfocus-tools .figfocus-dl {
@@ -426,9 +474,12 @@
     font-size: 14px;
     font-variant-numeric: tabular-nums;
   }
+  /* The stage: a scroll container; the figure centers while it fits and
+     scrolls once it is larger than the stage (margin:auto handles both). */
   .figfocus-stage {
     flex: 1 1 auto;
     min-height: 0;
+    display: flex;
     overflow: auto;
     touch-action: none;
     overscroll-behavior: contain;
@@ -440,25 +491,37 @@
   }
   .figfocus-img {
     display: block;
-    width: 100%;
+    flex: none;
+    margin: auto;
     max-width: none;
-    height: auto;
     user-select: none;
     -webkit-user-drag: none;
     -webkit-touch-callout: none;
   }
+  /* The caption, whole: never clamped; scrolls only when very long. */
+  .figfocus-caption {
+    flex: 0 0 auto;
+    margin: 0;
+    padding: 10px 16px 12px;
+    border-top: 1px solid var(--rule);
+    max-height: 32vh;
+    overflow: auto;
+    color: var(--ink);
+    font-size: 14.5px;
+    line-height: 1.5;
+  }
+  .figfocus-caption strong {
+    font-weight: 600;
+  }
+  .figfocus-caption:empty {
+    display: none;
+  }
   @media (max-width: 640px) {
     .figfocus-bar {
-      padding: 8px 10px;
-    }
-    .figfocus-caption {
-      font-size: 13px;
-      flex-basis: 100%;
-      order: 2;
+      padding: 6px 8px;
     }
     .figfocus-tools {
       width: 100%;
-      flex-wrap: wrap;
       gap: 6px;
     }
     .figfocus-tools button,
@@ -468,6 +531,11 @@
     }
     .figfocus-tools [data-act="close"] {
       margin-left: auto;
+    }
+    .figfocus-caption {
+      font-size: 13px;
+      padding: 8px 10px 10px;
+      max-height: 28vh;
     }
   }
 </style>
