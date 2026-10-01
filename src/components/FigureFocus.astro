@@ -6,7 +6,10 @@
 // caption sits under the stage, readable; download (the attributed SVG with
 // the caption burned in, for house figures), copy-link, Esc/Back close.
 // Scott's review folds (2026-10-01): fit means fit, minus works below fit,
-// the caption is never clipped, the download carries the caption.
+// the caption is never clipped, the download carries the caption; the zoom
+// ladder is fit -> fit-width -> x1.5 steps (never an arbitrary 150 % first);
+// on phones the toolbar is Download + Copy link + close — zoom and pan are
+// the phone's own gestures.
 // The stage shows the CLEAN figure: the page's inline <svg> is cloned (vector
 // at every zoom, no fetch; ids suffixed so url(#…) refs stay unambiguous) or
 // the raster <img>; the download link points at the derivative.
@@ -78,6 +81,24 @@
     const computeFit = () => {
       fitScale = Math.max(0.001, Math.min((stage.clientWidth - 2 * PAD) / natW, (stage.clientHeight - 2 * PAD) / natH));
     };
+    // The zoom at which the figure spans the stage's full width (>= 1).
+    const fitWidth = () => Math.max(1, (stage.clientWidth - 2 * PAD) / (natW * fitScale));
+    // Ladder: … 44 % · 67 % · 100 % (whole figure) · full width · ×1.5 steps.
+    const stepIn = (z: number) => {
+      const fw = fitWidth();
+      if (z < 1 - 0.01) return Math.min(1, z * 1.5);
+      if (z < fw - 0.01) return fw;
+      return z * 1.5;
+    };
+    const stepOut = (z: number) => {
+      const fw = fitWidth();
+      if (z > fw + 0.01) return Math.max(fw, z / 1.5);
+      if (z > 1 + 0.01) return 1;
+      return z / 1.5;
+    };
+    // Double-tap / double-click toggle: whole figure <-> full width (2.5x when
+    // the figure is already width-bound at fit).
+    const toggleZoom = () => (zoom > 1.01 ? 1 : fitWidth() > 1.2 ? fitWidth() : 2.5);
     // Zoom about a stage point (px,py in stage client coords); dx/dy = how far
     // that anchor itself moved since the last call (a pinch's midpoint).
     // Content coordinates account for the centering margins on both sides.
@@ -256,8 +277,8 @@
       const btn = (e.target as Element).closest?.("button[data-act]") as HTMLButtonElement | null;
       if (!btn) return;
       const act = btn.dataset.act;
-      if (act === "in") apply(zoom * 1.5);
-      else if (act === "out") apply(zoom / 1.5);
+      if (act === "in") apply(stepIn(zoom));
+      else if (act === "out") apply(stepOut(zoom));
       else if (act === "fit") apply(1);
       else if (act === "close") dlg.close();
     });
@@ -274,8 +295,8 @@
       }
     });
     dlg.addEventListener("keydown", (e) => {
-      if (e.key === "+" || e.key === "=") apply(zoom * 1.5);
-      else if (e.key === "-" || e.key === "_") apply(zoom / 1.5);
+      if (e.key === "+" || e.key === "=") apply(stepIn(zoom));
+      else if (e.key === "-" || e.key === "_") apply(stepOut(zoom));
       else if (e.key === "0") apply(1);
       else return;
       e.preventDefault();
@@ -343,7 +364,7 @@
         const now = Date.now();
         if (now - lastTap < 320) {
           const r = rectOf();
-          apply(zoom > 1.01 ? 1 : 2.5, e.clientX - r.left, e.clientY - r.top);
+          apply(toggleZoom(), e.clientX - r.left, e.clientY - r.top);
           lastTap = 0;
           suppressDbl = Date.now();
         } else lastTap = now;
@@ -358,7 +379,7 @@
     stage.addEventListener("dblclick", (e) => {
       if (lastPointerType === "touch" || Date.now() - suppressDbl < 700) return;
       const r = rectOf();
-      apply(zoom > 1.01 ? 1 : 2.5, e.clientX - r.left, e.clientY - r.top);
+      apply(toggleZoom(), e.clientX - r.left, e.clientY - r.top);
     });
     // ctrl/cmd + wheel (what a trackpad pinch emits) zooms about the cursor;
     // a plain wheel pans — the stage is an ordinary scroll container.
@@ -516,6 +537,14 @@
   .figfocus-caption:empty {
     display: none;
   }
+  @media (hover: none) and (pointer: coarse) {
+    .figfocus-tools [data-act="in"],
+    .figfocus-tools [data-act="out"],
+    .figfocus-tools [data-act="fit"],
+    .figfocus-tools .figfocus-zoom {
+      display: none;
+    }
+  }
   @media (max-width: 640px) {
     .figfocus-bar {
       padding: 6px 8px;
@@ -531,6 +560,14 @@
     }
     .figfocus-tools [data-act="close"] {
       margin-left: auto;
+    }
+    /* Phones: zoom and pan are the device's gestures (Scott, 2026-10-01) —
+       the toolbar keeps Download, Copy link, and close. */
+    .figfocus-tools [data-act="in"],
+    .figfocus-tools [data-act="out"],
+    .figfocus-tools [data-act="fit"],
+    .figfocus-tools .figfocus-zoom {
+      display: none;
     }
     .figfocus-caption {
       font-size: 13px;

@@ -35,22 +35,37 @@ export const footerFontSize = (w) => Math.min(18, Math.max(11, Math.round(w / 95
 /** Caption type size: larger than the attribution line (~1.4 % of the width). */
 export const captionFontSize = (w) => Math.min(24, Math.max(13, Math.round(w / 70)));
 
-/** Greedy word wrap for SVG <text> (no auto-wrap in SVG): DejaVu Sans averages
- * ~0.58 em per glyph; 0.6 keeps every line inside the padding. */
+// DejaVu Sans advance widths, ASCII 32..126, in 1/1000 em (measured from the
+// box's DejaVuSans.ttf with PIL, 2026-10-01); other glyphs take the average.
+const DEJAVU_W = [318,401,460,838,636,950,780,275,390,390,500,838,318,361,318,337,636,636,636,636,636,636,636,636,636,636,337,337,838,838,838,531,1000,684,686,698,770,632,575,775,752,295,295,656,557,863,748,787,603,787,695,635,611,732,684,989,685,611,685,390,337,390,838,500,500,613,635,550,635,615,352,635,634,278,278,579,278,974,634,612,635,635,411,521,392,634,592,818,592,592,525,636,337,636,838];
+const DEJAVU_AVG = 502;
+/** Rendered width of a string in user units at a given font size (DejaVu Sans). */
+export function textWidth(text, fontSize) {
+  let u = 0;
+  for (const ch of String(text)) {
+    const c = ch.codePointAt(0);
+    u += c >= 32 && c <= 126 ? DEJAVU_W[c - 32] : DEJAVU_AVG;
+  }
+  return (u / 1000) * fontSize;
+}
+
+/** Greedy word wrap for SVG <text> (no auto-wrap in SVG) by MEASURED width,
+ * so lines fill the canvas width (Scott, 2026-10-01: "the caption full width"). */
 export function wrapCaption(text, maxWidth, fontSize) {
-  const perLine = Math.max(8, Math.floor(maxWidth / (fontSize * 0.6)));
   const lines = [];
   let line = "";
   for (const word of String(text).split(/\s+/).filter(Boolean)) {
-    if (!line) line = word;
-    else if ((line + " " + word).length <= perLine) line += " " + word;
+    const cand = line ? line + " " + word : word;
+    if (!line || textWidth(cand, fontSize) <= maxWidth) line = cand;
     else {
       lines.push(line);
       line = word;
     }
-    while (line.length > perLine) {
-      lines.push(line.slice(0, perLine));
-      line = line.slice(perLine);
+    while (textWidth(line, fontSize) > maxWidth && line.length > 1) {
+      let cut = line.length - 1;
+      while (cut > 1 && textWidth(line.slice(0, cut), fontSize) > maxWidth) cut--;
+      lines.push(line.slice(0, cut));
+      line = line.slice(cut);
     }
   }
   if (line) lines.push(line);
@@ -156,8 +171,14 @@ export function attributeSvg(raw, opts) {
   //    URL as a live link.
   const y = c.y + c.h;
   const baseline = y + band - Math.round(fs * 0.85);
+  // Every line but the last is "full": pin it to the measure with textLength
+  // (spacing-adjusted) so a fallback font renders the same full-width block.
+  const measure = c.w - 2 * pad;
   const captionText = captionLines
-    .map((ln, i) => `<text x="${c.x + pad}" y="${y + pad + Math.round(fsC * 0.9) + i * lineH}" font-size="${fsC}" fill="#334155">${esc(ln)}</text>`)
+    .map((ln, i) => {
+      const full = i < captionLines.length - 1 ? ` textLength="${measure}" lengthAdjust="spacing"` : "";
+      return `<text x="${c.x + pad}" y="${y + pad + Math.round(fsC * 0.9) + i * lineH}" font-size="${fsC}" fill="#334155"${full}>${esc(ln)}</text>`;
+    })
     .join("");
   const footer =
     `<g id="fig-attribution" font-size="${fs}" fill="#6b7280">` +
