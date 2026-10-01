@@ -145,7 +145,9 @@ export function mdxBodyToPlainMd(post: Post): string {
     /(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[ \t]*(?=\n|$)/g,
     (m) => stash(m),
   );
-  body = body.replace(/`[^`\n]+`/g, (m) => stash(m));
+  // Code spans of ANY backtick run length (`x`, `` `x` ``): run-length aware,
+  // or a double-backtick span swallows prose between spans (round-1 fold).
+  body = body.replace(/(`+)(?!`)[^\n]*?[^`\n]\1(?!`)/g, (m) => stash(m));
   // Any fence marker left after masking = unclosed/mismatched fence; the
   // masked scan below would go blind past it — fail loudly (round-2 G19).
   if (/^(?:`{3,}|~{3,})/m.test(body)) {

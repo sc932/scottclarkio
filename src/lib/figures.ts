@@ -86,7 +86,13 @@ export function attributionFor(fig: Figure) {
 
 /** The downloadable SVG: committed drawing + attribution footer + metadata. */
 export function attributedSvg(fig: Figure) {
-  return attributeSvg(figureSvgRaw(fig), attributionFor(fig));
+  const r = attributeSvg(figureSvgRaw(fig), attributionFor(fig));
+  // House law: every figure carries a full-canvas background rect (the render
+  // harness needs it; diagram SKILL rule 33(b)); a transparent footer band is
+  // a heuristic miss, never a style (glmfull r1 F3).
+  if (!r.backgroundExtended)
+    throw new Error(`figure ${fig.svgSource}: no full-canvas background <rect> matched — author one (x/y at the canvas origin, width/height = the viewBox or 100%)`);
+  return r;
 }
 
 /** Download filename offered by the focus view (`<a download>`). */

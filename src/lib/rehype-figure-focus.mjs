@@ -83,7 +83,8 @@ const text = (n) =>
   n.type === "text" ? n.value : (n.children ?? []).map(text).join("");
 
 export default function rehypeFigureFocus() {
-  return (tree) => {
+  return (tree, file) => {
+    const converted = new Set();
     const walk = (node) => {
       const kids = node.children;
       if (!Array.isArray(kids)) return;
@@ -181,9 +182,26 @@ export default function rehypeFigureFocus() {
               : []),
           ],
         };
+        converted.add(img);
         kids.splice(i, captionChildren ? j - i + 1 : 1, figure);
       }
     };
     walk(tree);
+    // Every site image must be a figure: an inline or reference-style image is
+    // counted by the scan but cannot be wrapped — fail the BUILD here, naming
+    // the file, rather than the gate later (glmfull r1 F5).
+    const stray = [];
+    const find = (n) => {
+      if (n?.type === "element" && n.tagName === "img") {
+        const s = String(n.properties?.src ?? "");
+        if (s.startsWith("/") && !s.startsWith("//") && !converted.has(n)) stray.push(s);
+      }
+      (n?.children ?? []).forEach(find);
+    };
+    find(tree);
+    if (stray.length)
+      throw new Error(
+        `rehype-figure-focus: image(s) not focusable in ${file?.path ?? "(unknown file)"} — a site image must sit alone in its paragraph: ${stray.join(", ")}`,
+      );
   };
 }

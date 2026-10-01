@@ -52,6 +52,9 @@ for (const fig of scanFigures({
   const path = `/blog/${fig.post}`;
   if (!figureImages.has(path)) figureImages.set(path, []);
   figureImages.get(path).push({ url: `https://scottclark.io${fig.download}` });
+  // House figures: the PNG twin rides too — what social/og surfaces reference
+  // and what Google Images indexes most reliably (glmfull r1 rec b).
+  if (fig.kind === "svg") figureImages.get(path).push({ url: `https://scottclark.io${fig.src}` });
 }
 
 export default defineConfig({

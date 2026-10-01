@@ -52,6 +52,8 @@
     let viaHistory = false;
     let lastPointerType = "";
     let suppressDbl = 0;
+    let backPending = false;
+    let lockY = 0;
 
     // Zoom about a stage point (px,py in stage client coords); pan = scroll.
     const apply = (z: number, px?: number, py?: number) => {
@@ -88,7 +90,8 @@
       opener = a;
       const inner = a.querySelector("svg, img");
       const alt = inner?.getAttribute("aria-label") ?? inner?.getAttribute("alt") ?? "";
-      const text = fig?.querySelector("figcaption")?.textContent ?? "";
+      // /figures cards wrap the caption text in .fig-cap (the links follow it).
+      const text = fig?.querySelector(".fig-cap")?.textContent ?? fig?.querySelector("figcaption")?.textContent ?? "";
       cap.textContent = text.replace(/^\s*Link to this figure\s*/, "").trim() || alt;
       img.alt = alt;
       img.removeAttribute("style");
@@ -99,7 +102,11 @@
       dl.href = a.href;
       dl.download = a.dataset.download ?? "";
       dl.textContent = /\.svg(\?|$)/i.test(a.href) ? "Download SVG" : "Download image";
+      // iOS Safari scrolls the page behind a modal despite overflow:hidden on
+      // html — pin the body and restore the offset on close (glmfull r1 F10).
+      lockY = window.scrollY;
       document.documentElement.classList.add("figfocus-open");
+      document.body.style.top = `-${lockY}px`;
       dlg.showModal();
       zoom = 1;
       refit();
@@ -114,13 +121,28 @@
     };
     dlg.addEventListener("close", () => {
       document.documentElement.classList.remove("figfocus-open");
+      document.body.style.top = "";
+      window.scrollTo(0, lockY);
       img.removeAttribute("src");
-      if (pushed && !viaHistory) history.back();
+      if (pushed && !viaHistory) {
+        backPending = true;
+        history.back();
+      }
       pushed = false;
       viaHistory = false;
       opener?.focus({ preventScroll: true });
     });
     window.addEventListener("popstate", () => {
+      // A back() we queued at close may land after another figure opened —
+      // re-pin that figure's hash instead of closing it (glmfull r1 F4).
+      if (backPending) {
+        backPending = false;
+        if (dlg.open) {
+          history.replaceState({ figfocus: figId }, "", `#${figId}`);
+          pushed = true;
+          return;
+        }
+      }
       if (dlg.open) {
         viaHistory = true;
         dlg.close();
@@ -247,9 +269,21 @@
       },
       { passive: false },
     );
-    // iOS Safari: keep a pinch on the stage from zooming the page.
-    for (const t of ["gesturestart", "gesturechange"])
-      stage.addEventListener(t, (e) => e.preventDefault());
+    // WebKit GestureEvents: iOS — keep a pinch from zooming the page; macOS
+    // Safari — a trackpad pinch arrives HERE (not as ctrl+wheel), so zoom by
+    // its scale about the gesture point (glmfull r1 F11).
+    let g0 = 1;
+    stage.addEventListener("gesturestart", (e) => {
+      e.preventDefault();
+      g0 = zoom;
+    });
+    stage.addEventListener("gesturechange", (e) => {
+      e.preventDefault();
+      const ge = e as Event & { scale: number; clientX: number; clientY: number };
+      if (lastPointerType === "touch" || !ge.scale) return;
+      const r = rectOf();
+      apply(g0 * ge.scale, ge.clientX - r.left, ge.clientY - r.top);
+    });
     window.addEventListener("resize", () => {
       if (dlg.open) refit();
     });
@@ -271,6 +305,12 @@
   }
   html.figfocus-open {
     overflow: hidden;
+  }
+  html.figfocus-open body {
+    position: fixed;
+    left: 0;
+    right: 0;
+    width: 100%;
   }
   .figfocus {
     width: 100vw;

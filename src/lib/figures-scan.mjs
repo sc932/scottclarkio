@@ -40,7 +40,11 @@ const attr = (attrs, k) => {
 function maskCode(body) {
   return body
     .replace(/(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[ \t]*(?=\n|$)/g, "$1")
-    .replace(/`[^`\n]+`/g, "");
+    // Code spans of ANY backtick run length (`x`, `` `x` ``, ``` `` ```): a
+    // double-backtick span containing single backticks must mask as one span,
+    // or the mask swallows prose between spans — and an image with it (the
+    // distributional archive hit this, round-1 fold).
+    .replace(/(`+)(?!`)[^\n]*?[^`\n]\1(?!`)/g, "");
 }
 
 /** Figures of ONE post body, in document order. */
@@ -73,7 +77,7 @@ export function scanBody(slug, body) {
       // Root-relative site images only; external images are not ours to index.
       if (!url.startsWith("/") || url.startsWith("//")) continue;
       const file = basename(url);
-      const name = file.replace(extname(file), "");
+      const name = file.slice(0, file.length - extname(file).length);
       out.push({
         post: slug,
         kind: "raster",
@@ -104,6 +108,8 @@ export function scanFigures({ blogDir, parseFrontmatter }) {
   for (const f of readdirSync(blogDir).filter((n) => n.endsWith(".mdx")).sort()) {
     const raw = readFileSync(join(blogDir, f), "utf8");
     const { frontmatter, content } = parseFrontmatter(raw);
+    // "Published" = not draft — the same predicate as blog.ts getPublishedPosts;
+    // a divergence fails the manifest/index lockstep teeth in the gate loudly.
     if (frontmatter.draft === true) continue;
     const slug = f.replace(/\.mdx$/, "");
     for (const fig of scanBody(slug, content)) {

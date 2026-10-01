@@ -80,7 +80,7 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
               const a = attributionFor(f);
               const label = f.caption || f.alt || f.name;
               return (
-                <figure class="post-figure figures-card" id={f.id} data-figure={f.id} aria-labelledby={`${f.id}-caption`}>
+                <figure class="post-figure figures-card" id={`${f.post}--${f.id}`} data-figure={f.id} aria-labelledby={`${f.post}--${f.id}-caption`}>
                   <div class="fig-panel">
                     <a
                       class="fig-open"
@@ -92,8 +92,8 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
                       <span class="fig-expand" aria-hidden="true" />
                     </a>
                   </div>
-                  <figcaption id={`${f.id}-caption`}>
-                    {f.caption || f.alt}
+                  <figcaption id={`${f.post}--${f.id}-caption`}>
+                    <span class="fig-cap">{f.caption || f.alt}</span>
                     <span class="figures-links">
                       <a href={`${postHref}#${f.id}`}>In the post</a>
                       <a href={f.download} download={downloadName(f)}>

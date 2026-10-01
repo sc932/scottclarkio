@@ -252,7 +252,7 @@ for (const file of htmlFiles) {
   const allowed = [
     isPostPage && html.includes('class="yt-facade"'),
     rel === "blog/index.html" && html.includes("<script data-pillar-sort>"),
-    html.includes("<dialog class=\"figfocus\"") && /<figure\b(?=[^>]*\bclass="post-figure)[^>]*\bid="fig-/.test(html),
+    html.includes("<dialog class=\"figfocus\"") && /<figure\b(?=[^>]*\bclass="post-figure)[^>]*\bdata-figure="fig-/.test(html),
   ].filter(Boolean).length;
   if (scriptCount !== allowed)
     failures.push(
@@ -260,7 +260,9 @@ for (const file of htmlFiles) {
     );
   // Figure focus contract (2026-10-01): a page with figures ships the focus
   // view; a page without them must not.
-  const figCount = (html.match(/<figure\b(?=[^>]*\bclass="post-figure)[^>]*\bid="fig-/g) ?? []).length;
+  // Presence keys on data-figure (the un-namespaced id both producers and the
+  // /figures cards carry); per-post id checks below key on id="fig-…".
+  const figCount = (html.match(/<figure\b(?=[^>]*\bclass="post-figure)[^>]*\bdata-figure="fig-/g) ?? []).length;
   if (figCount > 0 && !html.includes('<dialog class="figfocus"'))
     failures.push(`${rel}: ${figCount} figure(s) but no figure-focus view`);
   if (figCount === 0 && html.includes('<dialog class="figfocus"'))
@@ -467,7 +469,7 @@ for (const s of distPosts) {
   // or component tags (round-2 S7); residue checks apply OUTSIDE code only.
   const mdMasked = md
     .replace(/(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[ \t]*(?=\n|$)/g, "")
-    .replace(/`[^`\n]+`/g, "");
+    .replace(/(`+)(?!`)[^\n]*?[^`\n]\1(?!`)/g, "");
   for (const bad of ["<Figure", "<YouTubeFacade"])
     if (mdMasked.includes(bad)) failures.push(`twin ${s}.md leaks ${bad}`);
   if (/^import\s|^export[\s{]|<[A-Z][A-Za-z]*[\s/>]/m.test(mdMasked))
@@ -702,7 +704,7 @@ if (existsSync(SVG_SRC)) {
       const raw = readFileSync(f.svgSource, "utf8");
       const title = raw.match(/<title\b[^>]*>([\s\S]*?)<\/title>/)?.[1]?.trim();
       const date = asDate(f.postDate);
-      const { svg } = attributeSvg(raw, {
+      const { svg, backgroundExtended } = attributeSvg(raw, {
         holder: figureAttribution.holder,
         publisher: figureAttribution.publisher,
         creator: figureAttribution.creator,
@@ -712,6 +714,8 @@ if (existsSync(SVG_SRC)) {
         title,
         caption: f.caption,
       });
+      if (!backgroundExtended)
+        failures.push(`figures: ${f.download} footer band has no background — no full-canvas rect matched (SKILL 33b)`);
       const built = readFileSync(out, "utf8");
       if (built !== svg)
         failures.push(`figures: ${f.download} differs from attributeSvg(${f.svgSource}) — the build and the gate disagree`);
@@ -741,10 +745,14 @@ if (existsSync(SVG_SRC)) {
   else {
     const page = readFileSync(indexPath, "utf8");
     for (const f of figuresExpected) {
-      if (!page.includes(`id="${f.id}"`)) failures.push(`figures: index lacks ${f.id}`);
+      if (!page.includes(`id="${f.post}--${f.id}"`)) failures.push(`figures: index lacks ${f.post}--${f.id}`);
       if (!page.includes(`href="${f.download}"`)) failures.push(`figures: index lacks the download for ${f.id}`);
       if (!page.includes(`href="/blog/${f.post}#${f.id}"`)) failures.push(`figures: index lacks the in-post link for ${f.id}`);
     }
+    // One page, many posts: every id on the index must be unique (glmfull r1 F2).
+    const idxIds = [...page.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
+    if (new Set(idxIds).size !== idxIds.length)
+      failures.push(`figures: duplicate id on /figures: ${idxIds.filter((x, i) => idxIds.indexOf(x) !== i).join(", ")}`);
     const g = pickGraph(page);
     const nodes = g && typeof g === "object" ? g["@graph"] ?? [] : [];
     const cp = nodes.find((n) => n["@type"] === "CollectionPage");

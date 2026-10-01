@@ -102,7 +102,6 @@ export function attributeSvg(raw, opts) {
     `<dc:rights><cc:Agent><dc:title>${esc(`© ${year} ${holder}`)}</dc:title></cc:Agent></dc:rights>`,
     opts.publisher ? `<dc:publisher><cc:Agent><dc:title>${esc(opts.publisher)}</dc:title></cc:Agent></dc:publisher>` : "",
     `<dc:source>${esc(url)}</dc:source>`,
-    `<dc:identifier>${esc(url)}</dc:identifier>`,
     `<dc:date>${esc(date)}</dc:date>`,
     `</cc:Work>`,
     `</rdf:RDF>`,
