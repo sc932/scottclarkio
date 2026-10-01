@@ -1,0 +1,376 @@
+---
+// Figure focus (2026-10-01) — the in-page focus view for every figure on a
+// page: full width, zoom (buttons, ctrl/cmd+wheel = trackpad pinch, touch
+// pinch, double-tap), pan (drag, touch, scroll), download (the attributed
+// SVG for house figures), copy-link, Esc/Back closes. Progressive
+// enhancement over the `a.fig-open` links Figure.astro and
+// rehype-figure-focus.mjs emit — with JS off the links open the image itself.
+// Included ONCE per page that renders figures ([slug].astro, /figures); the
+// AIO gate allows exactly this script (marker: data-figfocus) on exactly
+// those pages. Dependency-free by design (the estate ships no JS libraries).
+// Zoom is LAYOUT zoom (the image's width), not a CSS transform: browsers
+// re-rasterize an SVG <img> at its layout size, so the diagram stays crisp at
+// 8x; pan is the stage's own scroll position, so one model serves mouse,
+// touch and keyboard.
+---
+
+<dialog class="figfocus" id="figfocus" aria-label="Figure focus view" data-figfocus>
+  <div class="figfocus-bar">
+    <p class="figfocus-caption" id="figfocus-caption"></p>
+    <div class="figfocus-tools" role="group" aria-label="Figure tools">
+      <button type="button" data-act="out" aria-label="Zoom out" title="Zoom out (-)">&minus;</button>
+      <output class="figfocus-zoom" aria-live="polite" aria-label="Zoom level">100%</output>
+      <button type="button" data-act="in" aria-label="Zoom in" title="Zoom in (+)">+</button>
+      <button type="button" data-act="fit" title="Fit to width (0)">Fit</button>
+      <a class="figfocus-dl" href="#" download>Download SVG</a>
+      <button type="button" data-act="link" title="Copy a link to this figure">Copy link</button>
+      <button type="button" data-act="close" aria-label="Close" title="Close (Esc)">&times;</button>
+    </div>
+  </div>
+  <div class="figfocus-stage" tabindex="0" aria-describedby="figfocus-caption">
+    <img class="figfocus-img" alt="" decoding="async" />
+  </div>
+</dialog>
+
+<script>
+  const dlg = document.getElementById("figfocus") as HTMLDialogElement | null;
+  if (dlg && typeof dlg.showModal === "function") {
+    const q = <T extends Element>(s: string) => dlg.querySelector(s) as T;
+    const stage = q<HTMLElement>(".figfocus-stage");
+    const img = q<HTMLImageElement>(".figfocus-img");
+    const cap = q<HTMLElement>(".figfocus-caption");
+    const zoomOut = q<HTMLOutputElement>(".figfocus-zoom");
+    const dl = q<HTMLAnchorElement>(".figfocus-dl");
+    const linkBtn = q<HTMLButtonElement>('[data-act="link"]');
+    const MIN = 1;
+    const MAX = 8;
+    let zoom = 1;
+    let fitW = 1;
+    let figId = "";
+    let opener: HTMLElement | null = null;
+    let pushed = false;
+    let viaHistory = false;
+
+    // Zoom about a stage point (px,py in stage client coords); pan = scroll.
+    const apply = (z: number, px?: number, py?: number) => {
+      z = Math.min(MAX, Math.max(MIN, z));
+      const r = z / zoom;
+      const ax = px ?? stage.clientWidth / 2;
+      const ay = py ?? stage.clientHeight / 2;
+      const sl = (stage.scrollLeft + ax) * r - ax;
+      const st = (stage.scrollTop + ay) * r - ay;
+      zoom = z;
+      img.style.width = `${Math.round(fitW * zoom)}px`;
+      stage.scrollLeft = sl;
+      stage.scrollTop = st;
+      zoomOut.value = `${Math.round(zoom * 100)}%`;
+    };
+    const refit = () => {
+      fitW = Math.max(1, stage.clientWidth);
+      img.style.width = `${Math.round(fitW * zoom)}px`;
+    };
+
+    const open = (a: HTMLAnchorElement) => {
+      const fig = a.closest("figure");
+      figId = fig?.id ?? "";
+      opener = a;
+      const inner = a.querySelector("svg, img");
+      const alt = inner?.getAttribute("aria-label") ?? inner?.getAttribute("alt") ?? "";
+      const text = fig?.querySelector("figcaption")?.textContent ?? "";
+      cap.textContent = text.replace(/^\s*Link to this figure\s*/, "").trim() || alt;
+      img.alt = alt;
+      img.removeAttribute("style");
+      img.src = a.href;
+      dl.href = a.href;
+      dl.download = a.dataset.download ?? "";
+      dl.textContent = /\.svg(\?|$)/i.test(a.href) ? "Download SVG" : "Download image";
+      document.documentElement.classList.add("figfocus-open");
+      dlg.showModal();
+      zoom = 1;
+      refit();
+      stage.scrollTo(0, 0);
+      zoomOut.value = "100%";
+      pushed = false;
+      if (figId && location.hash !== `#${figId}`) {
+        history.pushState({ figfocus: figId }, "", `#${figId}`);
+        pushed = true;
+      }
+      stage.focus({ preventScroll: true });
+    };
+    dlg.addEventListener("close", () => {
+      document.documentElement.classList.remove("figfocus-open");
+      img.removeAttribute("src");
+      if (pushed && !viaHistory) history.back();
+      pushed = false;
+      viaHistory = false;
+      opener?.focus({ preventScroll: true });
+    });
+    window.addEventListener("popstate", () => {
+      if (dlg.open) {
+        viaHistory = true;
+        dlg.close();
+      }
+    });
+    // Plain clicks open the focus view; modifier clicks keep the native link.
+    document.addEventListener("click", (e) => {
+      const a = (e.target as Element).closest?.("a.fig-open") as HTMLAnchorElement | null;
+      if (!a || e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      e.preventDefault();
+      open(a);
+    });
+    dlg.addEventListener("click", (e) => {
+      const btn = (e.target as Element).closest?.("button[data-act]") as HTMLButtonElement | null;
+      if (!btn) return;
+      const act = btn.dataset.act;
+      if (act === "in") apply(zoom * 1.5);
+      else if (act === "out") apply(zoom / 1.5);
+      else if (act === "fit") apply(1);
+      else if (act === "close") dlg.close();
+    });
+    linkBtn.addEventListener("click", async () => {
+      const url = `${location.origin}${location.pathname}#${figId}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        linkBtn.textContent = "Copied";
+        setTimeout(() => (linkBtn.textContent = "Copy link"), 1600);
+      } catch {
+        window.prompt("Link to this figure", url);
+      }
+    });
+    dlg.addEventListener("keydown", (e) => {
+      if (e.key === "+" || e.key === "=") apply(zoom * 1.5);
+      else if (e.key === "-" || e.key === "_") apply(zoom / 1.5);
+      else if (e.key === "0") apply(1);
+      else return;
+      e.preventDefault();
+    });
+
+    // Pointers: one = drag-pan (any pointer type; touch-action none on the
+    // stage keeps the browser out), two = pinch about the midpoint.
+    const ptrs = new Map<number, { x: number; y: number }>();
+    let pinch0 = 0;
+    let zoom0 = 1;
+    let lastX = 0;
+    let lastY = 0;
+    let lastTap = 0;
+    let moved = 0;
+    const rectOf = () => stage.getBoundingClientRect();
+    stage.addEventListener("pointerdown", (e) => {
+      if (e.button !== 0) return;
+      stage.setPointerCapture(e.pointerId);
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      if (ptrs.size === 2) {
+        const [a, b] = [...ptrs.values()];
+        pinch0 = Math.hypot(a.x - b.x, a.y - b.y) || 1;
+        zoom0 = zoom;
+      } else {
+        lastX = e.clientX;
+        lastY = e.clientY;
+        moved = 0;
+      }
+    });
+    stage.addEventListener("pointermove", (e) => {
+      if (!ptrs.has(e.pointerId)) return;
+      ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+      const r = rectOf();
+      if (ptrs.size === 2) {
+        const [a, b] = [...ptrs.values()];
+        const d = Math.hypot(a.x - b.x, a.y - b.y);
+        apply((zoom0 * d) / pinch0, (a.x + b.x) / 2 - r.left, (a.y + b.y) / 2 - r.top);
+      } else {
+        stage.scrollLeft -= e.clientX - lastX;
+        stage.scrollTop -= e.clientY - lastY;
+        moved += Math.abs(e.clientX - lastX) + Math.abs(e.clientY - lastY);
+        lastX = e.clientX;
+        lastY = e.clientY;
+      }
+    });
+    const lift = (e: PointerEvent) => {
+      if (!ptrs.has(e.pointerId)) return;
+      ptrs.delete(e.pointerId);
+      const rest = [...ptrs.values()][0];
+      if (rest) {
+        lastX = rest.x;
+        lastY = rest.y;
+        moved = 9;
+      } else if (e.type === "pointerup" && e.pointerType === "touch" && moved < 8) {
+        // Double-tap toggles fit <-> 2.5x about the tap (mouse uses dblclick).
+        const now = Date.now();
+        if (now - lastTap < 320) {
+          const r = rectOf();
+          apply(zoom > 1.01 ? 1 : 2.5, e.clientX - r.left, e.clientY - r.top);
+          lastTap = 0;
+        } else lastTap = now;
+      }
+    };
+    stage.addEventListener("pointerup", lift);
+    stage.addEventListener("pointercancel", lift);
+    stage.addEventListener("dblclick", (e) => {
+      if ((e as MouseEvent).detail && (e as PointerEvent).pointerType === "touch") return;
+      const r = rectOf();
+      apply(zoom > 1.01 ? 1 : 2.5, e.clientX - r.left, e.clientY - r.top);
+    });
+    // ctrl/cmd + wheel (what a trackpad pinch emits) zooms about the cursor;
+    // a plain wheel pans — the stage is an ordinary scroll container.
+    stage.addEventListener(
+      "wheel",
+      (e) => {
+        if (!(e.ctrlKey || e.metaKey)) return;
+        e.preventDefault();
+        const r = rectOf();
+        const d = e.deltaMode === 1 ? e.deltaY * 16 : e.deltaMode === 2 ? e.deltaY * 400 : e.deltaY;
+        const k = Math.min(2, Math.max(0.5, Math.exp(-d * 0.0025)));
+        apply(zoom * k, e.clientX - r.left, e.clientY - r.top);
+      },
+      { passive: false },
+    );
+    // iOS Safari: keep a pinch on the stage from zooming the page.
+    for (const t of ["gesturestart", "gesturechange"])
+      stage.addEventListener(t, (e) => e.preventDefault());
+    window.addEventListener("resize", () => {
+      if (dlg.open) refit();
+    });
+  }
+</script>
+
+<style is:global>
+  /* Screen-reader-only text (the caption anchors' accessible name). */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+  html.figfocus-open {
+    overflow: hidden;
+  }
+  .figfocus {
+    width: 100vw;
+    height: 100vh;
+    height: 100dvh;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    display: none;
+    flex-direction: column;
+  }
+  .figfocus[open] {
+    display: flex;
+  }
+  .figfocus::backdrop {
+    background: rgba(28, 25, 22, 0.35);
+  }
+  .figfocus-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px 24px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--rule);
+    flex-wrap: wrap;
+  }
+  .figfocus-caption {
+    margin: 0;
+    flex: 1 1 320px;
+    min-width: 0;
+    color: var(--mute);
+    font-size: 14px;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .figfocus-tools {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+  }
+  .figfocus-tools button,
+  .figfocus-tools .figfocus-dl {
+    min-width: 40px;
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    background: #fff;
+    color: var(--ink);
+    font: inherit;
+    font-size: 15px;
+    line-height: 38px;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color 0.15s ease, border-color 0.15s ease;
+  }
+  .figfocus-tools button:hover,
+  .figfocus-tools .figfocus-dl:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .figfocus-tools button:focus-visible,
+  .figfocus-tools .figfocus-dl:focus-visible,
+  .figfocus-stage:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .figfocus-zoom {
+    min-width: 52px;
+    text-align: center;
+    color: var(--mute);
+    font-size: 14px;
+    font-variant-numeric: tabular-nums;
+  }
+  .figfocus-stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+    touch-action: none;
+    overscroll-behavior: contain;
+    cursor: grab;
+    background: #fff;
+  }
+  .figfocus-stage:active {
+    cursor: grabbing;
+  }
+  .figfocus-img {
+    display: block;
+    width: 100%;
+    max-width: none;
+    height: auto;
+  }
+  @media (max-width: 640px) {
+    .figfocus-bar {
+      padding: 8px 10px;
+    }
+    .figfocus-caption {
+      font-size: 13px;
+      flex-basis: 100%;
+      order: 2;
+    }
+    .figfocus-tools {
+      width: 100%;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .figfocus-tools button,
+    .figfocus-tools .figfocus-dl {
+      padding: 0 10px;
+      font-size: 14px;
+    }
+    .figfocus-tools [data-act="close"] {
+      margin-left: auto;
+    }
+  }
+</style>

@@ -9,6 +9,8 @@ import {
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeExternalLinks from "rehype-external-links";
 import { readFileSync, readdirSync } from "node:fs";
+import rehypeFigureFocus from "./src/lib/rehype-figure-focus.mjs";
+import { scanFigures } from "./src/lib/figures-scan.mjs";
 
 // Per-post <lastmod> for the sitemap, read from blog frontmatter at config
 // time (`updated` ?? `date`). Google treats lastmod as all-or-nothing trust:
@@ -37,6 +39,21 @@ try {
   if (err?.code !== "ENOENT") throw err;
 }
 
+// Figure images ride the sitemap as <image:image> entries on their post (the
+// image-sitemap extension, <image:loc> only — see the press note above): the
+// attributed SVG for house figures, the raster itself otherwise. Same scan as
+// the build (src/lib/figures-scan.mjs), so the sitemap cannot list a figure
+// the page does not render.
+const figureImages = new Map();
+for (const fig of scanFigures({
+  blogDir: new URL("./src/content/blog/", import.meta.url).pathname,
+  parseFrontmatter,
+})) {
+  const path = `/blog/${fig.post}`;
+  if (!figureImages.has(path)) figureImages.set(path, []);
+  figureImages.get(path).push({ url: `https://scottclark.io${fig.download}` });
+}
+
 export default defineConfig({
   site: "https://scottclark.io",
   integrations: [
@@ -46,6 +63,7 @@ export default defineConfig({
         const path = new URL(item.url).pathname.replace(/\/$/, "") || "/";
         const lastmod = postLastmod.get(path);
         if (lastmod) item.lastmod = lastmod;
+        if (figureImages.has(path)) item.img = figureImages.get(path);
         return item;
       },
     }),
@@ -65,6 +83,9 @@ export default defineConfig({
       rehypePlugins: [
         rehypeHeadingIds,
         [rehypeAutolinkHeadings, { behavior: "wrap" }],
+        // Markdown images -> focusable, deep-linkable figures (figure focus,
+        // 2026-10-01; same markup contract as Figure.astro).
+        rehypeFigureFocus,
         [rehypeExternalLinks, { rel: ["noopener", "noreferrer"] }],
       ],
     }),

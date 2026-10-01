@@ -30,6 +30,8 @@ import {
   formatDate,
   pillarLabel,
 } from "./blog";
+import { figuresTitle, figuresDescription, figuresText, figureAttribution } from "./site-content";
+import { getFigures, attributionFor } from "./figures";
 
 function rowToMd(row: ChronoRow, useCvBullets = false): string {
   const list = useCvBullets
@@ -309,5 +311,43 @@ ${items}
 ---
 
 Source: ${siteUrl}/press
+`;
+}
+
+/** /figures.md — the figures index twin (also embedded in llms-full.txt):
+ * every figure the blog renders, grouped by post, with its deep link, the
+ * download, and the copyright line. Same data as the page and /figures.json. */
+export async function renderFiguresMd(): Promise<string> {
+  const figs = await getFigures();
+  const byPost = new Map<string, typeof figs>();
+  for (const f of figs) {
+    if (!byPost.has(f.post)) byPost.set(f.post, []);
+    byPost.get(f.post)!.push(f);
+  }
+  const sections = [...byPost.values()]
+    .map((group) => {
+      const first = group[0];
+      const items = group
+        .map((f) => {
+          const a = attributionFor(f);
+          const label = f.caption || f.alt || f.name;
+          return `- [${label}](${f.pageUrl}) — ${f.kind === "svg" ? "SVG" : "image"}: ${f.downloadUrl} (${"\u00a9"} ${a.year} ${a.holder})`;
+        })
+        .join("\n");
+      return `## ${first.postTitle}\n\n${first.pageUrl.split("#")[0]}\n\n${items}`;
+    })
+    .join("\n\n");
+  return `# ${figuresTitle}: ${figureAttribution.siteName}
+
+> ${figuresDescription}
+
+${figuresText.intro}
+
+${figuresText.attribution} Machine-readable index: ${siteUrl}/figures.json
+
+${sections}
+
+---
+Source: ${siteUrl}/figures (${figureAttribution.siteName})
 `;
 }

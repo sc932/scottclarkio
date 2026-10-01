@@ -17,7 +17,7 @@ When a new convention or pattern emerges in this repo's work, document it here i
 
 ## Project Overview
 
-Personal website for Scott Clark hosted at scottclark.io. Static site built with **Astro 5**, served as plain HTML+CSS, deployed to **AWS S3 + CloudFront**.
+Personal website for Scott Clark hosted at scottclark.io. Static site built with **Astro 7** (package.json; the "Astro 5" note here was stale until 2026-10-01), served as plain HTML+CSS, deployed to **AWS S3 + CloudFront**.
 
 Phases:
 - **Phase 1A — done (2026-05-01).** Plugins and skills installed: `frontend-design` and `playwright` MCP from the Anthropic marketplaces, plus the project-specific `scottclark-site` skill at `~/.claude/skills/scottclark-site/SKILL.md`.
@@ -218,7 +218,7 @@ A custom **`scottclark-site`** skill at `~/.claude/skills/scottclark-site/SKILL.
 
 ## Tech Stack
 
-- **Astro 5** — static site generator (zero client-side JS; no islands currently used).
+- **Astro 7** — static site generator. Client JS is an ALLOWLIST, not zero (estate contract, SPEC ruling 7): the YouTube facade (video posts), the pillar-sort script (blog listing), and the figure-focus view (any page with figures, 2026-10-01) — each marker-pinned in `scripts/aio-check.mjs`; no islands, no frameworks.
 - **TypeScript** — strict mode.
 - **`@fontsource-variable/source-serif-4`** + **`@fontsource-variable/ibm-plex-sans`** — self-hosted variable fonts. The canonical pages use vanilla CSS via `<style is:global define:vars={...}>` in `SiteLayout.astro`.
 - **`@astrojs/sitemap`** + **`@astrojs/rss`** — sitemap auto-generation (output: `/sitemap-index.xml` + `/sitemap-0.xml`) and RSS feed (output: `/rss.xml`, currently empty channel). Both pinned exact per dep hygiene. Added 2026-05-04 with Phase 1C.
@@ -358,6 +358,7 @@ terraform apply                                           # commit changes
 - All CSS lives in `SiteLayout.astro`'s `<style is:global define:vars={...}>` block. Page-specific CSS (e.g., `.abstract` on publications, `.focus-list` on cv) goes in `<style is:global>` at the bottom of that page.
 - Theme tokens (`--bg`, `--ink`, `--mute`, `--soft`, `--accent`, `--rule`, `--ruleSoft`, `--serif`, `--sans`) are wired through CSS custom properties via Astro's `define:vars`. Source in `src/lib/site-theme.ts`.
 - Images go in `public/images/` for static assets, or external URLs for third-party media.
+- **Figure focus (2026-10-01, estate-wide):** every figure a post renders (`<Figure>` SVGs and markdown images alike) is deep-linkable (`<figure id="fig-<name>">`, caption label = self-link), click-to-focus (`FigureFocus.astro`: full width, zoom, pan, download), and downloadable as an attributed SVG (`/figures/<slug>/<name>.svg`, footer = copyright + deep link; identity in `site-content.ts` `figureAttribution`). `/figures` + `/figures.md` + `/figures.json` index them; the AIO gate holds page ↔ derivatives ↔ index ↔ sitemap in lockstep via one scan (`src/lib/figures-scan.mjs`). Contract: vault `Projects/content_factory/blog-grammar.md` § Figure focus.
 
 ## Design System
 
@@ -394,7 +395,7 @@ Body font-size 17px, line-height 1.55. Max content width 880px. Sticky masthead 
 - **Do NOT add features beyond the static-site vision.** No CMS, no comment systems, no analytics dashboards in the site itself, no user accounts. Keep it static, fast, cheap.
 - **Do NOT hand-edit blog post prose in `src/content/blog/*.mdx`.** The blog is LIVE (Phase 2 shipped 2026-07-28); the vault `Writing/<slug>.md` files are canonical and posts re-port at Scott's LOCK — a hand-edit here silently diverges from the vault and dies at the next re-port. New posts arrive via the factory port, never drafted in-repo.
 - **Do NOT duplicate AIO/SEO rendering logic.** Phase 1C shipped a single source of truth for every signal: `personSchema` + `websiteSchema` + `buildProfilePageSchema` / `buildCollectionPageSchema` / `buildBreadcrumbList` helpers in `site-content.ts`; six `.md` twin endpoints in `src/pages/` driven by render functions in `src/lib/md-pages.ts`; OG/Twitter/canonical/rel=me/JSON-LD `@graph` all assembled in `SiteLayout.astro` from the schema helpers; `public/robots.txt`, `public/humans.txt`, `public/.well-known/security.txt`. When adding a new page, pass a `pageSchema` prop to `SiteLayout` and use the existing helpers. When changing bio facts, update `personSchema` only — every other surface (HTML head meta, JSON-LD graph, .md twins, llms-full.txt, RSS feed metadata) reads from there. Never hand-roll a `<meta>` tag in a page or hand-write a `.md` endpoint.
-- **Do NOT add client-side JavaScript** unless absolutely necessary (Astro islands only). Currently the site ships zero JS to the browser; preserve that.
+- **Do NOT add client-side JavaScript** beyond the allowlist (facade · pillar sort · figure focus). A new script is a deliberate island: dependency-free, inline, shipped only on pages that need it, marker-pinned in the AIO gate, and recorded in the vault blog-grammar script budget — never a framework.
 - **Do NOT use server-side rendering** — fully static.
 - **Do NOT commit `.env` files or AWS credentials.**
 - **Do NOT modify the LICENSE structure** (dual MIT/copyright).

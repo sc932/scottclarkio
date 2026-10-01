@@ -5,6 +5,16 @@
 // under public/images/blog/<slug>/ for the .md twins, feeds, and social.
 // Usage in MDX (single-line, self-closing — the .md twin rewrite depends on
 // this exact shape): <Figure slug="..." name="..." caption="..." />
+//
+// Figure focus (2026-10-01): every figure is deep-linkable (id = figureId(name),
+// the caption's "Figure N" label is the self-link, like the wrapped heading
+// anchors), and the plate is a link to the figure's DOWNLOADABLE version —
+// the attributed SVG at /figures/<slug>/<name>.svg (footer: copyright + this
+// deep link; built by the figures endpoint). With JS, FigureFocus.astro
+// upgrades that link into the in-page focus view (full width, zoom, pan,
+// download); without JS the browser opens the SVG itself. Same markup
+// contract as rehype-figure-focus.mjs (markdown images).
+import { figureId } from "../lib/figures-scan.mjs";
 interface Props {
   slug: string;
   name: string;
@@ -37,14 +47,33 @@ const svg = raw.replace(/<svg\b[^>]*>/, (root) => {
   const cleaned = root.replace(/\s(?:role|aria-label)="[^"]*"/g, "");
   return cleaned.replace(/<svg\b/, `<svg role="img" aria-label="${label}"`);
 });
+const id = figureId(name);
+const download = `/figures/${slug}/${name}.svg`;
 ---
 
-<figure class="post-figure" data-png={`/images/blog/${slug}/${name}.png`}>
+<figure
+  class="post-figure"
+  id={id}
+  data-figure={id}
+  data-png={`/images/blog/${slug}/${name}.png`}
+  aria-labelledby={`${id}-caption`}
+>
   {/* White panel + hairline border: figures stay white (asset-portable) and
       read as plates on the warm page. Border over shadow — hairline rules are
       this design system's only depth vocabulary (Scott, 2026-07-23). */}
   <div class="fig-panel">
-    <Fragment set:html={svg} />
+    <a
+      class="fig-open"
+      href={download}
+      data-download={`${slug}-${name}.svg`}
+      aria-label={`Open figure: ${alt ?? caption}`}
+    >
+      <Fragment set:html={svg} />
+      <span class="fig-expand" aria-hidden="true"></span>
+    </a>
   </div>
-  <figcaption>{caption}</figcaption>
+  <figcaption id={`${id}-caption`}>
+    <a class="fig-anchor" href={`#${id}`}><span class="sr-only">Link to this figure</span></a>
+    {caption}
+  </figcaption>
 </figure>

@@ -38,6 +38,16 @@ const RULES = [
 // as KNOWN-EXEMPT notes; an exclude that stops suppressing anything fails.
 const EXCLUDE = [
   {
+    path: /^figures\/index\.html$/,
+    rule: "distributional",
+    why: "the figures index quotes captions and post titles verbatim from the posts; the source posts carry the property links (figure focus, 2026-10-01)",
+  },
+  {
+    path: /^figures\/index\.html$/,
+    rule: "talaria",
+    why: "the figures index quotes captions and post titles verbatim from the posts; the source posts carry the property links (figure focus, 2026-10-01)",
+  },
+  {
     path: /^press\/index\.html$/,
     rule: "distributional",
     why: "press excerpts are verbatim third-party quotes (provenance: never edit or markup another publisher's words); each entry's outbound link is the article itself",

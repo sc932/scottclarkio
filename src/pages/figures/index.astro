@@ -1,0 +1,255 @@
+---
+import "@fontsource-variable/source-serif-4";
+import "@fontsource-variable/ibm-plex-sans";
+import SiteLayout from "../../components/SiteLayout.astro";
+import FigureFocus from "../../components/FigureFocus.astro";
+import { v2Theme } from "../../lib/site-theme";
+import {
+  siteUrl,
+  figureAttribution,
+  figuresTitle,
+  figuresDescription,
+  figuresText,
+} from "../../lib/site-content";
+import { getFigures, figureImageObject, downloadName, attributionFor } from "../../lib/figures";
+import { formatDate } from "../../lib/blog";
+
+// /figures (2026-10-01) — the index of every figure the blog renders, grouped
+// by post in listing order. Each card is the same focusable figure markup as
+// the posts (plate = fig-open link to the attributed SVG; the focus view
+// upgrades it), with the deep link into the post and the download. Data =
+// src/lib/figures.ts, the same source as /figures.json, the .md twin and the
+// AIO gate; JSON-LD = CollectionPage + ItemList of the figures' ImageObjects.
+const figures = await getFigures();
+const byPost = new Map<string, typeof figures>();
+for (const f of figures) {
+  if (!byPost.has(f.post)) byPost.set(f.post, []);
+  byPost.get(f.post)!.push(f);
+}
+const pageUrl = `${siteUrl}/figures`;
+const pageSchema = {
+  "@type": "CollectionPage",
+  "@id": pageUrl,
+  url: pageUrl,
+  name: `${figuresTitle}: ${figureAttribution.siteName}`,
+  description: figuresDescription,
+  isPartOf: { "@id": `${siteUrl}/#website` },
+  mainEntity: {
+    "@type": "ItemList",
+    numberOfItems: figures.length,
+    itemListElement: figures.map((f, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      item: figureImageObject(f),
+    })),
+  },
+};
+const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
+---
+
+<SiteLayout
+  {...v2Theme}
+  pageTitle={`${figuresTitle}: ${figureAttribution.siteName}`}
+  pageDescription={figuresDescription}
+  pageSchema={pageSchema}
+  breadcrumbTrail={breadcrumbTrail}
+>
+  <article class="figures">
+    <header class="figures-head">
+      <h1>{figuresTitle}</h1>
+      <p class="figures-intro">{figuresText.intro}</p>
+      <p class="figures-meta">
+        {figuresText.attribution} Machine-readable index:{" "}
+        <a href="/figures.json">figures.json</a>. Markdown: <a href="/figures.md">figures.md</a>.
+      </p>
+    </header>
+
+    {[...byPost.values()].map((group) => {
+      const first = group[0];
+      const postHref = `/blog/${first.post}`;
+      return (
+        <section class="figures-post" aria-labelledby={`post-${first.post}`}>
+          <h2 id={`post-${first.post}`}>
+            <a href={postHref}>{first.postTitle}</a>
+          </h2>
+          <p class="figures-post-meta">
+            {formatDate(first.postDate)} · {group.length} {group.length === 1 ? "figure" : "figures"}
+          </p>
+          <div class="figures-grid">
+            {group.map((f) => {
+              const a = attributionFor(f);
+              const label = f.caption || f.alt || f.name;
+              return (
+                <figure class="post-figure figures-card" id={f.id} data-figure={f.id} aria-labelledby={`${f.id}-caption`}>
+                  <div class="fig-panel">
+                    <a
+                      class="fig-open"
+                      href={f.download}
+                      data-download={downloadName(f)}
+                      aria-label={`Open figure: ${label}`}
+                    >
+                      <img src={f.src} alt={label} loading="lazy" decoding="async" />
+                      <span class="fig-expand" aria-hidden="true" />
+                    </a>
+                  </div>
+                  <figcaption id={`${f.id}-caption`}>
+                    {f.caption || f.alt}
+                    <span class="figures-links">
+                      <a href={`${postHref}#${f.id}`}>In the post</a>
+                      <a href={f.download} download={downloadName(f)}>
+                        {f.kind === "svg" ? "Download SVG" : "Download"}
+                      </a>
+                      <span class="figures-copy">{"©"} {a.year} {a.holder}</span>
+                    </span>
+                  </figcaption>
+                </figure>
+              );
+            })}
+          </div>
+        </section>
+      );
+    })}
+  </article>
+  <FigureFocus />
+</SiteLayout>
+
+<style is:global>
+  .figures {
+    max-width: 960px;
+  }
+  .figures-head h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 40px;
+    line-height: 1.1;
+    letter-spacing: -0.012em;
+    margin: 0 0 16px;
+  }
+  .figures-intro {
+    max-width: 40rem;
+    font-size: 17.5px;
+    line-height: 1.65;
+    margin: 0 0 12px;
+  }
+  .figures-meta {
+    max-width: 40rem;
+    color: var(--mute);
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0 0 8px;
+  }
+  .figures-meta a {
+    color: inherit;
+  }
+  .figures-meta a:hover {
+    color: var(--accent);
+  }
+  .figures-post {
+    border-top: 1px solid var(--rule);
+    padding-top: 28px;
+    margin-top: 36px;
+  }
+  .figures-post h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 26px;
+    line-height: 1.18;
+    letter-spacing: -0.008em;
+    margin: 0 0 6px;
+  }
+  .figures-post h2 a {
+    color: inherit;
+    text-decoration: none;
+  }
+  .figures-post h2 a:hover {
+    color: var(--accent);
+  }
+  .figures-post-meta {
+    color: var(--mute);
+    font-size: 14px;
+    margin: 0 0 18px;
+  }
+  .figures-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 28px 24px;
+  }
+  .figures .post-figure {
+    margin: 0;
+    max-width: none;
+    scroll-margin-top: 72px;
+  }
+  .figures .fig-panel {
+    position: relative;
+    background: #fff;
+    border: 1px solid var(--rule);
+    border-radius: 4px;
+    padding: 10px;
+  }
+  .figures .fig-open {
+    position: relative;
+    display: block;
+    cursor: zoom-in;
+  }
+  .figures .fig-open img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .figures .fig-open:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  .figures .post-figure:hover .fig-panel,
+  .figures .post-figure:focus-within .fig-panel,
+  .figures .post-figure:target .fig-panel {
+    border-color: var(--accent);
+  }
+  .figures .fig-expand {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 14px;
+    height: 14px;
+    border-right: 2px solid var(--mute);
+    border-bottom: 2px solid var(--mute);
+    opacity: 0.45;
+  }
+  .figures .post-figure:hover .fig-expand {
+    opacity: 1;
+    border-color: var(--accent);
+  }
+  .figures figcaption {
+    margin-top: 10px;
+    color: var(--mute);
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .figures-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 14px;
+    margin-top: 6px;
+    font-size: 13px;
+  }
+  .figures-links a {
+    color: var(--ink);
+    text-decoration: none;
+    border-bottom: 1px solid var(--rule);
+  }
+  .figures-links a:hover {
+    color: var(--accent);
+    border-bottom-color: var(--accent);
+  }
+  .figures-copy {
+    color: var(--soft);
+  }
+  @media (max-width: 640px) {
+    .figures-head h1 {
+      font-size: 32px;
+    }
+    .figures-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

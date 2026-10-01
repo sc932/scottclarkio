@@ -356,3 +356,27 @@ export function buildBreadcrumbFromTrail(
     ],
   };
 }
+
+// Figure attribution (2026-10-01): every downloadable figure carries this line
+// bottom-right (composed at build by src/lib/figure-attribution.mjs) plus the
+// figure's own deep-link URL; the /figures index, the ImageObject JSON-LD and
+// the manifest read the same block.
+export const figureAttribution = {
+  /** Copyright holder printed in the footer (the legal entity). */
+  holder: "Scott Clark",
+  /** Publisher / credit line (the public name of this site). */
+  publisher: "Scott Clark",
+  siteName: "Scott Clark",
+  /** Author of the figures. */
+  creator: "Scott Clark",
+};
+// /figures (2026-10-01): the index of every figure the blog renders.
+export const figuresTitle = "Figures";
+export const figuresDescription =
+  "Every diagram and figure from Scott Clark's writing, each linked to the essay it comes from and downloadable as a vector SVG that carries its attribution.";
+export const figuresText = {
+  intro:
+    "Diagrams from the essays, in one place. Open any figure to zoom and pan, follow the link to read it in context, or download the SVG. Each download carries its copyright line and the link back to its source essay bottom-right.",
+  attribution:
+    "Figures are the work of Scott Clark and are copyright Scott Clark. When you reuse one, keep the attribution line intact and link to the source essay.",
+};

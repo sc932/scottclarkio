@@ -4,6 +4,7 @@ import "@fontsource-variable/ibm-plex-sans";
 import { render } from "astro:content";
 import SiteLayout from "../../components/SiteLayout.astro";
 import TitleParts from "../../components/TitleParts.astro";
+import FigureFocus from "../../components/FigureFocus.astro";
 import { v2Theme } from "../../lib/site-theme";
 import { siteUrl } from "../../lib/site-content";
 import {
@@ -17,6 +18,7 @@ import {
   pillarLabel,
   type Post,
 } from "../../lib/blog";
+import { getPostFigures, figureImageObject } from "../../lib/figures";
 
 export async function getStaticPaths() {
   const posts = await getPublishedPosts();
@@ -28,7 +30,16 @@ interface Props {
 }
 const { post } = Astro.props;
 const { Content } = await render(post);
-const pageSchema = buildBlogPostingSchema(post);
+// Figure focus (2026-10-01): every figure the post renders (house SVG
+// figures + markdown images) is deep-linkable + downloadable; the page's
+// BlogPosting carries them as ImageObjects (contentUrl = the attributed
+// download, copyright + credit, no license grant) and the focus view ships
+// only on pages that have figures.
+const figures = getPostFigures(post);
+const pageSchema = {
+  ...buildBlogPostingSchema(post),
+  ...(figures.length && { associatedMedia: figures.map(figureImageObject) }),
+};
 
 // "Read next" (estate grammar, Scott 2026-07-24): two related posts at the
 // end of every post. With a small corpus this is a complete clique (listing
@@ -145,6 +156,8 @@ const breadcrumbTrail = [
     <div class="prose">
       <Content />
     </div>
+
+    {figures.length > 0 && <FigureFocus />}
 
     {/* Standing follow ask (Scott, 2026-07-28) — this site's analog of the
         talaria post-end CTA. Rides the .md twin too (renderPostMd). */}
@@ -379,6 +392,92 @@ const breadcrumbTrail = [
     height: auto;
     display: block;
   }
+  /* Figure focus (2026-10-01): the plate is a link to the figure's
+     downloadable version (JS upgrades it to the in-page focus view); the
+     caption's "Figure N" label is the self-link, exactly like the wrapped
+     heading anchors; a deep-linked figure lights its hairline. */
+  .prose {
+    counter-reset: figure;
+  }
+  .post-figure {
+    counter-increment: figure;
+    scroll-margin-top: 72px;
+  }
+  .post-figure .fig-open {
+    position: relative;
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    cursor: zoom-in;
+    border-radius: 2px;
+  }
+  .post-figure .fig-open img {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+  .post-figure .fig-open:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  .post-figure:hover .fig-panel,
+  .post-figure:focus-within .fig-panel {
+    border-color: var(--accent);
+  }
+  .post-figure:target .fig-panel {
+    border-color: var(--accent);
+  }
+  /* The expand glyph: two corner brackets, quiet until the plate is hovered. */
+  .fig-expand {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 14px;
+    height: 14px;
+    border-right: 2px solid var(--mute);
+    border-bottom: 2px solid var(--mute);
+    opacity: 0.45;
+    transition: opacity 0.15s ease, border-color 0.15s ease;
+  }
+  .post-figure:hover .fig-expand,
+  .post-figure:focus-within .fig-expand {
+    opacity: 1;
+    border-color: var(--accent);
+  }
+  .fig-anchor {
+    color: inherit;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .fig-anchor::before {
+    content: "Figure " counter(figure) ".";
+  }
+  .fig-anchor:hover {
+    color: var(--accent);
+  }
+  .fig-anchor--corner {
+    position: absolute;
+    right: 8px;
+    bottom: 6px;
+    font-size: 13px;
+    line-height: 1;
+    color: var(--mute);
+    opacity: 0.6;
+  }
+  .fig-anchor--corner::before {
+    content: "#";
+  }
+  .post-figure .fig-panel {
+    position: relative;
+  }
+  .post-figure--img .fig-panel {
+    padding: 8px;
+  }
+  .post-figure--img .fig-anchor--corner + .fig-open .fig-expand,
+  .post-figure--img .fig-anchor--corner ~ .fig-open .fig-expand {
+    bottom: 0;
+  }
+
   .post-figure figcaption {
     margin-top: 12px;
     color: var(--mute);

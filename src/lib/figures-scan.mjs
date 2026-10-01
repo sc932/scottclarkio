@@ -1,0 +1,112 @@
+// figures-scan.mjs — ONE enumeration of every figure the blog renders, shared
+// by the build (src/lib/figures.ts, the /figures endpoints), the config
+// (astro.config.mjs: sitemap <image:image> entries) and the AIO gate
+// (scripts/aio-check.mjs). Plain Node ESM so all three can import it.
+//
+// The MDX bodies follow the controlled component grammar (blog-grammar.md):
+// `<Figure slug="…" name="…" caption="…" />` single-line + self-closing, and
+// plain markdown images `![alt](/images/blog/<slug>/<file>)`. Both become a
+// focusable figure on the page (Figure.astro / rehype-figure-focus.mjs) with a
+// stable deep-link id; this module is where the id law and the derived-asset
+// URLs live so the page, the twins, the manifest and the gate cannot drift.
+import { readFileSync, readdirSync, existsSync } from "node:fs";
+import { join, basename, extname } from "node:path";
+
+/** Deep-link id for a figure asset name: `fig-` + the name with any leading
+ * `figN-` authoring prefix dropped (fig1-architecture -> fig-architecture;
+ * why-im-building-talaria -> fig-why-im-building-talaria). Lowercase, [a-z0-9-]. */
+export function figureId(name) {
+  const base = String(name)
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/^fig\d+-/i, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+  if (!base) throw new Error(`figureId: empty id from name "${name}"`);
+  return `fig-${base}`;
+}
+
+const attr = (attrs, k) => attrs.match(new RegExp(`\\b${k}="([^"]*)"`))?.[1];
+
+/** Strip fenced code + inline code so sample markup never counts as a figure
+ * (the same masking the twin renderer uses). */
+function maskCode(body) {
+  return body
+    .replace(/(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[ \t]*(?=\n|$)/g, "$1")
+    .replace(/`[^`\n]+`/g, "");
+}
+
+/** Figures of ONE post body, in document order. */
+export function scanBody(slug, body) {
+  const out = [];
+  const src = maskCode(body);
+  const re = /<Figure\s+([^>]*?)\/>|!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+  let m;
+  while ((m = re.exec(src))) {
+    if (m[1] !== undefined) {
+      const name = attr(m[1], "name");
+      const figSlug = attr(m[1], "slug") ?? slug;
+      const caption = attr(m[1], "caption") ?? "";
+      if (!name) continue;
+      out.push({
+        post: slug,
+        kind: "svg",
+        name,
+        id: figureId(name),
+        caption,
+        alt: attr(m[1], "alt") ?? caption,
+        // The inline page copy renders the committed SVG; the PNG twin feeds
+        // twins/feeds/social; the attributed SVG is the download.
+        src: `/images/blog/${figSlug}/${name}.png`,
+        svgSource: `src/assets/blog/${figSlug}/${name}.svg`,
+        download: `/figures/${figSlug}/${name}.svg`,
+      });
+    } else {
+      const url = m[3];
+      // Root-relative site images only; external images are not ours to index.
+      if (!url.startsWith("/") || url.startsWith("//")) continue;
+      const file = basename(url);
+      const name = file.replace(extname(file), "");
+      out.push({
+        post: slug,
+        kind: "raster",
+        name,
+        id: figureId(name),
+        caption: "",
+        alt: m[2] ?? "",
+        src: url,
+        svgSource: null,
+        download: url,
+      });
+    }
+  }
+  const seen = new Set();
+  for (const f of out) {
+    if (seen.has(f.id))
+      throw new Error(`figures: duplicate deep-link id "${f.id}" in post ${slug} (rename one asset)`);
+    seen.add(f.id);
+  }
+  return out;
+}
+
+/** Every figure of every non-draft post under blogDir (flat *.mdx by contract).
+ * `parseFrontmatter` is injected so this module needs no Astro import. */
+export function scanFigures({ blogDir, parseFrontmatter }) {
+  const figures = [];
+  if (!existsSync(blogDir)) return figures;
+  for (const f of readdirSync(blogDir).filter((n) => n.endsWith(".mdx")).sort()) {
+    const raw = readFileSync(join(blogDir, f), "utf8");
+    const { frontmatter, content } = parseFrontmatter(raw);
+    if (frontmatter.draft === true) continue;
+    const slug = f.replace(/\.mdx$/, "");
+    for (const fig of scanBody(slug, content)) {
+      figures.push({
+        ...fig,
+        postTitle: frontmatter.title,
+        postDate: frontmatter.date,
+        postUpdated: frontmatter.updated,
+      });
+    }
+  }
+  return figures;
+}

@@ -10,6 +10,8 @@
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { parseFrontmatter } from "@astrojs/markdown-remark";
+import { scanFigures } from "../src/lib/figures-scan.mjs";
+import { attributeSvg } from "../src/lib/figure-attribution.mjs";
 
 // ---- per-repo config ----
 const SITE_URL = "https://scottclark.io";
@@ -172,6 +174,44 @@ const pickGraph = (html) => {
 
 // ---- per-page checks ----
 const htmlFiles = walk(DIST).filter((f) => f.endsWith(".html"));
+// ---- figure focus (2026-10-01): every figure deep-linkable + downloadable ----
+// The gate re-runs the SAME scan the build and the sitemap use, so the page,
+// the derived SVGs, the index, the manifest and the twin are checked against
+// one enumeration — never against each other.
+const figuresExpected = scanFigures({ blogDir: SRC_BLOG, parseFrontmatter });
+const figuresByPost = new Map();
+for (const f of figuresExpected) {
+  if (!figuresByPost.has(f.post)) figuresByPost.set(f.post, []);
+  figuresByPost.get(f.post).push(f);
+}
+const figureRe = /<figure class="post-figure[^"]*" id="(fig-[^"]+)"[^>]*>([\s\S]*?)<\/figure>/g;
+function checkFigures(rel, html, slug) {
+  const expected = figuresByPost.get(slug) ?? [];
+  const found = [...html.matchAll(figureRe)].map((m) => ({ id: m[1], body: m[2] }));
+  const ids = found.map((f) => f.id);
+  if (new Set(ids).size !== ids.length) failures.push(`${rel}: duplicate figure deep-link id`);
+  if (!eqSets(new Set(ids), new Set(expected.map((f) => f.id))))
+    failures.push(
+      `${rel}: figure ids on the page [${ids}] != the source's figures [${expected.map((f) => f.id)}]`,
+    );
+  for (const f of found) {
+    const exp = expected.find((e) => e.id === f.id);
+    const open = f.body.match(/<a class="fig-open" href="([^"]+)"[^>]*>/);
+    if (!open) {
+      failures.push(`${rel}: figure ${f.id} has no fig-open link`);
+      continue;
+    }
+    if (exp && open[1] !== exp.download)
+      failures.push(`${rel}: figure ${f.id} opens ${open[1]}, expected ${exp.download}`);
+    if (!existsSync(join(DIST, open[1].replace(/^\//, ""))))
+      failures.push(`${rel}: figure ${f.id} download target did not build: ${open[1]}`);
+    if (!f.body.includes(`<a class="fig-anchor`) || !f.body.includes(`href="#${f.id}"`))
+      failures.push(`${rel}: figure ${f.id} has no self-link anchor to #${f.id}`);
+    if (!/aria-label="Open figure/.test(open[0]))
+      failures.push(`${rel}: figure ${f.id} fig-open link lacks its accessible name`);
+  }
+}
+
 let sawNoopener = false;
 for (const file of htmlFiles) {
   const rel = file.slice(DIST.length + 1);
@@ -202,22 +242,27 @@ for (const file of htmlFiles) {
     "",
   );
   const scriptCount = (nonLd.match(/<script[\s>]/gi) ?? []).length;
-  if (scriptCount > 0) {
-    const facadeOk =
-      isPostPage && scriptCount === 1 && html.includes('class="yt-facade"');
-    // The blog listing ships exactly ONE first-party script: the ?pillar=
-    // sort-only view (estate ruling 2026-07-25; ?pillar= is this site's URL
-    // key, settled at the 2026-07-28 port). Marker-pinned so any other
-    // script still blows the budget.
-    const pillarSortOk =
-      rel === "blog/index.html" &&
-      scriptCount === 1 &&
-      html.includes("<script data-pillar-sort>");
-    if (!facadeOk && !pillarSortOk)
-      failures.push(
-        `${rel}: ${scriptCount} non-JSON-LD <script>(s) — only the YouTube facade (post pages) or the pillar-sort script (blog listing) may ship (round-2 S24; pillar-sort 2026-07-28)`,
-      );
-  }
+  // First-party scripts, each keyed by the markup only its own page emits:
+  // the YouTube facade (post pages), the series-sort (blog listing), and the
+  // figure-focus view (any page rendering figures: posts + /figures,
+  // 2026-10-01). A page may carry exactly the scripts its markers call for —
+  // one each, nothing else (round-2 S24; listing sort).
+  const allowed = [
+    isPostPage && html.includes('class="yt-facade"'),
+    rel === "blog/index.html" && html.includes("<script data-pillar-sort>"),
+    html.includes("<dialog class=\"figfocus\"") && /<figure class="post-figure[^"]*" id="fig-/.test(html),
+  ].filter(Boolean).length;
+  if (scriptCount !== allowed)
+    failures.push(
+      `${rel}: ${scriptCount} non-JSON-LD <script>(s) but ${allowed} first-party script(s) licensed by the page's markup (facade / listing sort / figure focus)`,
+    );
+  // Figure focus contract (2026-10-01): a page with figures ships the focus
+  // view; a page without them must not.
+  const figCount = (html.match(/<figure class="post-figure[^"]*" id="fig-/g) ?? []).length;
+  if (figCount > 0 && !html.includes('<dialog class="figfocus"'))
+    failures.push(`${rel}: ${figCount} figure(s) but no figure-focus view`);
+  if (figCount === 0 && html.includes('<dialog class="figfocus"'))
+    failures.push(`${rel}: figure-focus view shipped on a page without figures`);
   const nonScript = nonLd.replace(/<script[\s\S]*?<\/script>/gi, "");
   if (/\son[a-z]+\s*=|href="javascript:/i.test(nonScript))
     failures.push(`${rel}: inline event handler or javascript: URL (round-2 S24)`);
@@ -357,6 +402,7 @@ for (const file of htmlFiles) {
     }
     if (html.includes("<h2") && hIds.length === 0)
       failures.push(`${rel}: h2 without id — markdown processor pin not applied?`);
+    checkFigures(rel, html, slug);
     // Figure PNG twins referenced by data-png must ship
     for (const m of html.matchAll(/data-png="([^"]+)"/g))
       if (!existsSync(join(DIST, m[1].replace(/^\//, ""))))
@@ -633,6 +679,95 @@ if (existsSync(SVG_SRC)) {
     )
       failures.push(`${f}: external/active resource reference — inline SVGs must be self-contained (round-2 S25)`);
   }
+}
+
+// ---- figure focus: derived SVGs, index, manifest, twin, sitemap ----
+{
+  const { figureAttribution } = await import("../src/lib/site-content.ts");
+  const asDate = (v) => (v instanceof Date ? v : new Date(v));
+  for (const f of figuresExpected) {
+    const url = `${SITE_URL}/blog/${f.post}#${f.id}`;
+    if (f.kind === "svg") {
+      const out = join(DIST, f.download.replace(/^\//, ""));
+      if (!existsSync(out)) {
+        failures.push(`figures: ${f.download} did not build`);
+        continue;
+      }
+      if (!existsSync(f.svgSource)) {
+        failures.push(`figures: ${f.svgSource} missing for ${f.post}/${f.name}`);
+        continue;
+      }
+      const raw = readFileSync(f.svgSource, "utf8");
+      const title = raw.match(/<title\b[^>]*>([\s\S]*?)<\/title>/)?.[1]?.trim();
+      const date = asDate(f.postDate);
+      const { svg } = attributeSvg(raw, {
+        holder: figureAttribution.holder,
+        publisher: figureAttribution.publisher,
+        creator: figureAttribution.creator,
+        year: date.getUTCFullYear(),
+        date: asDate(f.postUpdated ?? f.postDate).toISOString().slice(0, 10),
+        url,
+        title,
+        caption: f.caption,
+      });
+      const built = readFileSync(out, "utf8");
+      if (built !== svg)
+        failures.push(`figures: ${f.download} differs from attributeSvg(${f.svgSource}) — the build and the gate disagree`);
+      if (!built.includes(`id="fig-attribution"`) || !built.includes(url) || !built.includes(figureAttribution.holder))
+        failures.push(`figures: ${f.download} lacks the attribution footer (holder + deep link)`);
+      if (!built.includes("<dc:source>") || !built.includes("<dc:rights>"))
+        failures.push(`figures: ${f.download} lacks Dublin Core metadata`);
+      if (/<script\b|\son[a-z]+\s*=/i.test(built)) failures.push(`figures: ${f.download} carries script/handlers`);
+    } else if (!existsSync(join(DIST, f.download.replace(/^\//, "")))) {
+      failures.push(`figures: image ${f.download} (post ${f.post}) did not build`);
+    }
+    // Every figure rides the sitemap as an <image:loc> on its post.
+    if (!sitemaps.includes(`<image:loc>${SITE_URL}${f.download}</image:loc>`))
+      failures.push(`figures: sitemap has no <image:loc> for ${f.download}`);
+  }
+  // Derived set is EXACT: nothing under dist/figures/ the scan did not ask for.
+  const derived = existsSync(join(DIST, "figures"))
+    ? walk(join(DIST, "figures")).filter((x) => x.endsWith(".svg")).map((x) => "/" + x.slice(DIST.length + 1))
+    : [];
+  const wanted = figuresExpected.filter((f) => f.kind === "svg").map((f) => f.download);
+  if (!eqSets(new Set(derived), new Set(wanted)))
+    failures.push(`figures: built derivatives [${derived}] != expected [${wanted}]`);
+  // The index page lists every figure (id + download + in-post link), the
+  // manifest and the twin carry the same set, llms surfaces link them.
+  const indexPath = join(DIST, "figures", "index.html");
+  if (!existsSync(indexPath)) failures.push("figures: /figures index did not build");
+  else {
+    const page = readFileSync(indexPath, "utf8");
+    for (const f of figuresExpected) {
+      if (!page.includes(`id="${f.id}"`)) failures.push(`figures: index lacks ${f.id}`);
+      if (!page.includes(`href="${f.download}"`)) failures.push(`figures: index lacks the download for ${f.id}`);
+      if (!page.includes(`href="/blog/${f.post}#${f.id}"`)) failures.push(`figures: index lacks the in-post link for ${f.id}`);
+    }
+    const g = pickGraph(page);
+    const nodes = g && typeof g === "object" ? g["@graph"] ?? [] : [];
+    const cp = nodes.find((n) => n["@type"] === "CollectionPage");
+    const n = cp?.mainEntity?.numberOfItems;
+    if (n !== figuresExpected.length)
+      failures.push(`figures: index ItemList counts ${n}, scan says ${figuresExpected.length}`);
+  }
+  const manifestPath = join(DIST, "figures.json");
+  if (!existsSync(manifestPath)) failures.push("figures: /figures.json did not build");
+  else {
+    const m = JSON.parse(readFileSync(manifestPath, "utf8"));
+    const ids = new Set((m.figures ?? []).map((f) => `${f.post?.slug}#${f.id}`));
+    if (!eqSets(ids, new Set(figuresExpected.map((f) => `${f.post}#${f.id}`))))
+      failures.push("figures: /figures.json figure set != the scan");
+  }
+  const twinPath = join(DIST, "figures.md");
+  if (!existsSync(twinPath)) failures.push("figures: /figures.md twin did not build");
+  else {
+    const md = readFileSync(twinPath, "utf8");
+    for (const f of figuresExpected)
+      if (!md.includes(`${SITE_URL}${f.download}`)) failures.push(`figures: twin lacks the download for ${f.id}`);
+    if (!llmsFull.includes(md.trim())) failures.push("llms-full.txt does not embed the figures twin verbatim");
+  }
+  if (!llms.includes(`${SITE_URL}/figures.md`)) failures.push("llms.txt does not link the figures twin");
+  if (!llmsFull.includes(`Source: ${SITE_URL}/figures`)) failures.push("llms-full.txt missing the figures section");
 }
 
 // A debt pinned to a file that no longer exists is a stale declaration —

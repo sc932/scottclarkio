@@ -11,8 +11,7 @@ import {
   renderTalksMd,
   renderProjectsMd,
   renderPublicationsMd,
-  renderPressMd,
-} from "../lib/md-pages";
+  renderPressMd, renderFiguresMd } from "../lib/md-pages";
 import {
   getPublishedPosts,
   getPostsByDate,
@@ -32,6 +31,7 @@ export const GET: APIRoute = async () => {
     renderProjectsMd(),
     renderPublicationsMd(),
     renderPressMd(),
+    renderFiguresMd(),
     ...(posts.length ? [Promise.resolve(listing)] : []),
     ...posts.map((p) => Promise.resolve(renderPostMd(p))),
   ]);
