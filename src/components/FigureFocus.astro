@@ -7,9 +7,10 @@
 // the caption burned in, for house figures), copy-link, Esc/Back close.
 // Scott's review folds (2026-10-01): fit means fit, minus works below fit,
 // the caption is never clipped, the download carries the caption; the zoom
-// ladder is fit -> fit-width -> x1.5 steps (never an arbitrary 150 % first);
-// on phones the toolbar is Download + Copy link + close — zoom and pan are
-// the phone's own gestures.
+// buttons walk a FIXED grid (25 50 75 100 125 150 175 200 250 300 400 500 600
+// 800 %) with one special rung: the first + from the whole figure goes to
+// FULL WIDTH, top-aligned; on phones the toolbar is Download + Copy link +
+// close — zoom and pan are the phone's own gestures.
 // The stage shows the CLEAN figure: the page's inline <svg> is cloned (vector
 // at every zoom, no fetch; ids suffixed so url(#…) refs stay unambiguous) or
 // the raster <img>; the download link points at the derivative.
@@ -67,6 +68,18 @@
     let lockY = 0;
     let prevRestoration: ScrollRestoration = "auto";
 
+    // A reload while the dialog was open left scrollRestoration "manual" on
+    // the entry, and Chrome then skips the fragment scroll on EVERY later load
+    // (Scott: "refreshing the # link takes me to top of page, not the fig").
+    // Reset it, and scroll to a figure named by the hash ourselves.
+    if (history.scrollRestoration === "manual") history.scrollRestoration = "auto";
+    if (/^#fig-/.test(location.hash)) {
+      const t = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      if (t) requestAnimationFrame(() => t.scrollIntoView({ block: "start" }));
+    }
+    window.addEventListener("pagehide", () => {
+      if (dlg.open) history.scrollRestoration = prevRestoration;
+    });
     const dims = () => ({ w: natW * fitScale * zoom, h: natH * fitScale * zoom });
     const margins = (w: number, h: number) => ({
       ml: Math.max(0, (stage.clientWidth - w) / 2),
@@ -83,18 +96,21 @@
     };
     // The zoom at which the figure spans the stage's full width (>= 1).
     const fitWidth = () => Math.max(1, (stage.clientWidth - 2 * PAD) / (natW * fitScale));
-    // Ladder: … 44 % · 67 % · 100 % (whole figure) · full width · ×1.5 steps.
-    const stepIn = (z: number) => {
+    // The grid (Scott: "normal increments, ie 125, 150, 175"); the first +
+    // from the whole figure is the one off-grid rung: full width, top-aligned.
+    const GRID = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 6, 8];
+    const stepIn = (z: number): { z: number; top: boolean } => {
       const fw = fitWidth();
-      if (z < 1 - 0.01) return Math.min(1, z * 1.5);
-      if (z < fw - 0.01) return fw;
-      return z * 1.5;
+      if (Math.abs(z - 1) < 0.01 && fw > 1.01) return { z: fw, top: true };
+      return { z: GRID.find((g) => g > z + 0.01) ?? z, top: false };
     };
-    const stepOut = (z: number) => {
-      const fw = fitWidth();
-      if (z > fw + 0.01) return Math.max(fw, z / 1.5);
-      if (z > 1 + 0.01) return 1;
-      return z / 1.5;
+    const stepOut = (z: number) => [...GRID].reverse().find((g) => g < z - 0.01) ?? z;
+    const zoomStep = (dir: 1 | -1) => {
+      if (dir > 0) {
+        const s = stepIn(zoom);
+        apply(s.z);
+        if (s.top) stage.scrollTo({ left: 0, top: 0 });
+      } else apply(stepOut(zoom));
     };
     // Double-tap / double-click toggle: whole figure <-> full width (2.5x when
     // the figure is already width-bound at fit).
@@ -277,8 +293,8 @@
       const btn = (e.target as Element).closest?.("button[data-act]") as HTMLButtonElement | null;
       if (!btn) return;
       const act = btn.dataset.act;
-      if (act === "in") apply(stepIn(zoom));
-      else if (act === "out") apply(stepOut(zoom));
+      if (act === "in") zoomStep(1);
+      else if (act === "out") zoomStep(-1);
       else if (act === "fit") apply(1);
       else if (act === "close") dlg.close();
     });
@@ -295,8 +311,8 @@
       }
     });
     dlg.addEventListener("keydown", (e) => {
-      if (e.key === "+" || e.key === "=") apply(stepIn(zoom));
-      else if (e.key === "-" || e.key === "_") apply(stepOut(zoom));
+      if (e.key === "+" || e.key === "=") zoomStep(1);
+      else if (e.key === "-" || e.key === "_") zoomStep(-1);
       else if (e.key === "0") apply(1);
       else return;
       e.preventDefault();
