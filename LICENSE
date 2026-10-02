@@ -36,6 +36,11 @@ Applies to all files under:
   - src/content/   (blog posts, publications, talks, articles, projects)
   - public/images/ (photographs, graphics, media)
   - public/resume/ (resume and CV documents)
+  - src/assets/blog/ (the hand-drawn figure SVGs), EXCEPT that the figures
+    are offered for reuse under CC BY-ND 4.0
+    (https://creativecommons.org/licenses/by-nd/4.0/): reproduce them
+    unmodified with their attribution footer intact; no modified versions.
+    See https://scottclark.io/figures#reuse.
 
 Copyright (c) 2026 Scott Clark. All rights reserved.
 

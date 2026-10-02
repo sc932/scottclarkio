@@ -331,7 +331,7 @@ export async function renderFiguresMd(): Promise<string> {
         .map((f) => {
           const a = attributionFor(f);
           const label = figureLabel(f);
-          return `- [${label}](${f.pageUrl}) - ${f.kind === "svg" ? "SVG" : "image"}: ${f.downloadUrl} (${"\u00a9"} ${a.year} ${a.holder})`;
+          return `- [${label}](${f.pageUrl}) - ${f.kind === "svg" ? "SVG" : "image"}: ${f.downloadUrl} (${"©"} ${a.year} ${a.holder}${f.kind === "svg" ? `; ${figureAttribution.license.name}` : ""})`;
         })
         .join("\n");
       return `## ${first.postTitle}\n\n${first.pageUrl.split("#")[0]}\n\n${items}`;
@@ -344,6 +344,10 @@ export async function renderFiguresMd(): Promise<string> {
 ${figuresText.intro}
 
 ${figuresText.attribution} Machine-readable index: ${siteUrl}/figures.json
+
+## Reuse
+
+${figuresText.reuse.join("\n\n")} License text: ${figureAttribution.license.url}
 
 ${sections}
 

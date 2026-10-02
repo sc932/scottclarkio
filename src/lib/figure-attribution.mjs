@@ -74,7 +74,8 @@ export function wrapCaption(text, maxWidth, fontSize) {
 
 /**
  * @param raw   committed SVG source (the inline-page copy)
- * @param opts  { holder, year, url, display?, title?, caption?, creator?, publisher?, date? }
+ * @param opts  { holder, year, url, display?, title?, caption?, creator?, publisher?, date?, license? }
+ *   license  { name, url } — printed after the copyright line and carried as cc:license (Scott, 2026-10-02: CC BY-ND 4.0)
  *   url      absolute deep link to the figure on its post (the <a> target)
  *   display  URL text as printed (default: url without the scheme)
  */
@@ -150,6 +151,7 @@ export function attributeSvg(raw, opts) {
     opts.publisher ? `<dc:publisher><cc:Agent><dc:title>${esc(opts.publisher)}</dc:title></cc:Agent></dc:publisher>` : "",
     `<dc:source>${esc(url)}</dc:source>`,
     `<dc:date>${esc(date)}</dc:date>`,
+    opts.license?.url ? `<cc:license rdf:resource="${esc(opts.license.url)}"/>` : "",
     `</cc:Work>`,
     `</rdf:RDF>`,
     `</metadata>`,
@@ -186,6 +188,7 @@ export function attributeSvg(raw, opts) {
     captionText +
     `<text x="${c.x + c.w - pad}" y="${baseline}" text-anchor="end">` +
     `${esc(`© ${year} ${holder}`)}  ·  ` +
+    (opts.license?.name ? `<a href="${esc(opts.license.url)}"><tspan>${esc(opts.license.name)}</tspan></a>  ·  ` : "") +
     `<a href="${esc(url)}"><tspan fill="#4b5563">${esc(display)}</tspan></a>` +
     `</text></g>`;
   const close = out.lastIndexOf("</svg>");

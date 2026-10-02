@@ -59,10 +59,18 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
       <h1>{figuresTitle}</h1>
       <p class="figures-intro">{figuresText.intro}</p>
       <p class="figures-meta">
-        {figuresText.attribution} Machine-readable index:{" "}
+        {figuresText.attribution} Reuse terms: <a href="#reuse">below</a>. Machine-readable index:{" "}
         <a href="/figures.json">figures.json</a>. Markdown: <a href="/figures.md">figures.md</a>.
       </p>
     </header>
+
+    <section class="figures-reuse" id="reuse" aria-labelledby="reuse-label">
+      <h2 id="reuse-label">Reuse</h2>
+      {figuresText.reuse.map((p) => <p>{p}</p>)}
+      <p>
+        License text: <a href={figureAttribution.license.url} rel="license noopener" target="_blank">{figureAttribution.license.name}</a>.
+      </p>
+    </section>
 
     {[...byPost.values()].map((group) => {
       const first = group[0];
@@ -99,7 +107,7 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
                       <a href={f.download} download={downloadName(f)}>
                         {f.kind === "svg" ? "Download SVG" : "Download"}
                       </a>
-                      <span class="figures-copy">{"©"} {a.year} {a.holder}</span>
+                      <span class="figures-copy">{"©"} {a.year} {a.holder}{f.kind === "svg" ? ` · ${figureAttribution.license.name}` : ""}</span>
                     </span>
                   </figcaption>
                 </figure>
@@ -143,6 +151,28 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
   }
   .figures-meta a:hover {
     color: var(--accent);
+  }
+  .figures-reuse {
+    border-top: 1px solid var(--rule);
+    padding-top: 24px;
+    margin-top: 28px;
+    max-width: 40rem;
+    scroll-margin-top: 72px;
+  }
+  .figures-reuse h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 22px;
+    margin: 0 0 10px;
+  }
+  .figures-reuse p {
+    color: var(--mute);
+    font-size: 15px;
+    line-height: 1.55;
+    margin: 0 0 10px;
+  }
+  .figures-reuse a {
+    color: var(--ink);
   }
   .figures-post {
     border-top: 1px solid var(--rule);

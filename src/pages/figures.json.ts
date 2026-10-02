@@ -12,6 +12,8 @@ export const GET: APIRoute = async () => {
     publisher: figureAttribution.publisher,
     attribution: `Figures are © ${figureAttribution.holder} and the work of ${figureAttribution.creator}; house diagrams download as SVGs carrying an attribution footer and the link to their source post, other images as the original files.`,
     index: `${siteUrl}/figures`,
+    reuse: `${siteUrl}/figures#reuse`,
+    license: { scope: "house SVG figures only (rasters: all rights reserved)", ...figureAttribution.license },
     count: figs.length,
     figures: figs.map((f) => {
       const a = attributionFor(f);
@@ -25,6 +27,7 @@ export const GET: APIRoute = async () => {
         image: f.srcUrl,
         download: f.downloadUrl,
         copyright: `© ${a.year} ${a.holder}`,
+        license: f.kind === "svg" ? figureAttribution.license.url : null,
         creator: a.creator,
         date: a.date,
       };

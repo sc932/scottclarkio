@@ -371,6 +371,10 @@ export const figureAttribution = {
   creator: "Scott Clark",
   /** The JSON-LD creator — a reference to the site graph's own node. */
   creatorNode: { "@id": "https://scottclark.io/#person" },
+  /** Reuse terms for HOUSE figures (Scott, 2026-10-02: CC BY-ND 4.0): verbatim
+   * reproduction with the footer intact, no modified versions. Raster images
+   * (slides, screenshots) carry no grant. */
+  license: { name: "CC BY-ND 4.0", url: "https://creativecommons.org/licenses/by-nd/4.0/" },
 };
 // /figures (2026-10-01): the index of every figure the blog renders.
 export const figuresTitle = "Figures";
@@ -381,4 +385,8 @@ export const figuresText = {
     "Diagrams and images from the essays, in one place. Open any figure to zoom and pan, follow the link to read it in context, or download it. House diagrams download as SVGs with a copyright line and the link back to their source essay bottom-right; other images download as the original files.",
   attribution:
     "Figures are the work of Scott Clark and are copyright Scott Clark. Each download carries its attribution and the link to its source essay.",
+  reuse: [
+    "House diagrams (the SVG downloads) are licensed CC BY-ND 4.0: reproduce them unmodified, anywhere, with the attribution footer intact. The download already carries the credit, the source link, and the license. No modified versions: no cropping, re-labeling, or re-branding, and nothing that implies endorsement.",
+    "Talk slides, screenshots, and other raster images on these pages are not under that license; they carry third-party marks and product interfaces. Ask before reusing them.",
+  ],
 };

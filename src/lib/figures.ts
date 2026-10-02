@@ -85,6 +85,7 @@ export function attributionFor(fig: Figure) {
     url: fig.pageUrl,
     title: svgTitle,
     caption: fig.caption,
+    license: fig.kind === "svg" ? figureAttribution.license : undefined,
   };
 }
 
@@ -125,6 +126,10 @@ export function figureImageObject(fig: Figure) {
     copyrightNotice: `© ${a.year} ${a.holder}`,
     copyrightYear: a.year,
     creditText: figureAttribution.publisher,
+    // Google's licensable-image fields: house figures carry the grant, every
+    // figure points at the reuse terms (rasters: no grant, ask).
+    ...(fig.kind === "svg" && { license: figureAttribution.license.url }),
+    acquireLicensePage: `${siteUrl}/figures#reuse`,
     // The post's BlogPosting node is `<post url>#article` (blog.ts) — a bare
     // URL would dangle (glmflash r1 F3).
     isPartOf: { "@id": `${fig.pageUrl.split("#")[0]}#article` },

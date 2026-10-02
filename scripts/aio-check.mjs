@@ -729,6 +729,7 @@ if (existsSync(SVG_SRC)) {
         url,
         title,
         caption: f.caption,
+        license: figureAttribution.license,
       });
       if (!backgroundExtended)
         failures.push(`figures: ${f.download} footer band has no background — no full-canvas rect matched (SKILL 33b)`);
@@ -739,6 +740,15 @@ if (existsSync(SVG_SRC)) {
         failures.push(`figures: ${f.download} lacks the attribution footer (holder + deep link)`);
       if (!built.includes("<dc:source>") || !built.includes("<dc:rights>"))
         failures.push(`figures: ${f.download} lacks Dublin Core metadata`);
+      if (!built.includes(figureAttribution.license.url) || !built.includes(`>${figureAttribution.license.name}<`))
+        failures.push(`figures: ${f.download} lacks the ${figureAttribution.license.name} footer word / cc:license (Scott, 2026-10-02)`);
+      // The post's ImageObject for this figure carries the grant + the terms page.
+      const postPage = join(DIST, "blog", f.post, "index.html");
+      if (existsSync(postPage)) {
+        const ph = readFileSync(postPage, "utf8");
+        if (!ph.includes(`"license":"${figureAttribution.license.url}"`) || !ph.includes(`"acquireLicensePage":"${SITE_URL}/figures#reuse"`))
+          failures.push(`figures: ${f.post} ImageObject(s) lack license/acquireLicensePage`);
+      }
       if (/<script\b|<foreignObject\b|\son[a-z]+\s*=/i.test(built)) failures.push(`figures: ${f.download} carries script/handlers/foreignObject`);
     } else if (!existsSync(join(DIST, f.download.replace(/^\//, "")))) {
       failures.push(`figures: image ${f.download} (post ${f.post}) did not build`);
@@ -769,6 +779,8 @@ if (existsSync(SVG_SRC)) {
     const idxIds = [...page.matchAll(/ id="([^"]+)"/g)].map((m) => m[1]);
     if (new Set(idxIds).size !== idxIds.length)
       failures.push(`figures: duplicate id on /figures: ${idxIds.filter((x, i) => idxIds.indexOf(x) !== i).join(", ")}`);
+    if (!page.includes('id="reuse"') || !page.includes(figureAttribution.license.url))
+      failures.push("figures: /figures lacks the Reuse section with the license link (the acquireLicensePage target)");
     const g = pickGraph(page);
     const nodes = g && typeof g === "object" ? g["@graph"] ?? [] : [];
     const cp = nodes.find((n) => n["@type"] === "CollectionPage");
