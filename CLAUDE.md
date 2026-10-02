@@ -17,7 +17,7 @@ When a new convention or pattern emerges in this repo's work, document it here i
 
 ## Project Overview
 
-Personal website for Scott Clark hosted at scottclark.io. Static site built with **Astro 7** (package.json; the "Astro 5" note here was stale until 2026-10-01), served as plain HTML+CSS, deployed to **AWS S3 + CloudFront**.
+Personal website for Scott Clark hosted at scottclark.io. Static site built with **Astro 7** (package.json; the "Astro 5" note here was stale until 2026-10-01), served as HTML+CSS with three small page-scoped scripts (see the allowlist below), deployed to **AWS S3 + CloudFront**.
 
 Phases:
 - **Phase 1A — done (2026-05-01).** Plugins and skills installed: `frontend-design` and `playwright` MCP from the Anthropic marketplaces, plus the project-specific `scottclark-site` skill at `~/.claude/skills/scottclark-site/SKILL.md`.
@@ -201,7 +201,7 @@ Both faces are self-hosted via `@fontsource-variable/source-serif-4` and `@fonts
 
 ### Motion
 
-Motion budget for v1 is **CSS-only** transitions on `transform` / `opacity` for hover/focus states. No animation libraries. Astro `<ClientRouter />` View Transitions are an option later if the page-to-page feel needs it, but they're off by default to keep client-side JS at zero.
+Motion budget for v1 is **CSS-only** transitions on `transform` / `opacity` for hover/focus states. No animation libraries. Astro `<ClientRouter />` View Transitions are an option later if the page-to-page feel needs it, but they're off by default; client JS stays on the allowlist (facade, pillar sort, figure focus).
 
 ### Design feedback loop
 

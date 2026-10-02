@@ -347,7 +347,7 @@ ${figuresText.attribution} Machine-readable index: ${siteUrl}/figures.json
 
 ## Reuse
 
-${figuresText.reuse.join("\n\n")} License text: ${figureAttribution.license.url}
+${figuresText.reuse.join("\n\n")} License: ${figureAttribution.license.url}
 
 ${sections}
 

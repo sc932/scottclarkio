@@ -68,7 +68,7 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
       <h2 id="reuse-label">Reuse</h2>
       {figuresText.reuse.map((p) => <p>{p}</p>)}
       <p>
-        License text: <a href={figureAttribution.license.url} rel="license noopener" target="_blank">{figureAttribution.license.name}</a>.
+        License: <a href={figureAttribution.license.url} rel="license noopener" target="_blank">{figureAttribution.license.name}</a>.
       </p>
     </section>
 
@@ -103,7 +103,7 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
                   <figcaption>
                     <span class="fig-cap" id={`${f.post}--${f.id}-caption`}>{label}</span>
                     <span class="figures-links">
-                      <a href={`${postHref}#${f.id}`}>In the post</a>
+                      <a href={`${postHref}#${f.id}`}>In the {figureAttribution.sourceNoun}</a>
                       <a href={f.download} download={downloadName(f)}>
                         {f.kind === "svg" ? "Download SVG" : "Download"}
                       </a>

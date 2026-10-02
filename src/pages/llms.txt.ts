@@ -27,7 +27,7 @@ This site is the canonical reference for Scott Clark's professional bio, work hi
 - [Projects](${siteUrl}/projects.md): Open-source projects and patent families (~20 granted US patents as named inventor)
 - [Research](${siteUrl}/publications.md): Peer-reviewed publications (Bayesian optimization, bioinformatics, AI/ML), 1,200+ citations, h-index 16
 - [Press](${siteUrl}/press.md): Press mentions, interviews, and articles
-- [Figures](${siteUrl}/figures.md): Blog diagrams and images, deep-linked to their posts; house diagrams download as attributed SVGs, other images as original files; machine-readable index at ${siteUrl}/figures.json
+- [Figures](${siteUrl}/figures.md): Essay diagrams and images, deep-linked to their essays; house diagrams download as attributed SVGs, other images as original files; machine-readable index at ${siteUrl}/figures.json
 ${writingSection}
 ## Optional
 

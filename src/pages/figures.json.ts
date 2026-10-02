@@ -10,7 +10,7 @@ export const GET: APIRoute = async () => {
   const body = {
     site: siteUrl,
     publisher: figureAttribution.publisher,
-    attribution: `Figures are © ${figureAttribution.holder} and the work of ${figureAttribution.creator}; house diagrams download as SVGs carrying an attribution footer and the link to their source post, other images as the original files.`,
+    attribution: `Figures are © ${figureAttribution.holder} and the work of ${figureAttribution.creator}; house diagrams download as SVGs carrying an attribution footer and the link to their source ${figureAttribution.sourceNoun}, other images as the original files.`,
     index: `${siteUrl}/figures`,
     reuse: `${siteUrl}/figures#reuse`,
     license: { scope: "house SVG figures only (rasters: all rights reserved)", ...figureAttribution.license },
