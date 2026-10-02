@@ -73,10 +73,12 @@
     // (Scott: "refreshing the # link takes me to top of page, not the fig").
     // Reset it, and scroll to a figure named by the hash ourselves.
     if (history.scrollRestoration === "manual") history.scrollRestoration = "auto";
-    if (/^#fig-/.test(location.hash)) {
+    const scrollToHashFigure = () => {
+      if (!location.hash) return;
       const t = document.getElementById(decodeURIComponent(location.hash.slice(1)));
-      if (t) requestAnimationFrame(() => t.scrollIntoView({ block: "start" }));
-    }
+      if (t && t.matches("figure.post-figure")) requestAnimationFrame(() => t.scrollIntoView({ block: "start" }));
+    };
+    scrollToHashFigure();
     window.addEventListener("pagehide", () => {
       if (dlg.open) history.scrollRestoration = prevRestoration;
     });
@@ -101,20 +103,38 @@
     const GRID = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 6, 8];
     const stepIn = (z: number): { z: number; top: boolean } => {
       const fw = fitWidth();
-      if (Math.abs(z - 1) < 0.01 && fw > 1.01) return { z: fw, top: true };
+      if (Math.abs(z - 1) < 0.01 && fw > 1.1) return { z: fw, top: true };
       return { z: GRID.find((g) => g > z + 0.01) ?? z, top: false };
     };
-    const stepOut = (z: number) => [...GRID].reverse().find((g) => g < z - 0.01) ?? z;
+    // From the full-width rung, - returns to the whole figure (quick review,
+    // client seat #1); otherwise the next grid value below. The rung is
+    // REMEMBERED: at full width a vertical scrollbar narrows the stage, so a
+    // fresh fitWidth() no longer equals the zoom that was applied.
+    let fullWidthZ = 0;
+    const stepOut = (z: number) => {
+      const fw = fitWidth();
+      if ((fullWidthZ && Math.abs(z - fullWidthZ) < 0.01) || (fw > 1.1 && Math.abs(z - fw) < 0.01)) return 1;
+      return [...GRID].reverse().find((g) => g < z - 0.01) ?? z;
+    };
     const zoomStep = (dir: 1 | -1) => {
       if (dir > 0) {
         const s = stepIn(zoom);
+        if (s.top) fullWidthZ = s.z;
         apply(s.z);
         if (s.top) stage.scrollTo({ left: 0, top: 0 });
       } else apply(stepOut(zoom));
     };
     // Double-tap / double-click toggle: whole figure <-> full width (2.5x when
     // the figure is already width-bound at fit).
-    const toggleZoom = () => (zoom > 1.01 ? 1 : fitWidth() > 1.2 ? fitWidth() : 2.5);
+    const toggleZoom = () => {
+      if (zoom > 1.01) return 1;
+      const fw = fitWidth();
+      if (fw > 1.1) {
+        fullWidthZ = fw;
+        return fw;
+      }
+      return 2.5;
+    };
     // Zoom about a stage point (px,py in stage client coords); dx/dy = how far
     // that anchor itself moved since the last call (a pinch's midpoint).
     // Content coordinates account for the centering margins on both sides.
@@ -157,20 +177,32 @@
       zoomOut.value = "100%";
     };
     // Clone the page's inline svg with every id suffixed (url(#…)/href refs too).
-    const cloneSvg = (svg: SVGElement): SVGElement | null => {
-      const ids = [...svg.querySelectorAll("[id]")].map((n) => n.id).filter(Boolean);
-      let html = svg.outerHTML;
-      for (const id of ids) {
-        const e = id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-        html = html
-          .replace(new RegExp(`\\bid="${e}"`, "g"), `id="${id}-ff"`)
-          .replace(new RegExp(`url\\(#${e}\\)`, "g"), `url(#${id}-ff)`)
-          .replace(new RegExp(`href="#${e}"`, "g"), `href="#${id}-ff"`);
+    // A DOM clone (no serialize/reparse: outerHTML emits &nbsp;, which XML
+    // parsing rejects — quick review, client seat #3) with every id suffixed
+    // and url(#…) / href="#…" references rewritten to match.
+    const REF_ATTRS = ["fill", "stroke", "marker-start", "marker-mid", "marker-end", "clip-path", "mask", "filter", "style", "href", "xlink:href"];
+    const cloneSvg = (svg: SVGElement): SVGElement => {
+      const clone = svg.cloneNode(true) as SVGElement;
+      const map = new Map<string, string>();
+      for (const n of clone.querySelectorAll("[id]")) {
+        if (!n.id) continue;
+        map.set(n.id, `${n.id}-ff`);
+        n.id = `${n.id}-ff`;
       }
-      const doc = new DOMParser().parseFromString(html, "image/svg+xml");
-      const root = doc.documentElement;
-      if (!root || root.nodeName === "parsererror" || root.querySelector("parsererror")) return null;
-      return document.importNode(root, true) as unknown as SVGElement;
+      if (map.size) {
+        for (const n of [clone, ...clone.querySelectorAll("*")]) {
+          for (const a of REF_ATTRS) {
+            const v = n.getAttribute(a);
+            if (!v) continue;
+            let nv = v.replace(/url\(#([^)]+)\)/g, (m, id: string) => (map.has(id) ? `url(#${map.get(id)})` : m));
+            if ((a === "href" || a === "xlink:href") && v.startsWith("#") && map.has(v.slice(1))) nv = `#${map.get(v.slice(1))}`;
+            if (nv !== v) n.setAttribute(a, nv);
+          }
+        }
+        for (const st of clone.querySelectorAll("style"))
+          st.textContent = (st.textContent ?? "").replace(/#([A-Za-z_][\w:.-]*)/g, (m, id: string) => (map.has(id) ? `#${map.get(id)}` : m));
+      }
+      return clone;
     };
     // "Figure N." = the figure's ordinal among the page's CAPTIONED figures
     // (the same rule as the caption labels' CSS counter).
@@ -199,6 +231,13 @@
         cap.append(b, " ");
       }
       cap.append(text);
+      if (cap.textContent?.trim()) {
+        dlg.setAttribute("aria-labelledby", "figfocus-caption");
+        dlg.removeAttribute("aria-label");
+      } else {
+        dlg.removeAttribute("aria-labelledby");
+        dlg.setAttribute("aria-label", alt || "Figure focus view");
+      }
       dl.href = a.href;
       dl.download = a.dataset.download ?? "";
       dl.textContent = /\.svg(\?|$)/i.test(a.href) ? "Download SVG" : "Download image";
@@ -221,6 +260,8 @@
       stage.replaceChildren();
       el = null;
       const clone = svgEl ? cloneSvg(svgEl) : null;
+      // A click that turns into a double-click must not zoom the fresh view.
+      suppressDbl = Date.now();
       if (clone) {
         const vb = (clone.getAttribute("viewBox") ?? "").trim().split(/[\s,]+/).map(Number);
         natW = vb.length === 4 && vb[2] > 0 ? vb[2] : svgEl!.clientWidth || 1;
@@ -280,7 +321,7 @@
       if (dlg.open) {
         viaHistory = true;
         dlg.close();
-      }
+      } else scrollToHashFigure();
     });
     // Plain clicks open the focus view; modifier clicks keep the native link.
     document.addEventListener("click", (e) => {
@@ -300,7 +341,8 @@
     });
     linkBtn.addEventListener("click", async () => {
       // Prefer the figure's in-post deep link (the /figures cards carry one).
-      const inPost = opener?.closest("figure")?.querySelector<HTMLAnchorElement>(`a[href$="#${figId}"]:not(.fig-anchor)`);
+      const figKey = opener?.closest("figure")?.getAttribute("data-figure") ?? figId;
+      const inPost = opener?.closest("figure")?.querySelector<HTMLAnchorElement>(`a[href*="/blog/"][href$="#${figKey}"]`);
       const url = inPost ? new URL(inPost.getAttribute("href") ?? "", location.origin).href : `${location.origin}${location.pathname}#${figId}`;
       try {
         await navigator.clipboard.writeText(url);
@@ -325,6 +367,7 @@
     let zoom0 = 1;
     let pinchX = 0;
     let pinchY = 0;
+    const pinchFresh = new Set<number>();
     let lastX = 0;
     let lastY = 0;
     let lastTap = 0;
@@ -341,6 +384,7 @@
         zoom0 = zoom;
         pinchX = (a.x + b.x) / 2;
         pinchY = (a.y + b.y) / 2;
+        pinchFresh.clear();
       } else {
         lastX = e.clientX;
         lastY = e.clientY;
@@ -352,6 +396,11 @@
       ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
       const r = rectOf();
       if (ptrs.size === 2) {
+        // Each touch frame arrives as TWO pointermoves; apply the pinch once
+        // both fingers have reported (quick review, client seat #6).
+        pinchFresh.add(e.pointerId);
+        if (pinchFresh.size < 2) return;
+        pinchFresh.clear();
         const [a, b] = [...ptrs.values()];
         const d = Math.hypot(a.x - b.x, a.y - b.y);
         const mx = (a.x + b.x) / 2;

@@ -16,7 +16,13 @@ import { join, basename, extname } from "node:path";
  * `figN-` authoring prefix dropped (fig1-architecture -> fig-architecture;
  * why-im-building-talaria -> fig-why-im-building-talaria). Lowercase, [a-z0-9-]. */
 export function figureId(name) {
-  const base = String(name)
+  let n = String(name);
+  try {
+    n = decodeURIComponent(n); // the same id from a percent-encoded href and a raw filename
+  } catch {
+    /* keep as-is */
+  }
+  const base = n
     .replace(/\.[a-z0-9]+$/i, "")
     .replace(/^fig\d+-/i, "")
     .toLowerCase()
@@ -35,16 +41,32 @@ const attr = (attrs, k) => {
   return v === undefined ? undefined : decodeEntities(v);
 };
 
-/** Strip fenced code + inline code so sample markup never counts as a figure
- * (the same masking the twin renderer uses). */
+/** Blank out fenced code + inline code with SAME-LENGTH whitespace so sample
+ * markup never counts as a figure while every offset still maps onto the
+ * original text (captions are read from the original, code intact). */
 function maskCode(body) {
-  return body
-    .replace(/(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[ \t]*(?=\n|$)/g, "$1")
-    // Code spans of ANY backtick run length (`x`, `` `x` ``, ``` `` ```): a
-    // double-backtick span containing single backticks must mask as one span,
-    // or the mask swallows prose between spans — and an image with it (the
-    // distributional archive hit this, round-1 fold).
-    .replace(/(`+)(?!`)[^\n]*?[^`\n]\1(?!`)/g, "");
+  const blank = (m) => m.replace(/[^\n]/g, " ");
+  return (
+    body
+      .replace(/(^|\n)((?:`{3,}|~{3,})[^\n]*\n[\s\S]*?\n(?:`{3,}|~{3,})[ \t]*)(?=\n|$)/g, (m, lead, block) => lead + blank(block))
+      // Code spans of ANY backtick run length (`x`, `` `x` ``): a
+      // double-backtick span containing single backticks must mask as one span,
+      // or the mask swallows prose between spans — and an image with it (the
+      // distributional archive hit this, round-1 fold).
+      .replace(/(`+)(?!`)[^\n]*?[^`\n]\1(?!`)/g, blank)
+  );
+}
+
+/** Approximate the RENDERED text of a one-line markdown caption: code spans
+ * keep their content, links keep their text, emphasis markers drop. */
+export function captionText(md) {
+  return String(md)
+    .replace(/(`+)(?!`)([^\n]*?[^`\n])\1(?!`)/g, "$2")
+    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+    .replace(/(\*\*|__)(.+?)\1/g, "$2")
+    .replace(/(\*|_)(?!\1)(.+?)\1/g, "$2")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 /** Figures of ONE post body, in document order. */
@@ -83,10 +105,13 @@ export function scanBody(slug, body) {
       // The caption rehype adopts: the next non-blank line, italic-only, on its
       // own, <= 400 chars (grok r1 F8 — the machine surfaces must agree with
       // the page).
-      const after = src.slice(m.index + m[0].length);
-      const nxt = after.match(/^[ \t]*\n\s*\n([^\n]+)\n(?:\s*\n|$)/);
+      // Read the caption from the ORIGINAL text (offsets preserved by the
+      // same-length mask), so code spans inside it keep their content.
+      const after = body.slice(m.index + m[0].length);
+      const nxt = after.match(/^[ \t]*\n\s*\n([^\n]+)(?:\n(?:\s*\n|$)|$)/);
       const ital = nxt?.[1]?.trim().match(/^(\*|_)(?!\1)(.+)\1$/);
-      const caption = ital && ital[2].length <= 400 ? ital[2] : "";
+      const rendered = ital ? captionText(ital[2]) : "";
+      const caption = ital && rendered.length <= 400 ? rendered : "";
       out.push({
         post: slug,
         kind: "raster",

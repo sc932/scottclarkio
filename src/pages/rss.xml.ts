@@ -24,7 +24,12 @@ function feedifyHtml(html: string): string {
         return `<figure><img src="${siteUrl}${png}" alt="${alt}" /><figcaption>${cap}</figcaption></figure>`;
       },
     )
-    // Markdown-image figures (rehype-figure-focus): unwrap to a plain figure.
+    // Markdown-image figures (rehype-figure-focus): a plain <figure><img>[<figcaption>] — no plate, ids, or anchors.
+    .replace(
+      /<figure class="post-figure post-figure--img"[^>]*>[\s\S]*?(<img\b[^>]*>)[\s\S]*?(?:<figcaption>[\s\S]*?<span class="fig-cap"[^>]*>([\s\S]*?)<\/span>[\s\S]*?<\/figcaption>)?\s*<\/figure>/g,
+      (_m, img, cap) => `<figure>${img}${cap ? `<figcaption>${cap}</figcaption>` : ""}</figure>`,
+    )
+    // Any remaining focus affordances (defense in depth).
     .replace(/<a\s[^>]*class="[^"]*\bfig-open\b[^"]*"[^>]*>([\s\S]*?)<span\s[^>]*class="[^"]*\bfig-expand\b[^"]*"[^>]*>\s*<\/span>\s*<\/a>/g, "$1")
     .replace(/<a\s[^>]*class="[^"]*\bfig-anchor\b[^"]*"[^>]*>[\s\S]*?<\/a>\s*/g, "")
     // YouTubeFacade -> feed-safe anchor-wrapped poster (the sol S10 tooth:

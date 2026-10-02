@@ -213,8 +213,13 @@ function checkFigures(rel, html, slug) {
       failures.push(`${rel}: figure ${f.id} fig-open link lacks its accessible name`);
     // The page shows a caption iff the scan has one (the machine surfaces
     // carry the scan's caption — grok r1 F8).
-    if (exp && Boolean(exp.caption) !== /<figcaption\b/.test(f.body))
-      failures.push(`${rel}: figure ${f.id} caption presence differs between the page and the scan`);
+    if (exp) {
+      const capHtml = f.body.match(/<span class="fig-cap"[^>]*>([\s\S]*?)<\/span>/)?.[1] ?? "";
+      const pageCap = decodeEntities(capHtml.replace(/<[^>]+>/g, "")).replace(/\s+/g, " ").trim();
+      if (pageCap !== exp.caption.replace(/\s+/g, " ").trim())
+        failures.push(`${rel}: figure ${f.id} caption differs between the page ("${pageCap.slice(0, 60)}") and the scan ("${exp.caption.slice(0, 60)}")`);
+    }
+
   }
 }
 
@@ -254,19 +259,28 @@ for (const file of htmlFiles) {
   // may ship. Licensed: the YouTube facade (post pages), the listing sort
   // (blog index), the figure-focus view (pages with figures, 2026-10-01).
   const scriptTags = nonLd.match(/<script[\s>][\s\S]*?<\/script>/gi) ?? [];
-  const moduleCarries = (tag, needle) => {
-    if (tag.includes(needle)) return true;
-    const src = tag.match(/\bsrc="([^"]+)"/)?.[1];
-    if (!src || !src.startsWith("/_astro/")) return false;
-    const p = join(DIST, src.replace(/^\//, ""));
-    return existsSync(p) && readFileSync(p, "utf8").includes(needle);
+  // A licensed module is EITHER the exact external tag Astro emits (empty body,
+  // hashed /_astro/ file that exists and carries the needles) OR an inline
+  // module whose body carries them — a substring in a rogue body is not a
+  // match (quick review, build seat #3).
+  const moduleCarries = (tag, needles) => {
+    const ext = tag.match(/^<script type="module" src="(\/_astro\/[\w.-]+\.js)"><\/script>$/);
+    if (ext) {
+      const p = join(DIST, ext[1].replace(/^\//, ""));
+      if (!existsSync(p)) return false;
+      const body = readFileSync(p, "utf8");
+      return needles.every((n) => body.includes(n));
+    }
+    const opening = tag.match(/^<script[^>]*>/)?.[0] ?? "";
+    if (/^<script type="module">$/.test(opening)) return needles.every((n) => tag.includes(n));
+    return false;
   };
   const figMarker =
     html.includes('<dialog class="figfocus"') && /<figure\b(?=[^>]*\bclass="post-figure)[^>]*\bdata-figure="fig-/.test(html);
   const licensed = [
-    isPostPage && html.includes('class="yt-facade"') ? (t) => /^<script type="module"/.test(t) && moduleCarries(t, "yt-facade") : null,
+    isPostPage && html.includes('class="yt-facade"') ? (t) => moduleCarries(t, [".yt-facade", "iframe"]) : null,
     rel === "blog/index.html" && html.includes("<script data-pillar-sort>") ? (t) => t.startsWith("<script data-pillar-sort>") : null,
-    figMarker ? (t) => /^<script type="module"/.test(t) && moduleCarries(t, "figfocus") : null,
+    figMarker ? (t) => moduleCarries(t, ["figfocus-stage", "showModal", "data-act"]) : null,
   ].filter(Boolean);
   const unmatched = scriptTags.filter((t) => !licensed.some((ok) => ok(t)));
   if (scriptTags.length !== licensed.length || unmatched.length)
@@ -740,23 +754,61 @@ if (existsSync(SVG_SRC)) {
         failures.push(`figures: ${f.download} lacks the attribution footer (holder + deep link)`);
       if (!built.includes("<dc:source>") || !built.includes("<dc:rights>"))
         failures.push(`figures: ${f.download} lacks Dublin Core metadata`);
-      if (!built.includes(figureAttribution.license.url) || !built.includes(`>${figureAttribution.license.name}<`))
-        failures.push(`figures: ${f.download} lacks the ${figureAttribution.license.name} footer word / cc:license (Scott, 2026-10-02)`);
-      // The post's ImageObject for this figure carries the grant + the terms page.
-      const postPage = join(DIST, "blog", f.post, "index.html");
-      if (existsSync(postPage)) {
-        const ph = readFileSync(postPage, "utf8");
-        if (!ph.includes(`"license":"${figureAttribution.license.url}"`) || !ph.includes(`"acquireLicensePage":"${SITE_URL}/figures#reuse"`))
-          failures.push(`figures: ${f.post} ImageObject(s) lack license/acquireLicensePage`);
-      }
+      if (!built.includes(`<cc:license rdf:resource="${figureAttribution.license.url}"/>`) || !built.includes(`>${figureAttribution.license.name}<`))
+        failures.push(`figures: ${f.download} lacks the ${figureAttribution.license.name} footer word / <cc:license> (Scott, 2026-10-02)`);
       if (/<script\b|<foreignObject\b|\son[a-z]+\s*=/i.test(built)) failures.push(`figures: ${f.download} carries script/handlers/foreignObject`);
     } else if (!existsSync(join(DIST, f.download.replace(/^\//, "")))) {
       failures.push(`figures: image ${f.download} (post ${f.post}) did not build`);
     }
-    // Every figure rides the sitemap as an <image:loc> on its post.
-    if (!sitemaps.includes(`<image:loc>${SITE_URL}${f.download}</image:loc>`))
-      failures.push(`figures: sitemap has no <image:loc> for ${f.download}`);
+    // The post's ImageObject for THIS figure, parsed (quick review, build #5):
+    // license iff svg, the terms page, a creator reference that resolves in
+    // the same graph, contentUrl = the download, isPartOf = the post node.
+    const postPage = join(DIST, "blog", f.post, "index.html");
+    if (existsSync(postPage)) {
+      const g = pickGraph(readFileSync(postPage, "utf8"));
+      const nodes = g && typeof g === "object" ? g["@graph"] ?? [] : [];
+      // Every @id anywhere in the graph (talaria's author Person is nested
+      // inside the BlogPosting; distributional's publisher is top-level).
+      const ids = new Set();
+      const walkIds = (v) => {
+        if (Array.isArray(v)) v.forEach(walkIds);
+        else if (v && typeof v === "object") {
+          if (typeof v["@id"] === "string" && (v["@type"] || Object.keys(v).length > 1)) ids.add(v["@id"]);
+          Object.values(v).forEach(walkIds);
+        }
+      };
+      walkIds(nodes);
+      const bp = nodes.find((n) => n["@type"] === "BlogPosting");
+      const io = (bp?.associatedMedia ?? []).find((m) => m["@id"] === url);
+      if (!io) failures.push(`figures: ${f.post} has no ImageObject @id ${url}`);
+      else {
+        if (io.contentUrl !== `${SITE_URL}${f.download}`) failures.push(`figures: ${f.id} ImageObject contentUrl != the download`);
+        if (io.acquireLicensePage !== `${SITE_URL}/figures#reuse`) failures.push(`figures: ${f.id} ImageObject lacks acquireLicensePage`);
+        if (f.kind === "svg" ? io.license !== figureAttribution.license.url : io.license !== undefined)
+          failures.push(`figures: ${f.id} ImageObject license must be ${f.kind === "svg" ? "the grant" : "absent (raster)"}`);
+        if (!io.creator?.["@id"] || !ids.has(io.creator["@id"])) failures.push(`figures: ${f.id} ImageObject creator does not resolve in the page graph`);
+        if (io.isPartOf?.["@id"] !== bp["@id"]) failures.push(`figures: ${f.id} ImageObject isPartOf != the BlogPosting @id`);
+      }
+    }
+    // Every figure rides the sitemap as an <image:loc> on its post — the
+    // download AND, for house figures, the PNG twin (quick review, build #4).
+    for (const loc of [f.download, ...(f.kind === "svg" ? [f.src] : [])])
+      if (!sitemaps.includes(`<image:loc>${SITE_URL}${loc}</image:loc>`))
+        failures.push(`figures: sitemap has no <image:loc> for ${loc}`);
   }
+  {
+    // …and nothing else rides a post's image set (exact, per post URL).
+    for (const [post, figs] of figuresByPost) {
+      const url = `${SITE_URL}/blog/${post}`;
+      const entry = urlEntries.find((e) => e.loc === url);
+      if (!entry) continue;
+      const block = sitemaps.match(new RegExp(`<url>\\s*<loc>${url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}</loc>[\\s\\S]*?</url>`))?.[0] ?? "";
+      const have = new Set([...block.matchAll(/<image:loc>([^<]+)<\/image:loc>/g)].map((m) => m[1]));
+      const want = new Set(figs.flatMap((f) => [`${SITE_URL}${f.download}`, ...(f.kind === "svg" ? [`${SITE_URL}${f.src}`] : [])]));
+      if (!eqSets(have, want)) failures.push(`figures: sitemap image set for /blog/${post} != the scan ([${[...have]}] vs [${[...want]}])`);
+    }
+  }
+
   // Derived set is EXACT: nothing under dist/figures/ the scan did not ask for.
   const derived = existsSync(join(DIST, "figures"))
     ? walk(join(DIST, "figures")).filter((x) => x.endsWith(".svg")).map((x) => "/" + x.slice(DIST.length + 1))
@@ -793,9 +845,9 @@ if (existsSync(SVG_SRC)) {
   else {
     const m = JSON.parse(readFileSync(manifestPath, "utf8"));
     // Identities AND URLs, exact and duplicate-free (astra r1 F8).
-    const actual = (m.figures ?? []).map((f) => JSON.stringify([f.post?.slug, f.id, f.url, f.download]));
+    const actual = (m.figures ?? []).map((f) => JSON.stringify([f.post?.slug, f.id, f.url, f.download, f.license ?? null]));
     const expected = figuresExpected.map((f) =>
-      JSON.stringify([f.post, f.id, `${SITE_URL}/blog/${f.post}#${f.id}`, `${SITE_URL}${f.download}`]),
+      JSON.stringify([f.post, f.id, `${SITE_URL}/blog/${f.post}#${f.id}`, `${SITE_URL}${f.download}`, f.kind === "svg" ? figureAttribution.license.url : null]),
     );
     if (m.count !== expected.length || actual.length !== expected.length || new Set(actual).size !== actual.length || !eqSets(new Set(actual), new Set(expected)))
       failures.push("figures: /figures.json identities or URLs != the scan (or duplicates)");

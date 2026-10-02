@@ -36,11 +36,6 @@ Applies to all files under:
   - src/content/   (blog posts, publications, talks, articles, projects)
   - public/images/ (photographs, graphics, media)
   - public/resume/ (resume and CV documents)
-  - src/assets/blog/ (the hand-drawn figure SVGs), EXCEPT that the figures
-    are offered for reuse under CC BY-ND 4.0
-    (https://creativecommons.org/licenses/by-nd/4.0/): reproduce them
-    unmodified with their attribution footer intact; no modified versions.
-    See https://scottclark.io/figures#reuse.
 
 Copyright (c) 2026 Scott Clark. All rights reserved.
 
@@ -51,3 +46,24 @@ of the copyright holder, except for brief quotations in critical reviews and
 certain other noncommercial uses permitted by copyright law.
 
 For permission requests, contact Scott Clark.
+
+================================================================================
+FIGURE LICENSE (CC BY-ND 4.0)
+================================================================================
+
+Applies to the hand-drawn figures:
+  - src/assets/blog/**/*.svg          (the committed figure sources)
+  - the published downloads at https://scottclark.io/figures/<post>/<name>.svg
+    (each source composed with its caption and attribution footer)
+  - public/images/blog/<post>/<figure>.png (the PNG twins of those figures)
+
+These figures are licensed under Creative Commons Attribution-NoDerivatives
+4.0 International (https://creativecommons.org/licenses/by-nd/4.0/): you may
+reproduce and redistribute them, including commercially, unmodified, with the
+attribution the download carries (or an equivalent credit and a link to the
+source essay). No modified versions. Nothing here implies endorsement.
+Terms as published: https://scottclark.io/figures#reuse
+
+The figures are the one carve-out from the content license above; talk
+slides, screenshots, photographs, and every other file under the content
+directories stay All Rights Reserved.

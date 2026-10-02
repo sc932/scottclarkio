@@ -183,7 +183,11 @@ export function attributeSvg(raw, opts) {
     })
     .join("");
   const footer =
-    `<g id="fig-attribution" font-size="${fs}" fill="#6b7280">` +
+    // The band is MEASURED in DejaVu Sans — declare it, or a root without a
+    // font-family (two scottclark.io figures) renders the footer in the
+    // viewer's default serif with the pinned lines over-stretched (quick
+    // review, build seat #1).
+    `<g id="fig-attribution" font-family="DejaVu Sans, Verdana, sans-serif" font-size="${fs}" fill="#6b7280">` +
     `<line x1="${c.x}" y1="${y + 0.5}" x2="${c.x + c.w}" y2="${y + 0.5}" stroke="#e5e7eb" stroke-width="1"/>` +
     captionText +
     `<text x="${c.x + c.w - pad}" y="${baseline}" text-anchor="end">` +

@@ -109,8 +109,8 @@ export const figureLabel = (fig: Figure) =>
 export const downloadName = (fig: Figure) =>
   `${fig.post}-${fig.name}${fig.kind === "svg" ? ".svg" : fig.download.slice(fig.download.lastIndexOf("."))}`;
 
-/** schema.org ImageObject for a figure (Google's image-license fields minus a
- * license grant — redistribution terms are Scott's to confirm). */
+/** schema.org ImageObject for a figure (Google's image-license fields; the
+ * CC BY-ND 4.0 grant rides house SVG figures only — Scott, 2026-10-02). */
 export function figureImageObject(fig: Figure) {
   const a = attributionFor(fig);
   return {
