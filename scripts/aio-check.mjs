@@ -501,8 +501,8 @@ for (const s of distPosts) {
   // Mask code regions first — a fenced sample legitimately shows imports
   // or component tags (round-2 S7); residue checks apply OUTSIDE code only.
   const mdMasked = md
-    .replace(/(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[`~]*[ \t]*(?=\n|$)/g, "")
-    .replace(/(`+)(?!`)[^\n]*?[^`\n]\1(?!`)/g, "");
+    .replace(/(^|\n)[ \t]{0,3}(?:(`{3,})[^\n]*\n[\s\S]*?\n[ \t]{0,3}\2`*|(~{3,})[^\n]*\n[\s\S]*?\n[ \t]{0,3}\3~*)[ \t]*(?=\n|$)/g, "")
+    .replace(/(?<!`)(`+)(?!`)[^\n]*?[^`\n]\1(?!`)/g, "");
   for (const bad of ["<Figure", "<YouTubeFacade"])
     if (mdMasked.includes(bad)) failures.push(`twin ${s}.md leaks ${bad}`);
   if (/^import\s|^export[\s{]|<[A-Z][A-Za-z]*[\s/>]/m.test(mdMasked))
@@ -630,8 +630,16 @@ if (distPosts.length) {
 for (const bad of ["&lt;Figure", "&lt;YouTubeFacade", 'src=&quot;/'])
   if (rssXml.includes(bad)) failures.push(`rss.xml contains ${bad} (unrendered/unabsolutized)`);
 // Feed-safety tooth (sol S10): facade markup must never reach the feed.
+// Fenced / inline code samples legitimately show markup (the same rule as the
+// twin-residue mask: residue checks apply OUTSIDE code only — round-3 K3 F2);
+// the feed carries its HTML XML-escaped, so mask the escaped <pre>/<code> too.
+const rssOutsideCode = rssXml
+  .replace(/<pre\b[\s\S]*?<\/pre>/g, "")
+  .replace(/<code\b[\s\S]*?<\/code>/g, "")
+  .replace(/&lt;pre\b[\s\S]*?&lt;\/pre&gt;/g, "")
+  .replace(/&lt;code\b[\s\S]*?&lt;\/code&gt;/g, "");
 for (const bad of ["yt-facade", "<button", "&lt;button", "<iframe", "&lt;iframe", "data-png=", "fig-open", "fig-anchor", "fig-expand", "fig-cap", "figfocus", "<dialog", "&lt;dialog", "<svg", "&lt;svg"])
-  if (rssXml.includes(bad))
+  if (rssOutsideCode.includes(bad))
     failures.push(`rss.xml contains "${bad}" — facade markup is not feed-safe (sol S10)`);
 
 // ---- robots.txt: GROUP-parsed Content-Signal (sol S9) ----

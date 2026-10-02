@@ -49,14 +49,15 @@ function maskCode(body) {
   return (
     body
       // The closing fence is the SAME run (same character, at least as long —
-      // CommonMark), so a four-backtick fence showing a ``` line inside stays
-      // ONE block (round-2 K3 F5).
-      .replace(/(^|\n)((`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\3[`~]*[ \t]*)(?=\n|$)/g, (m, lead, block) => lead + blank(block))
+      // CommonMark; a mixed run is not a closer), so a four-backtick fence
+      // showing a ``` line inside stays ONE block (round-2 K3 F5); either
+      // fence line may sit 0–3 spaces in (round-3 astra F4 / fable F6).
+      .replace(/(^|\n)([ \t]{0,3}(?:(`{3,})[^\n]*\n[\s\S]*?\n[ \t]{0,3}\3`*|(~{3,})[^\n]*\n[\s\S]*?\n[ \t]{0,3}\4~*)[ \t]*)(?=\n|$)/g, (m, lead, block) => lead + blank(block))
       // Code spans of ANY backtick run length (`x`, `` `x` ``): a
       // double-backtick span containing single backticks must mask as one span,
       // or the mask swallows prose between spans — and an image with it (the
       // distributional archive hit this, round-1 fold).
-      .replace(/(`+)(?!`)[^\n]*?[^`\n]\1(?!`)/g, blank)
+      .replace(/(?<!`)(`+)(?!`)[^\n]*?[^`\n]\1(?!`)/g, blank)
   );
 }
 
@@ -68,15 +69,20 @@ export function captionText(md) {
   // entities decode once as the page does (round-2 astra F6 / deepseek F3 /
   // glmfull F3). CommonMark strips one leading + trailing space from a span.
   const code = [];
-  const masked = String(md).replace(/(`+)(?!`)([^\n]*?[^`\n])\1(?!`)/g, (_m, _ticks, value) => {
+  // (a literal NUL normalizes to U+FFFD first, CommonMark's rule, so it cannot
+  // impersonate a placeholder — round-3 astra F6; the run boundary is checked on
+  // BOTH sides — round-3 astra F5)
+  const masked = String(md).replace(/\u0000/g, "�").replace(/(?<!`)(`+)(?!`)([^\n]*?[^`\n])\1(?!`)/g, (_m, _ticks, value) => {
     const normalized = value.startsWith(" ") && value.endsWith(" ") && /\S/.test(value) ? value.slice(1, -1) : value;
     return `\u0000${code.push(normalized) - 1}\u0000`;
   });
   return decodeEntities(
     masked
       .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
-      .replace(/(\*\*|__)(.+?)\1/g, "$2")
-      .replace(/(\*|_)(?!\1)(.+?)\1/g, "$2"),
+      .replace(/\*\*(.+?)\*\*/g, "$1")
+      .replace(/(^|[^\w])__(.+?)__(?=[^\w]|$)/g, "$1$2")
+      .replace(/\*(?!\*)(.+?)\*/g, "$1")
+      .replace(/(^|[^\w])_(?!_)(.+?)_(?=[^\w]|$)/g, "$1$2"), // `_` never opens inside a word (round-3 fable F4)
   )
     .replace(/\u0000(\d+)\u0000/g, (_m, i) => code[Number(i)])
     .replace(/\s+/g, " ")
@@ -123,7 +129,9 @@ export function scanBody(slug, body) {
       // same-length mask), so code spans inside it keep their content.
       const after = body.slice(m.index + m[0].length);
       const nxt = after.match(/^[ \t]*\n\s*\n([^\n]+)(?:\n(?:\s*\n|$)|$)/);
-      const ital = nxt?.[1]?.trim().match(/^(\*|_)(?!\1)(.+)\1$/);
+      const italMatch = nxt?.[1]?.trim().match(/^(\*|_)(?!\1)(.+)\1$/);
+      // `*a* and *b*` is two spans + prose, not an italic-only paragraph (round-3 fable F5)
+      const ital = italMatch && !/[*_]\s+[^*_]+\s+[*_]/.test(italMatch[2]) ? italMatch : null;
       const rendered = ital ? captionText(ital[2]) : "";
       const caption = ital && rendered.length <= 400 ? rendered : "";
       out.push({

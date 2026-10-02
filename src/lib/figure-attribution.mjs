@@ -38,12 +38,13 @@ export const captionFontSize = (w) => Math.min(24, Math.max(13, Math.round(w / 7
 // DejaVu Sans advance widths in 1/1000 em (measured from the box's
 // DejaVuSans.ttf with PIL, 2026-10-01 / 10-02): ASCII 32..126, Latin-1
 // 0xA0..0xFF, General Punctuation U+2010..U+2026 (dashes, quotes, ellipsis).
-// Any other glyph assumes a FULL em, so the wrap errs early and the unpinned
-// last line can never overflow the band (round-2 K3 F4).
+// Any other glyph assumes TWO ems — above every DejaVu Sans advance (the
+// per-mille sign is 1.34 em) and emoji fonts — so the wrap errs early and the
+// unpinned last line cannot overflow the band (round-2 K3 F4, round-3 astra F7).
 const DEJAVU_W = [318,401,460,838,636,950,780,275,390,390,500,838,318,361,318,337,636,636,636,636,636,636,636,636,636,636,337,337,838,838,838,531,1000,684,686,698,770,632,575,775,752,295,295,656,557,863,748,787,603,787,695,635,611,732,684,989,685,611,685,390,337,390,838,500,500,613,635,550,635,615,352,635,634,278,278,579,278,974,634,612,635,635,411,521,392,634,592,818,592,592,525,636,337,636,838];
 const DEJAVU_LAT1 = [318, 401, 636, 636, 636, 636, 337, 500, 500, 1000, 471, 612, 838, 0, 1000, 500, 500, 838, 401, 401, 500, 636, 636, 318, 500, 401, 471, 612, 969, 969, 969, 531, 684, 684, 684, 684, 684, 684, 974, 698, 632, 632, 632, 632, 295, 295, 295, 295, 775, 748, 787, 787, 787, 787, 787, 838, 787, 732, 732, 732, 732, 611, 605, 630, 613, 613, 613, 613, 613, 613, 982, 550, 615, 615, 615, 615, 278, 278, 278, 278, 612, 634, 612, 612, 612, 612, 612, 838, 612, 634, 634, 634, 634, 592, 635, 592];
 const DEJAVU_PUNCT = [361, 361, 636, 500, 1000, 1000, 500, 500, 318, 318, 318, 318, 518, 518, 518, 518, 500, 500, 590, 590, 334, 667, 1000];
-const DEJAVU_UNKNOWN = 1000;
+const DEJAVU_UNKNOWN = 2000; // two ems: above every DejaVu Sans advance (U+2030 is 1.34 em) and emoji fonts (round-3 astra F7)
 /** Rendered width of a string in user units at a given font size (DejaVu Sans). */
 export function textWidth(text, fontSize) {
   let u = 0;
@@ -97,7 +98,10 @@ export function attributeSvg(raw, opts) {
   // The attribution line is ONE unwrapped right-aligned line; on a narrow
   // canvas it would silently clip the license and the deep link — the whole
   // point of the footer. Fail loud (round-2 glmfull F5).
-  const attrLine = `© ${year} ${holder}  ·  ${opts.license?.name ? `${opts.license.name}  ·  ` : ""}${display}`;
+  const SEP = "  ·  ";
+  const copyright = `© ${year} ${holder}`;
+  // the SAME parts the footer emits below — one source for the measure and the markup (round-3 K3 F6)
+  const attrLine = [copyright, ...(opts.license?.name ? [opts.license.name] : []), display].join(SEP);
   if (textWidth(attrLine, fs) > c.w - 2 * pad)
     throw new Error(`attributeSvg: attribution line (${Math.round(textWidth(attrLine, fs))} units) does not fit a ${c.w}-unit canvas — widen the figure or shorten the holder/url`);
   const fsC = captionFontSize(c.w);
@@ -161,7 +165,7 @@ export function attributeSvg(raw, opts) {
     opts.title ? `<dc:title>${esc(opts.title)}</dc:title>` : "",
     opts.caption ? `<dc:description>${esc(opts.caption)}</dc:description>` : "",
     opts.creator ? `<dc:creator><cc:Agent><dc:title>${esc(opts.creator)}</dc:title></cc:Agent></dc:creator>` : "",
-    `<dc:rights><cc:Agent><dc:title>${esc(`© ${year} ${holder}`)}</dc:title></cc:Agent></dc:rights>`,
+    `<dc:rights><cc:Agent><dc:title>${esc(copyright)}</dc:title></cc:Agent></dc:rights>`,
     opts.publisher ? `<dc:publisher><cc:Agent><dc:title>${esc(opts.publisher)}</dc:title></cc:Agent></dc:publisher>` : "",
     `<dc:source>${esc(url)}</dc:source>`,
     `<dc:date>${esc(date)}</dc:date>`,
@@ -208,8 +212,8 @@ export function attributeSvg(raw, opts) {
     `<line x1="${c.x}" y1="${y + 0.5}" x2="${c.x + c.w}" y2="${y + 0.5}" stroke="#e5e7eb" stroke-width="1"/>` +
     captionText +
     `<text x="${c.x + c.w - pad}" y="${baseline}" text-anchor="end">` +
-    `${esc(`© ${year} ${holder}`)}  ·  ` +
-    (opts.license?.name ? `<a href="${esc(opts.license.url)}"><tspan>${esc(opts.license.name)}</tspan></a>  ·  ` : "") +
+    `${esc(copyright)}${SEP}` +
+    (opts.license?.name ? `<a href="${esc(opts.license.url)}"><tspan>${esc(opts.license.name)}</tspan></a>${SEP}` : "") +
     `<a href="${esc(url)}"><tspan fill="#4b5563">${esc(display)}</tspan></a>` +
     `</text></g>`;
   const close = out.lastIndexOf("</svg>");

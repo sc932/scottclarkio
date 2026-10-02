@@ -74,7 +74,6 @@
     // the entry, and Chrome then skips the fragment scroll on EVERY later load
     // (Scott: "refreshing the # link takes me to top of page, not the fig").
     // Reset it, and scroll to a figure named by the hash ourselves.
-    if (history.scrollRestoration === "manual") history.scrollRestoration = "auto";
     const scrollToHashFigure = () => {
       if (!location.hash) return;
       let hashId = "";
@@ -86,6 +85,25 @@
       const t = document.getElementById(hashId);
       if (t && t.matches("figure.post-figure")) requestAnimationFrame(() => t.scrollIntoView({ block: "start" }));
     };
+    // The entry an open pushed carries state {figfocus}. Reaching it by RELOAD
+    // means Chrome restores that entry's saved offset — 0, the body was locked —
+    // at its load-time restore step, AFTER our first-frame scroll (measured
+    // under 400 ms latency: scroll 6197 → load → 0; round-3 fable F1 — warm
+    // caches hide it). Keep restoration OFF until load has passed, scroll to
+    // the figure ourselves at init AND at load, then hand the mode back.
+    if (history.state && history.state.figfocus) {
+      history.scrollRestoration = "manual";
+      const handBack = () => {
+        scrollToHashFigure();
+        requestAnimationFrame(() =>
+          requestAnimationFrame(() => {
+            if (!dlg.open) history.scrollRestoration = "auto";
+          }),
+        );
+      };
+      if (document.readyState === "complete") handBack();
+      else window.addEventListener("load", handBack, { once: true });
+    } else if (history.scrollRestoration === "manual") history.scrollRestoration = "auto";
     scrollToHashFigure();
     window.addEventListener("pagehide", () => {
       if (dlg.open) history.scrollRestoration = prevRestoration;
@@ -365,6 +383,7 @@
           if (!backPending || seq !== closeSeq) return;
           backPending = false;
           pendingOpen = null;
+          history.scrollRestoration = prevRestoration; // no traversal is coming — do not strand "manual" (round-3 astra F2 / K3 F5)
         }, 400);
       }
       pushed = false;
@@ -389,8 +408,11 @@
         // re-aim the page at the arrival figure) — and only if no deferred
         // open re-opened meanwhile (that open's own close restores it).
         const mode = prevRestoration;
+        const seqAtLanding = closeSeq;
         requestAnimationFrame(() => {
-          if (!dlg.open) history.scrollRestoration = mode;
+          // this traversal's own frame only — never inside a newer close window
+          // or a newer traversal (round-3 astra F1)
+          if (seqAtLanding === closeSeq && !dlg.open && !pushed && !backPending) history.scrollRestoration = mode;
         });
         if (pendingOpen) {
           const a = pendingOpen;
@@ -405,7 +427,12 @@
       if (dlg.open) {
         viaHistory = true;
         dlg.close();
-      } else scrollToHashFigure();
+      } else {
+        // a stale "manual" of ours (a reload while open, a typed hash, a Back
+        // inside the restore frame) heals on the next landing (round-3 fable F2)
+        if (history.scrollRestoration === "manual") history.scrollRestoration = "auto";
+        scrollToHashFigure();
+      }
     });
     // Plain clicks open the focus view; modifier clicks keep the native link.
     document.addEventListener("click", (e) => {
@@ -517,6 +544,16 @@
         flushPinch(); // the last pending pinch lands before the contact leaves
       }
       ptrs.delete(e.pointerId);
+      if (ptrs.size === 2) {
+        // a third contact lifted: re-seed the pinch from the pair that is
+        // actually down, or the next frame jumps by d_new/d_old (round-3
+        // astra F3 / K3 F1 / fable F3)
+        const [pa, pb] = [...ptrs.values()];
+        pinch0 = Math.hypot(pa.x - pb.x, pa.y - pb.y) || 1;
+        zoom0 = zoom;
+        pinchX = (pa.x + pb.x) / 2;
+        pinchY = (pa.y + pb.y) / 2;
+      }
       const rest = [...ptrs.values()][0];
       if (rest) {
         lastX = rest.x;
