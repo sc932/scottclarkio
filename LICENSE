@@ -4,7 +4,8 @@ This project uses a dual license:
 CODE LICENSE (MIT)
 ================================================================================
 
-Applies to all files EXCEPT those under src/content/ and public/images/.
+Applies to all files EXCEPT those under src/content/, src/assets/blog/,
+public/images/, and public/resume/.
 
 MIT License
 
@@ -33,9 +34,11 @@ CONTENT LICENSE (All Rights Reserved)
 ================================================================================
 
 Applies to all files under:
-  - src/content/   (blog posts, publications, talks, articles, projects)
-  - public/images/ (photographs, graphics, media)
-  - public/resume/ (resume and CV documents)
+  - src/content/     (blog posts, publications, talks, articles, projects)
+  - src/assets/blog/ (the hand-drawn figure sources; their published
+                      downloads are licensed below)
+  - public/images/   (photographs, graphics, media, the figures' PNG twins)
+  - public/resume/   (resume and CV documents)
 
 Copyright (c) 2026 Scott Clark. All rights reserved.
 
@@ -51,19 +54,18 @@ For permission requests, contact Scott Clark.
 FIGURE LICENSE (CC BY-ND 4.0)
 ================================================================================
 
-Applies to the hand-drawn figures:
-  - src/assets/blog/**/*.svg          (the committed figure sources)
-  - the published downloads at https://scottclark.io/figures/<post>/<name>.svg
-    (each source composed with its caption and attribution footer)
-  - public/images/blog/<post>/<figure>.png (the PNG twins of those figures)
+Applies to the PUBLISHED figure downloads:
+  - https://scottclark.io/figures/<post>/<name>.svg
+    (each hand-drawn figure composed with its caption and attribution footer)
 
-These figures are licensed under Creative Commons Attribution-NoDerivatives
+The downloads are licensed under Creative Commons Attribution-NoDerivatives
 4.0 International (https://creativecommons.org/licenses/by-nd/4.0/): you may
 reproduce and redistribute them, including commercially, unmodified, with the
-attribution the download carries (or an equivalent credit and a link to the
-source essay). No modified versions. Nothing here implies endorsement.
-Terms as published: https://scottclark.io/figures#reuse
+attribution footer they carry intact. No modified versions. Nothing here
+implies endorsement. Terms as published: https://scottclark.io/figures#reuse
 
-The figures are the one carve-out from the content license above; talk
-slides, screenshots, photographs, and every other file under the content
-directories stay All Rights Reserved.
+The footered download is the licensed form of each figure. The figure sources
+(src/assets/blog/**/*.svg) and the PNG twins (public/images/blog/<post>/*.png)
+are site content under the content license above; talk slides, screenshots,
+photographs, and every other file under the content directories stay All
+Rights Reserved.

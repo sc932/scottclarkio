@@ -1,7 +1,7 @@
 // /figures/<post>/<name>.svg — the DOWNLOADABLE version of a house figure:
 // the committed drawing plus the attribution footer and Dublin Core metadata
 // (src/lib/figure-attribution.mjs). The inline page copy stays clean; the
-// focus view and the download point here. Built for every SVG figure of
+// focus view clones the inline svg; the download points here. Built for every SVG figure of
 // every published post; the AIO gate recomputes each file through the same
 // composer and fails on any byte of drift.
 import type { APIRoute } from "astro";

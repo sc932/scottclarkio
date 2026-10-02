@@ -331,7 +331,8 @@ export async function renderFiguresMd(): Promise<string> {
         .map((f) => {
           const a = attributionFor(f);
           const label = figureLabel(f);
-          return `- [${label}](${f.pageUrl}) - ${f.kind === "svg" ? "SVG" : "image"}: ${f.downloadUrl} (${"©"} ${a.year} ${a.holder}${f.kind === "svg" ? `; ${figureAttribution.license.name}` : ""})`;
+          const safe = label.replace(/([\[\]])/g, "\\$1"); // a `]` in a caption would break the link (round-2 glmfull F9)
+          return `- [${safe}](${f.pageUrl}) - ${f.kind === "svg" ? "SVG" : "image"}: ${f.downloadUrl} (${"©"} ${a.year} ${a.holder}${f.kind === "svg" ? `; ${figureAttribution.license.name}` : ""})`;
         })
         .join("\n");
       return `## ${first.postTitle}\n\n${first.pageUrl.split("#")[0]}\n\n${items}`;

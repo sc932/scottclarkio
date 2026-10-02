@@ -65,6 +65,7 @@
     let lastPointerType = "";
     let suppressDbl = 0;
     let backPending = false;
+    let closeSeq = 0;
     let pendingOpen: HTMLAnchorElement | null = null;
     let lockY = 0;
     let prevRestoration: ScrollRestoration = "auto";
@@ -76,7 +77,13 @@
     if (history.scrollRestoration === "manual") history.scrollRestoration = "auto";
     const scrollToHashFigure = () => {
       if (!location.hash) return;
-      const t = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+      let hashId = "";
+      try {
+        hashId = decodeURIComponent(location.hash.slice(1));
+      } catch {
+        return; // malformed percent-encoding ("#%") — nothing to scroll to (round-2 K3 F2)
+      }
+      const t = document.getElementById(hashId);
       if (t && t.matches("figure.post-figure")) requestAnimationFrame(() => t.scrollIntoView({ block: "start" }));
     };
     scrollToHashFigure();
@@ -98,7 +105,7 @@
       fitScale = Math.max(0.001, Math.min((stage.clientWidth - 2 * PAD) / natW, (stage.clientHeight - 2 * PAD) / natH));
     };
     // The zoom at which the figure spans the stage's full width (>= 1).
-    const fitWidth = () => Math.max(1, (stage.clientWidth - 2 * PAD) / (natW * fitScale));
+    const fitWidth = () => Math.min(MAX, Math.max(1, (stage.clientWidth - 2 * PAD) / (natW * fitScale))); // clamped like apply() (round-2 glmflash F1)
     // The grid (Scott: "normal increments, ie 125, 150, 175"); the first +
     // from the whole figure is the one off-grid rung: full width, top-aligned.
     const GRID = [0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4, 5, 6, 8];
@@ -172,6 +179,7 @@
     };
     const ready = () => {
       zoom = 1;
+      fullWidthZ = 0; // the rung is per figure (round-2 K3 F3 / chair C1)
       computeFit();
       size();
       stage.scrollTo(0, 0);
@@ -185,6 +193,10 @@
     const cloneSvg = (svg: SVGElement): SVGElement => {
       const clone = svg.cloneNode(true) as SVGElement;
       const map = new Map<string, string>();
+      if (clone.id) {
+        map.set(clone.id, `${clone.id}-ff`); // querySelectorAll skips the root (round-2 glmflash F4)
+        clone.id = `${clone.id}-ff`;
+      }
       for (const n of clone.querySelectorAll("[id]")) {
         if (!n.id) continue;
         map.set(n.id, `${n.id}-ff`);
@@ -195,13 +207,18 @@
           for (const a of REF_ATTRS) {
             const v = n.getAttribute(a);
             if (!v) continue;
-            let nv = v.replace(/url\(#([^)]+)\)/g, (m, id: string) => (map.has(id) ? `url(#${map.get(id)})` : m));
+            let nv = v.replace(/url\((['"]?)#([^)'"]+)\1\)/g, (m, q: string, id: string) => (map.has(id) ? `url(${q}#${map.get(id)}${q})` : m));
             if ((a === "href" || a === "xlink:href") && v.startsWith("#") && map.has(v.slice(1))) nv = `#${map.get(v.slice(1))}`;
             if (nv !== v) n.setAttribute(a, nv);
           }
         }
         for (const st of clone.querySelectorAll("style"))
-          st.textContent = (st.textContent ?? "").replace(/#([A-Za-z_][\w:.-]*)/g, (m, id: string) => (map.has(id) ? `#${map.get(id)}` : m));
+          st.textContent = (st.textContent ?? "").replace(/#([A-Za-z_][\w:.-]*)/g, (m, id: string) => {
+            if (map.has(id)) return `#${map.get(id)}`;
+            const cut = id.search(/[:.]/); // `#id:hover`, `#id.cls` (round-2 grok F11)
+            const base = cut > 0 ? id.slice(0, cut) : "";
+            return base && map.has(base) ? `#${map.get(base)}${id.slice(cut)}` : m;
+          });
       }
       return clone;
     };
@@ -220,7 +237,11 @@
       // A close's back() still in flight: open once its popstate has landed
       // (a pushState racing a pending traversal leaves Chrome's entries in
       // an inconsistent order — quick review, client seat; race probe).
-      if (backPending) {
+      // …or a close whose queued `close` event has not run yet
+      // (`dialog.close()` drops `open` synchronously, the event fires in a
+      // later task): its cleanup would erase this open's stage and traverse
+      // the wrong entry (round-2 astra F2). `pushed` is reset only there.
+      if (backPending || (!dlg.open && pushed)) {
         pendingOpen = a;
         return;
       }
@@ -255,11 +276,20 @@
       // would persist that into the entry being left.
       lockY = window.scrollY;
       pushed = false;
+      // Scroll restoration goes MANUAL on the entry we are about to leave,
+      // BEFORE the push (the new entry inherits it; set again after): our own
+      // back() then lands on that entry without Chrome re-aiming the page at
+      // its fragment AFTER popstate (measured: popstate 1822 → hashchange 922
+      // — the deep-link arrival path; round-2 grok F1 / fable F1, second
+      // half). The popstate branch restores the mode once we are back.
+      // A "manual" found here is OURS (the init guard resets any other at load):
+      // a deferred re-open must keep the ORIGINAL mode to restore.
+      if (history.scrollRestoration !== "manual") prevRestoration = history.scrollRestoration;
+      history.scrollRestoration = "manual";
       if (figId) {
         history.pushState({ figfocus: figId }, "", `#${figId}`);
         pushed = true;
       }
-      prevRestoration = history.scrollRestoration;
       history.scrollRestoration = "manual";
       document.documentElement.classList.add("figfocus-open");
       document.body.style.top = `-${lockY}px`;
@@ -267,6 +297,9 @@
       // Content: the clean inline svg (vector) or the raster image.
       stage.replaceChildren();
       el = null;
+      ptrs.clear(); // a pointer still captured at close must not seed the next open's gesture (round-2 glmfull F7)
+      cancelPinchFrame();
+      moved = 0;
       const clone = svgEl ? cloneSvg(svgEl) : null;
       // A click that turns into a double-click must not zoom the fresh view.
       suppressDbl = Date.now();
@@ -287,9 +320,11 @@
         img.draggable = false;
         img.decoding = "async";
         img.onerror = () => {
+          if (el !== img || !dlg.open) return; // a removed image's late callback (round-2 astra F5)
           cap.textContent = "The image failed to load.";
         };
         img.onload = () => {
+          if (el !== img || !dlg.open) return;
           natW = img.naturalWidth || 1;
           natH = img.naturalHeight || 1;
           ready();
@@ -304,37 +339,68 @@
       document.documentElement.classList.remove("figfocus-open");
       document.body.style.top = "";
       window.scrollTo(0, lockY);
-      history.scrollRestoration = prevRestoration;
+      // Restore the mode here only when we are NOT about to traverse: Chrome
+      // applies the mode in effect at back() time to the LANDING entry
+      // (measured — restoring "auto" here made the arrival entry fragment-
+      // scroll after popstate), so with our own back() in flight it stays
+      // manual and the popstate branch restores it after landing.
+      if (!(pushed && !viaHistory)) history.scrollRestoration = prevRestoration;
+      cancelPinchFrame(); // gesture state dies with the view (round-2 astra F1 / glmfull F7)
+      ptrs.clear();
+      lastTap = 0;
       stage.replaceChildren();
       el = null;
       if (pushed && !viaHistory) {
         backPending = true;
         history.back();
-        // Watchdog: if the traversal never reports (it was cancelled by a
-        // navigation), release the latch and run any open it was holding.
+        // Watchdog: if the traversal never reports, release the latch — and
+        // DROP the deferred open rather than run it: a merely SLOW back()
+        // would deliver its popstate after that open and close the fresh
+        // dialog (the race in a new costume — round-2 inkling/K3/deepseek/
+        // glmfull/glmflash/astra, convergent). A lost click is the cheap
+        // direction; the user clicks again. The timer is THIS close's own
+        // (`seq`): an older close's timer never releases a newer latch.
+        const seq = ++closeSeq;
         setTimeout(() => {
-          if (!backPending) return;
+          if (!backPending || seq !== closeSeq) return;
           backPending = false;
-          const a = pendingOpen;
           pendingOpen = null;
-          if (a) open(a);
         }, 400);
       }
       pushed = false;
       viaHistory = false;
       opener?.focus({ preventScroll: true });
+      // A click that arrived inside the close window runs now when no
+      // traversal is pending (the popstate path runs it otherwise).
+      if (!backPending && pendingOpen) {
+        const next = pendingOpen;
+        pendingOpen = null;
+        open(next);
+      }
     });
     window.addEventListener("popstate", () => {
       // The back() we queued at close has landed on the page's own entry;
       // an open that arrived meanwhile runs now (and pushes normally).
       if (backPending) {
         backPending = false;
+        // Back on the entry whose mode went manual at open: restore it a FRAME
+        // later — Chrome's post-popstate fragment-scroll step reads the mode
+        // after these listeners ran (measured: a synchronous restore let it
+        // re-aim the page at the arrival figure) — and only if no deferred
+        // open re-opened meanwhile (that open's own close restores it).
+        const mode = prevRestoration;
+        requestAnimationFrame(() => {
+          if (!dlg.open) history.scrollRestoration = mode;
+        });
         if (pendingOpen) {
           const a = pendingOpen;
           pendingOpen = null;
           open(a);
-          return;
         }
+        // Our own traversal: the close handler already restored the scroll;
+        // falling through would scroll to a `#fig-` hash the entry we return
+        // to still carries (the deep-link arrival path — round-2 grok F1).
+        return;
       }
       if (dlg.open) {
         viaHistory = true;
@@ -385,7 +451,29 @@
     let zoom0 = 1;
     let pinchX = 0;
     let pinchY = 0;
-    const pinchFresh = new Set<number>();
+    // Pinch updates are COALESCED per animation frame from the latest known
+    // position of BOTH contacts: a stationary finger emits no pointermove, so
+    // waiting for "both fingers reported" froze the anchored pinch (round-2
+    // astra F1 — probe: one finger still, the other moving, zoom stayed
+    // 100 %); one frame = one apply, so the two moves a touch frame emits no
+    // longer land as two half-updates (quick review, client seat #6).
+    let pinchFrame: number | null = null;
+    const cancelPinchFrame = () => {
+      if (pinchFrame !== null) cancelAnimationFrame(pinchFrame);
+      pinchFrame = null;
+    };
+    const flushPinch = () => {
+      pinchFrame = null;
+      if (ptrs.size !== 2 || !dlg.open) return;
+      const [a, b] = [...ptrs.values()];
+      const r = rectOf();
+      const d = Math.hypot(a.x - b.x, a.y - b.y);
+      const mx = (a.x + b.x) / 2;
+      const my = (a.y + b.y) / 2;
+      apply((zoom0 * d) / pinch0, mx - r.left, my - r.top, mx - pinchX, my - pinchY);
+      pinchX = mx;
+      pinchY = my;
+    };
     let lastX = 0;
     let lastY = 0;
     let lastTap = 0;
@@ -402,7 +490,7 @@
         zoom0 = zoom;
         pinchX = (a.x + b.x) / 2;
         pinchY = (a.y + b.y) / 2;
-        pinchFresh.clear();
+        cancelPinchFrame();
       } else {
         lastX = e.clientX;
         lastY = e.clientY;
@@ -412,21 +500,9 @@
     stage.addEventListener("pointermove", (e) => {
       if (!ptrs.has(e.pointerId)) return;
       ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-      const r = rectOf();
       if (ptrs.size === 2) {
-        // Each touch frame arrives as TWO pointermoves; apply the pinch once
-        // both fingers have reported (quick review, client seat #6).
-        pinchFresh.add(e.pointerId);
-        if (pinchFresh.size < 2) return;
-        pinchFresh.clear();
-        const [a, b] = [...ptrs.values()];
-        const d = Math.hypot(a.x - b.x, a.y - b.y);
-        const mx = (a.x + b.x) / 2;
-        const my = (a.y + b.y) / 2;
-        apply((zoom0 * d) / pinch0, mx - r.left, my - r.top, mx - pinchX, my - pinchY);
-        pinchX = mx;
-        pinchY = my;
-      } else {
+        if (pinchFrame === null) pinchFrame = requestAnimationFrame(flushPinch);
+      } else if (ptrs.size === 1) {
         stage.scrollLeft -= e.clientX - lastX;
         stage.scrollTop -= e.clientY - lastY;
         moved += Math.abs(e.clientX - lastX) + Math.abs(e.clientY - lastY);
@@ -436,6 +512,10 @@
     });
     const lift = (e: PointerEvent) => {
       if (!ptrs.has(e.pointerId)) return;
+      if (pinchFrame !== null) {
+        cancelPinchFrame();
+        flushPinch(); // the last pending pinch lands before the contact leaves
+      }
       ptrs.delete(e.pointerId);
       const rest = [...ptrs.values()][0];
       if (rest) {

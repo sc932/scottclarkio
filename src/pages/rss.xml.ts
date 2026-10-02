@@ -19,6 +19,7 @@ function feedifyHtml(html: string): string {
       (_m, png, caption) => {
         const cap = String(caption)
           .replace(/<a\s[^>]*class="[^"]*\bfig-anchor\b[^"]*"[^>]*>[\s\S]*?<\/a>\s*/g, "")
+          .replace(/<span class="fig-cap"[^>]*>([\s\S]*?)<\/span>/, "$1") // the page-scoped caption span is not feed markup (round-2 glmflash F5)
           .trim();
         const alt = cap.replace(/<[^>]+>/g, "");
         return `<figure><img src="${siteUrl}${png}" alt="${alt}" /><figcaption>${cap}</figcaption></figure>`;

@@ -48,7 +48,10 @@ function maskCode(body) {
   const blank = (m) => m.replace(/[^\n]/g, " ");
   return (
     body
-      .replace(/(^|\n)((?:`{3,}|~{3,})[^\n]*\n[\s\S]*?\n(?:`{3,}|~{3,})[ \t]*)(?=\n|$)/g, (m, lead, block) => lead + blank(block))
+      // The closing fence is the SAME run (same character, at least as long —
+      // CommonMark), so a four-backtick fence showing a ``` line inside stays
+      // ONE block (round-2 K3 F5).
+      .replace(/(^|\n)((`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\3[`~]*[ \t]*)(?=\n|$)/g, (m, lead, block) => lead + blank(block))
       // Code spans of ANY backtick run length (`x`, `` `x` ``): a
       // double-backtick span containing single backticks must mask as one span,
       // or the mask swallows prose between spans — and an image with it (the
@@ -60,11 +63,22 @@ function maskCode(body) {
 /** Approximate the RENDERED text of a one-line markdown caption: code spans
  * keep their content, links keep their text, emphasis markers drop. */
 export function captionText(md) {
-  return String(md)
-    .replace(/(`+)(?!`)([^\n]*?[^`\n])\1(?!`)/g, "$2")
-    .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
-    .replace(/(\*\*|__)(.+?)\1/g, "$2")
-    .replace(/(\*|_)(?!\1)(.+?)\1/g, "$2")
+  // Code spans are LITERAL: mask them first so emphasis markers inside them
+  // survive (`a_b_c`) and entities inside them stay undecoded; outside them,
+  // entities decode once as the page does (round-2 astra F6 / deepseek F3 /
+  // glmfull F3). CommonMark strips one leading + trailing space from a span.
+  const code = [];
+  const masked = String(md).replace(/(`+)(?!`)([^\n]*?[^`\n])\1(?!`)/g, (_m, _ticks, value) => {
+    const normalized = value.startsWith(" ") && value.endsWith(" ") && /\S/.test(value) ? value.slice(1, -1) : value;
+    return `\u0000${code.push(normalized) - 1}\u0000`;
+  });
+  return decodeEntities(
+    masked
+      .replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1")
+      .replace(/(\*\*|__)(.+?)\1/g, "$2")
+      .replace(/(\*|_)(?!\1)(.+?)\1/g, "$2"),
+  )
+    .replace(/\u0000(\d+)\u0000/g, (_m, i) => code[Number(i)])
     .replace(/\s+/g, " ")
     .trim();
 }

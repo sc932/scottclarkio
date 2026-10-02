@@ -2,8 +2,8 @@
 // figure: the committed drawing plus a footer band carrying the CAPTION
 // (wrapped, left-aligned — Scott, 2026-10-01: "The download should include the
 // caption") and an attribution line (copyright + the figure's deep-link URL,
-// bottom-right), plus machine-readable Dublin Core metadata. The inline page copy stays clean; the focus view and the
-// download serve this derivative (built by src/pages/figures/[slug]/[name].svg.ts,
+// bottom-right), plus machine-readable Dublin Core metadata. The inline page copy stays clean; the focus view shows
+// the page's inline svg cloned; the DOWNLOAD serves this derivative (built by src/pages/figures/[slug]/[name].svg.ts,
 // verified byte-for-byte by the AIO gate through this same function).
 //
 // Geometry: the footer lives in a NEW band appended below the declared canvas
@@ -23,8 +23,8 @@ export function svgCanvas(raw) {
   if (!root) throw new Error("attributeSvg: no <svg> root");
   const vb = root[0].match(/\bviewBox=["']\s*([-\d.]+)[ ,]+([-\d.]+)[ ,]+([-\d.]+)[ ,]+([-\d.]+)\s*["']/);
   if (vb) return { root: root[0], x: +vb[1], y: +vb[2], w: +vb[3], h: +vb[4] };
-  const w = root[0].match(/\bwidth="([\d.]+)"/)?.[1];
-  const h = root[0].match(/\bheight="([\d.]+)"/)?.[1];
+  const w = root[0].match(/\bwidth=["']([\d.]+)["']/)?.[1];
+  const h = root[0].match(/\bheight=["']([\d.]+)["']/)?.[1];
   if (!w || !h) throw new Error("attributeSvg: root has neither viewBox nor width/height");
   return { root: root[0], x: 0, y: 0, w: +w, h: +h };
 }
@@ -35,16 +35,24 @@ export const footerFontSize = (w) => Math.min(18, Math.max(11, Math.round(w / 95
 /** Caption type size: larger than the attribution line (~1.4 % of the width). */
 export const captionFontSize = (w) => Math.min(24, Math.max(13, Math.round(w / 70)));
 
-// DejaVu Sans advance widths, ASCII 32..126, in 1/1000 em (measured from the
-// box's DejaVuSans.ttf with PIL, 2026-10-01); other glyphs take the average.
+// DejaVu Sans advance widths in 1/1000 em (measured from the box's
+// DejaVuSans.ttf with PIL, 2026-10-01 / 10-02): ASCII 32..126, Latin-1
+// 0xA0..0xFF, General Punctuation U+2010..U+2026 (dashes, quotes, ellipsis).
+// Any other glyph assumes a FULL em, so the wrap errs early and the unpinned
+// last line can never overflow the band (round-2 K3 F4).
 const DEJAVU_W = [318,401,460,838,636,950,780,275,390,390,500,838,318,361,318,337,636,636,636,636,636,636,636,636,636,636,337,337,838,838,838,531,1000,684,686,698,770,632,575,775,752,295,295,656,557,863,748,787,603,787,695,635,611,732,684,989,685,611,685,390,337,390,838,500,500,613,635,550,635,615,352,635,634,278,278,579,278,974,634,612,635,635,411,521,392,634,592,818,592,592,525,636,337,636,838];
-const DEJAVU_AVG = 502;
+const DEJAVU_LAT1 = [318, 401, 636, 636, 636, 636, 337, 500, 500, 1000, 471, 612, 838, 0, 1000, 500, 500, 838, 401, 401, 500, 636, 636, 318, 500, 401, 471, 612, 969, 969, 969, 531, 684, 684, 684, 684, 684, 684, 974, 698, 632, 632, 632, 632, 295, 295, 295, 295, 775, 748, 787, 787, 787, 787, 787, 838, 787, 732, 732, 732, 732, 611, 605, 630, 613, 613, 613, 613, 613, 613, 982, 550, 615, 615, 615, 615, 278, 278, 278, 278, 612, 634, 612, 612, 612, 612, 612, 838, 612, 634, 634, 634, 634, 592, 635, 592];
+const DEJAVU_PUNCT = [361, 361, 636, 500, 1000, 1000, 500, 500, 318, 318, 318, 318, 518, 518, 518, 518, 500, 500, 590, 590, 334, 667, 1000];
+const DEJAVU_UNKNOWN = 1000;
 /** Rendered width of a string in user units at a given font size (DejaVu Sans). */
 export function textWidth(text, fontSize) {
   let u = 0;
   for (const ch of String(text)) {
     const c = ch.codePointAt(0);
-    u += c >= 32 && c <= 126 ? DEJAVU_W[c - 32] : DEJAVU_AVG;
+    if (c >= 32 && c <= 126) u += DEJAVU_W[c - 32];
+    else if (c >= 0xa0 && c <= 0xff) u += DEJAVU_LAT1[c - 0xa0];
+    else if (c >= 0x2010 && c <= 0x2026) u += DEJAVU_PUNCT[c - 0x2010];
+    else u += DEJAVU_UNKNOWN;
   }
   return (u / 1000) * fontSize;
 }
@@ -86,6 +94,12 @@ export function attributeSvg(raw, opts) {
   const c = svgCanvas(raw);
   const fs = footerFontSize(c.w);
   const pad = Math.round(fs * 1.2);
+  // The attribution line is ONE unwrapped right-aligned line; on a narrow
+  // canvas it would silently clip the license and the deep link — the whole
+  // point of the footer. Fail loud (round-2 glmfull F5).
+  const attrLine = `© ${year} ${holder}  ·  ${opts.license?.name ? `${opts.license.name}  ·  ` : ""}${display}`;
+  if (textWidth(attrLine, fs) > c.w - 2 * pad)
+    throw new Error(`attributeSvg: attribution line (${Math.round(textWidth(attrLine, fs))} units) does not fit a ${c.w}-unit canvas — widen the figure or shorten the holder/url`);
   const fsC = captionFontSize(c.w);
   const lineH = Math.round(fsC * 1.35);
   const captionLines = opts.caption ? wrapCaption(opts.caption, c.w - 2 * pad, fsC) : [];
@@ -101,7 +115,7 @@ export function attributeSvg(raw, opts) {
     () => `viewBox="${c.x} ${c.y} ${c.w} ${newH}"`,
   );
   if (!/\bviewBox=/.test(root)) root = root.replace(/<svg\b/, `<svg viewBox="0 0 ${c.w} ${newH}"`);
-  root = root.replace(/\s(?:width|height)="[^"]*"/g, "");
+  root = root.replace(/\s(?:width|height)=(["'])[\s\S]*?\1/g, ""); // either quote style (round-2 astra F8)
   // Explicit dimensions (= the viewBox): image consumers read exact intrinsic
   // sizes (the focus view's fit math), and the file opens at natural size.
   root = root.replace(/<svg\b/, () => `<svg width="${c.w}" height="${newH}"`);
@@ -178,7 +192,10 @@ export function attributeSvg(raw, opts) {
   const measure = c.w - 2 * pad;
   const captionText = captionLines
     .map((ln, i) => {
-      const full = i < captionLines.length - 1 ? ` textLength="${measure}" lengthAdjust="spacing"` : "";
+      // Pin only a genuinely full line (>= 90 % of the measure): a line the wrap
+      // ended early before a long unbreakable token must not be letter-spaced
+      // across the width (round-2 fable F7).
+      const full = i < captionLines.length - 1 && textWidth(ln, fsC) >= measure * 0.9 ? ` textLength="${measure}" lengthAdjust="spacing"` : "";
       return `<text x="${c.x + pad}" y="${y + pad + Math.round(fsC * 0.9) + i * lineH}" font-size="${fsC}" fill="#334155"${full}>${esc(ln)}</text>`;
     })
     .join("");

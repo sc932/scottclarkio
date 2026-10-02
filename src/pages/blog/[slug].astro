@@ -33,7 +33,7 @@ const { Content } = await render(post);
 // Figure focus (2026-10-01): every figure the post renders (house SVG
 // figures + markdown images) is deep-linkable + downloadable; the page's
 // BlogPosting carries them as ImageObjects (contentUrl = the attributed
-// download, copyright + credit, no license grant) and the focus view ships
+// download, copyright + credit, CC BY-ND 4.0 on house SVGs, no grant on rasters) and the focus view ships
 // only on pages that have figures.
 const figures = getPostFigures(post);
 const pageSchema = {

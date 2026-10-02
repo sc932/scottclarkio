@@ -280,10 +280,14 @@ for (const file of htmlFiles) {
   const licensed = [
     isPostPage && html.includes('class="yt-facade"') ? (t) => moduleCarries(t, [".yt-facade", "iframe"]) : null,
     rel === "blog/index.html" && html.includes("<script data-pillar-sort>") ? (t) => t.startsWith("<script data-pillar-sort>") : null,
-    figMarker ? (t) => moduleCarries(t, ["figfocus-stage", "showModal", "data-act"]) : null,
+    figMarker ? (t) => moduleCarries(t, ["figfocus-stage", "showModal", "data-act", "figfocus:"]) : null,
   ].filter(Boolean);
-  const unmatched = scriptTags.filter((t) => !licensed.some((ok) => ok(t)));
-  if (scriptTags.length !== licensed.length || unmatched.length)
+  // One-to-one: every licensed shape is matched by EXACTLY one tag and every
+  // tag matches exactly one shape — two facade tags and no focus module used
+  // to satisfy the count (round-2 astra F9).
+  const matchesPerLicense = licensed.map((ok) => scriptTags.filter((t) => ok(t)).length);
+  const unmatched = scriptTags.filter((t) => licensed.filter((ok) => ok(t)).length !== 1);
+  if (scriptTags.length !== licensed.length || unmatched.length || matchesPerLicense.some((n) => n !== 1))
     failures.push(
       `${rel}: ${scriptTags.length} non-JSON-LD <script>(s) vs ${licensed.length} licensed shape(s) (facade / listing sort / figure focus)${unmatched.length ? `; unmatched: ${unmatched.map((t) => t.slice(0, 80)).join(" | ")}` : ""}`,
     );
@@ -497,7 +501,7 @@ for (const s of distPosts) {
   // Mask code regions first — a fenced sample legitimately shows imports
   // or component tags (round-2 S7); residue checks apply OUTSIDE code only.
   const mdMasked = md
-    .replace(/(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[ \t]*(?=\n|$)/g, "")
+    .replace(/(^|\n)(`{3,}|~{3,})[^\n]*\n[\s\S]*?\n\2[`~]*[ \t]*(?=\n|$)/g, "")
     .replace(/(`+)(?!`)[^\n]*?[^`\n]\1(?!`)/g, "");
   for (const bad of ["<Figure", "<YouTubeFacade"])
     if (mdMasked.includes(bad)) failures.push(`twin ${s}.md leaks ${bad}`);
@@ -626,7 +630,7 @@ if (distPosts.length) {
 for (const bad of ["&lt;Figure", "&lt;YouTubeFacade", 'src=&quot;/'])
   if (rssXml.includes(bad)) failures.push(`rss.xml contains ${bad} (unrendered/unabsolutized)`);
 // Feed-safety tooth (sol S10): facade markup must never reach the feed.
-for (const bad of ["yt-facade", "<button", "&lt;button", "<iframe", "&lt;iframe", "data-png=", "fig-open", "fig-anchor", "fig-expand", "figfocus", "<dialog", "&lt;dialog"])
+for (const bad of ["yt-facade", "<button", "&lt;button", "<iframe", "&lt;iframe", "data-png=", "fig-open", "fig-anchor", "fig-expand", "fig-cap", "figfocus", "<dialog", "&lt;dialog", "<svg", "&lt;svg"])
   if (rssXml.includes(bad))
     failures.push(`rss.xml contains "${bad}" — facade markup is not feed-safe (sol S10)`);
 
@@ -800,9 +804,15 @@ if (existsSync(SVG_SRC)) {
     // …and nothing else rides a post's image set (exact, per post URL).
     for (const [post, figs] of figuresByPost) {
       const url = `${SITE_URL}/blog/${post}`;
-      const entry = urlEntries.find((e) => e.loc === url);
-      if (!entry) continue;
-      const block = sitemaps.match(new RegExp(`<url>\\s*<loc>${url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}</loc>[\\s\\S]*?</url>`))?.[0] ?? "";
+      // The <loc>s carry a trailing slash; the slash-stripped locMap is the key
+      // (a `urlEntries.find((e) => e.loc === url)` lookup never matched, so this
+      // exactness tooth was DEAD on all three sites — round-2 fable F2).
+      const entry = locMap.get(url);
+      if (!entry) {
+        failures.push(`figures: sitemap has no entry for /blog/${post}`);
+        continue;
+      }
+      const block = sitemaps.match(new RegExp(`<url>\\s*<loc>${url.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/?</loc>[\\s\\S]*?</url>`))?.[0] ?? "";
       const have = new Set([...block.matchAll(/<image:loc>([^<]+)<\/image:loc>/g)].map((m) => m[1]));
       const want = new Set(figs.flatMap((f) => [`${SITE_URL}${f.download}`, ...(f.kind === "svg" ? [`${SITE_URL}${f.src}`] : [])]));
       if (!eqSets(have, want)) failures.push(`figures: sitemap image set for /blog/${post} != the scan ([${[...have]}] vs [${[...want]}])`);
