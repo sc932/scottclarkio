@@ -51,8 +51,11 @@ function maskCode(body) {
       // The closing fence is the SAME run (same character, at least as long —
       // CommonMark; a mixed run is not a closer), so a four-backtick fence
       // showing a ``` line inside stays ONE block (round-2 K3 F5); either
-      // fence line may sit 0–3 spaces in (round-3 astra F4 / fable F6).
-      .replace(/(^|\n)([ \t]{0,3}(?:(`{3,})[^\n]*\n[\s\S]*?\n[ \t]{0,3}\3`*|(~{3,})[^\n]*\n[\s\S]*?\n[ \t]{0,3}\4~*)[ \t]*)(?=\n|$)/g, (m, lead, block) => lead + blank(block))
+      // fence line may sit 0–3 spaces in (round-3 astra F4 / fable F6). The
+      // indent counts CHARACTERS where CommonMark counts columns: a tab-indented
+      // "fence" is indented code on the page but masked here — mask-permissive
+      // fails safe for every tooth, so no column arithmetic (round-4 K3 F4).
+      .replace(/(^|\n)([ \t]{0,3}(?:(`{3,})(?!`)[^\n]*\n[\s\S]*?\n[ \t]{0,3}\3`*|(~{3,})(?!~)[^\n]*\n[\s\S]*?\n[ \t]{0,3}\4~*)[ \t]*)(?=\n|$)/g, (m, lead, block) => lead + blank(block))
       // Code spans of ANY backtick run length (`x`, `` `x` ``): a
       // double-backtick span containing single backticks must mask as one span,
       // or the mask swallows prose between spans — and an image with it (the
@@ -130,8 +133,14 @@ export function scanBody(slug, body) {
       const after = body.slice(m.index + m[0].length);
       const nxt = after.match(/^[ \t]*\n\s*\n([^\n]+)(?:\n(?:\s*\n|$)|$)/);
       const italMatch = nxt?.[1]?.trim().match(/^(\*|_)(?!\1)(.+)\1$/);
-      // `*a* and *b*` is two spans + prose, not an italic-only paragraph (round-3 fable F5)
-      const ital = italMatch && !/[*_]\s+[^*_]+\s+[*_]/.test(italMatch[2]) ? italMatch : null;
+      // `*a* and *b*` / `*a*, *b*` is two spans + prose, not an italic-only
+      // paragraph (round-3 fable F5, round-4 fable F2) — but only the OUTER
+      // marker can split it: the other marker and `**` nest cleanly, and a
+      // marker inside a code span is literal (round-4 K3 F3 / astra F4).
+      const splitBy = italMatch
+        ? (italMatch[1] === "*" ? /(?<!\*)\*(?!\*)(?=[\s,;:.])[^*]*(?<!\*)\*(?!\*)/ : /(?<!_)_(?!_)(?=[\s,;:.])[^_]*(?<!_)_(?!_)/).test(maskCode(italMatch[2]))
+        : false;
+      const ital = italMatch && !splitBy ? italMatch : null;
       const rendered = ital ? captionText(ital[2]) : "";
       const caption = ital && rendered.length <= 400 ? rendered : "";
       out.push({

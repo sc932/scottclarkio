@@ -142,7 +142,7 @@ export function mdxBodyToPlainMd(post: Post): string {
   const masked: string[] = [];
   const stash = (m: string) => `@@MDX-MASK-${masked.push(m) - 1}@@`;
   body = body.replace(
-    /(^|\n)[ \t]{0,3}(?:(`{3,})[^\n]*\n[\s\S]*?\n[ \t]{0,3}\2`*|(~{3,})[^\n]*\n[\s\S]*?\n[ \t]{0,3}\3~*)[ \t]*(?=\n|$)/g,
+    /(^|\n)[ \t]{0,3}(?:(`{3,})(?!`)[^\n]*\n[\s\S]*?\n[ \t]{0,3}\2`*|(~{3,})(?!~)[^\n]*\n[\s\S]*?\n[ \t]{0,3}\3~*)[ \t]*(?=\n|$)/g,
     (m) => stash(m),
   );
   // Code spans of ANY backtick run length (`x`, `` `x` ``): run-length aware,

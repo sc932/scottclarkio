@@ -93,11 +93,19 @@
     // the figure ourselves at init AND at load, then hand the mode back.
     if (history.state && history.state.figfocus) {
       history.scrollRestoration = "manual";
+      // a reader who scrolls during the hold is not yanked back at load (Chrome
+      // cancels its own pending restore on user scroll — round-4 K3 F5)
+      let userScrolled = false;
+      const noteScroll = () => {
+        userScrolled = true;
+      };
+      window.addEventListener("wheel", noteScroll, { passive: true, once: true });
+      window.addEventListener("touchmove", noteScroll, { passive: true, once: true });
       const handBack = () => {
-        scrollToHashFigure();
+        if (!userScrolled) scrollToHashFigure();
         requestAnimationFrame(() =>
           requestAnimationFrame(() => {
-            if (!dlg.open) history.scrollRestoration = "auto";
+            if (!dlg.open && !pushed && !backPending) history.scrollRestoration = "auto"; // never inside a newer close (round-4 astra F2)
           }),
         );
       };
