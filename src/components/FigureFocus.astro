@@ -93,16 +93,20 @@
     // the figure ourselves at init AND at load, then hand the mode back.
     if (history.state && history.state.figfocus) {
       history.scrollRestoration = "manual";
-      // a reader who scrolls during the hold is not yanked back at load (Chrome
-      // cancels its own pending restore on user scroll — round-4 K3 F5)
-      let userScrolled = false;
-      const noteScroll = () => {
-        userScrolled = true;
-      };
-      window.addEventListener("wheel", noteScroll, { passive: true, once: true });
-      window.addEventListener("touchmove", noteScroll, { passive: true, once: true });
       const handBack = () => {
-        if (!userScrolled) scrollToHashFigure();
+        // re-aim at load only if the page is still NEAR the figure (font and
+        // image loads shift it by tens of px); a reader who scrolled away during
+        // the hold — wheel, keys, scrollbar, touch — is not yanked back (round-4
+        // K3 F5 / fable fold-check F1; a scroll listener could not tell a user
+        // scroll from a layout-anchoring one)
+        let near = false;
+        try {
+          const t = document.getElementById(decodeURIComponent(location.hash.slice(1)));
+          near = !!t && Math.abs(t.getBoundingClientRect().top) < 200;
+        } catch {
+          /* malformed hash: nothing to re-aim at */
+        }
+        if (near) scrollToHashFigure();
         requestAnimationFrame(() =>
           requestAnimationFrame(() => {
             if (!dlg.open && !pushed && !backPending) history.scrollRestoration = "auto"; // never inside a newer close (round-4 astra F2)

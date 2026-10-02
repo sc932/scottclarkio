@@ -642,13 +642,13 @@ const rssOutsideCode = rssXml
   .replace(/&lt;pre\b[\s\S]*?&lt;\/pre&gt;/g, "")
   .replace(/&lt;code\b[\s\S]*?&lt;\/code&gt;/g, "");
 const FEED_WORDS = ["yt-facade", "data-png=", "fig-open", "fig-anchor", "fig-expand", "fig-cap", "figfocus"];
-const FEED_TAGS = ["<button", "&lt;button", "<iframe", "&lt;iframe", "<dialog", "&lt;dialog", "<svg", "&lt;svg"];
+// tag NAMES end at a boundary: `<svg-icon>` is not `<svg>` (round-4 fable fold-check F2)
+const FEED_TAG_RE = /(?:<|&lt;)(?:button|iframe|dialog|svg)(?=[\s/>]|&gt;)/;
 for (const bad of FEED_WORDS)
   if (rssOutsideCode.includes(bad))
     failures.push(`rss.xml contains "${bad}" — facade markup is not feed-safe (sol S10)`);
-for (const bad of FEED_TAGS)
-  if (rssXml.includes(bad))
-    failures.push(`rss.xml contains "${bad}" — facade markup is not feed-safe (sol S10)`);
+const tagHit = rssXml.match(FEED_TAG_RE);
+if (tagHit) failures.push(`rss.xml contains "${tagHit[0]}" — facade markup is not feed-safe (sol S10)`);
 
 // ---- robots.txt: GROUP-parsed Content-Signal (sol S9) ----
 const robots = readFileSync(join(DIST, "robots.txt"), "utf8");
