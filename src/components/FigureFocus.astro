@@ -65,6 +65,7 @@
     let lastPointerType = "";
     let suppressDbl = 0;
     let backPending = false;
+    let pendingOpen: HTMLAnchorElement | null = null;
     let lockY = 0;
     let prevRestoration: ScrollRestoration = "auto";
 
@@ -216,6 +217,13 @@
     };
 
     const open = (a: HTMLAnchorElement) => {
+      // A close's back() still in flight: open once its popstate has landed
+      // (a pushState racing a pending traversal leaves Chrome's entries in
+      // an inconsistent order — quick review, client seat; race probe).
+      if (backPending) {
+        pendingOpen = a;
+        return;
+      }
       const fig = a.closest("figure");
       figId = fig?.id ?? "";
       opener = a;
@@ -302,19 +310,29 @@
       if (pushed && !viaHistory) {
         backPending = true;
         history.back();
+        // Watchdog: if the traversal never reports (it was cancelled by a
+        // navigation), release the latch and run any open it was holding.
+        setTimeout(() => {
+          if (!backPending) return;
+          backPending = false;
+          const a = pendingOpen;
+          pendingOpen = null;
+          if (a) open(a);
+        }, 400);
       }
       pushed = false;
       viaHistory = false;
       opener?.focus({ preventScroll: true });
     });
     window.addEventListener("popstate", () => {
-      // A back() we queued at close may land after another figure opened —
-      // re-pin that figure's hash instead of closing it.
+      // The back() we queued at close has landed on the page's own entry;
+      // an open that arrived meanwhile runs now (and pushes normally).
       if (backPending) {
         backPending = false;
-        if (dlg.open) {
-          history.replaceState({ figfocus: figId }, "", `#${figId}`);
-          pushed = true;
+        if (pendingOpen) {
+          const a = pendingOpen;
+          pendingOpen = null;
+          open(a);
           return;
         }
       }
