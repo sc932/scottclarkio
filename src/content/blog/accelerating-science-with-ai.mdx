@@ -1,0 +1,347 @@
+---
+title: "Accelerating Science with AI: Surfing the Frontier Between the Bitter Lesson and No Free Lunch (talk recap)"
+description: "My seminar at Oregon State University's College of Science on accelerating science with AI: why the Bitter Lesson and No Free Lunch are both right, why there will always be a frontier between them, and how a harness with physics-rooted guardrails lets a scientist surf it. Video, slides, and a slide-by-slide walk."
+date: 2026-10-13T20:00:00Z
+format: video
+pillar: building-things
+kind: why
+videoId: "uMbylhLlhOc"
+videoDuration: "PT58M10S"
+videoUploadDate: 2026-10-13
+videoPoster: "/images/blog/accelerating-science-with-ai/poster.jpg"
+---
+
+import YouTubeFacade from "../../components/YouTubeFacade.astro";
+
+{/* GENERATED-PORT from vault Writing/accelerating-science-with-ai.md v0.2.1 (2026-10-13, GENERATED-DRAFT; the r1 line-edit fold incl. the Fable seat; jam open).
+   The VAULT file is canonical: do not hand-edit prose here; re-port at Scott's LOCK. */}
+
+On October 5, 2026, I gave the AI+Science seminar at Oregon State University's College of Science, where I did my undergraduate degrees. The argument: the Bitter Lesson and No Free Lunch are both right, there will always be a frontier between them, and that frontier is where research lives. The College recorded the whole session, including the Q&A. The video is below; after it, the summary, then the whole talk slide by slide.
+
+<YouTubeFacade id="uMbylhLlhOc" title="Accelerating Science with AI: Surfing the Frontier Between the Bitter Lesson and No Free Lunch (OSU College of Science AI+Science Seminar, October 2026)" posterSrc="/images/blog/accelerating-science-with-ai/poster.jpg" />
+
+Prefer to page through the deck itself? [Download the slides (PDF)](/slides/accelerating-science-with-ai.pdf).
+
+The longer versions of the arguments are on the [Talaria Scientific](https://talariasci.com) blog: [the frontier wave between the Bitter Lesson and No Free Lunch](https://talariasci.com/blog/no-free-lunch-bitter-lesson), [the right model for the job](https://talariasci.com/blog/the-right-model-for-the-job), and [why I am building it](https://talariasci.com/blog/why-im-building-talaria).
+
+## The summary
+
+I opened with the three beliefs I wanted the room to leave with: AI and science together can lead to abundance, researchers will always have a vital role to play even as the models keep getting better, and we can build tools that accelerate the whole process.
+
+Abundance means new fundamental scientific discoveries, which lead to new materials and more efficient energy, and from there to better medicine and a better ability to explore the cosmos. It means living in a sci-fi future and improving quality of life, as opposed to only replacing repetitive work. I believe we are at the point where AI can meaningfully accelerate science, which raises the question everybody in the field asks, whether AI is going to solve everything and what is left for the humans.
+
+Two ideas answer that question from opposite ends. The Bitter Lesson (Rich Sutton, 2019) says scale beats cleverness: give a computer a million examples and enough GPUs and it will beat your clever hand-built method. The No Free Lunch theorems (Wolpert and Macready, 1997) say that if you know the problem you are solving, you can do better than a general-purpose algorithm. Both are right in their own regime. I draw model performance as a rising wave over a line of problems, arranged from the ones with abundant evidence on the left to the ones with almost none on the right. In distribution, where there are millions of examples, each generation of models raises the water and absorbs the specialized methods that used to stand above it: the digits on a zip code, then the cat in a photo, and now whole videos. Out of distribution, where the evidence runs out, a specialized solver still stands above the waterline. By construction there will always be problems that were never fed into the system, so there will always be a frontier, and it keeps moving. My advice to the students in the room was the line on the slide: "Don't climb a static mountain that is about to be washed over. Surf the wave."
+
+We are still a long way from typing "solve stable fusion containment" into a chat window, but AI has changed what is feasible. Every project I have run sat inside the cost, quality, and speed trade-off, where you pick two. With a reasoning partner that can code and run almost indefinitely at your desk, the feasible region has grown. At Intel I would have budgeted 10 to 15 people and 18 months for a project like that; now one or two people can get 95 percent of the way there in a week. The better frame is the best of both worlds: AI attacks the in-distribution problems that have become trivial, so researchers have the time to attack the out-of-distribution problems that are still hard. The human pushes out of distribution and the machine fills in behind.
+
+I have been working on versions of this problem for 20 years, with varying degrees of success. In grad school every project ended the same way, with parameter tuning, which usually fell to the grad student doing what we jokingly called grad student descent. Bayesian optimization was my answer. It builds a map of the mountain from the few expensive samples you can afford, with the uncertainty drawn in, and an acquisition function picks where to sample next. That became my thesis and then SigOpt, which I ran for seven years before selling it to Intel. The optimizer did exactly what it was told. It would make the number you gave it go up while a number you never mentioned went down, or it would put you on the edge of a cliff instead of on the peak. I said it on stage the way I have said it for a decade: "The best thing about a black box optimizer is that it will optimize anything you tell it to. The worst thing about a black box optimizer is that it will blindly optimize exactly what you tell it to." You need to be able to trust the numbers. That took me to [Distributional](https://distributional.com), first as an AI testing company and then as an agent analytics company. Both failed, the first as a solution looking for a problem and the second as a feature instead of a product. What survived is that it matters to know what to measure and to trust what you measure, and that you should solve the version of the problem you care about.
+
+That version, for me, is computational science, which is what I am building now at Talaria Scientific. Ideas move science forward, but testing them is expensive in researcher time. In grad school, once a week, my advisor and I would fill a whiteboard with ideas, pick one, and I would come back a week later with a single matplotlib plot, after environments, baselines, debugging, and restarting the machine that died at 3 a.m. That validation schlep is exactly what AI is now good at, because it is repeatable work that is in distribution, especially when you harness it with guardrails rooted in physics and simulation. A harness sets a language model to a specific job, the way a horse harness sets a horse to work. The job here is five steps, idea, plan, implement, run, synthesize, with validation at each one and a system of record underneath that keeps every run, configuration, and result reproducible. The result is a what-if machine, and I think of it as a mech suit instead of an android. It is a tool you put on to do more, run faster, and lift heavier things. The models are biased toward the median and are not good at sampling outside the convex hull of their distribution. The human does that part, and together they synthesize the results and repeat.
+
+Every field that simulates the physical world keeps a portfolio of models, from the full-fidelity solvers it trusts to the cheap approximations it can afford, and that portfolio has always been sparse, because a new method was a decade of work or a massive insight. A harness that manufactures and validates surrogate models makes that portfolio dense along its cost-versus-fidelity frontier, neural operators and physics-informed networks included. Bayesian optimization can then search over both the parameters of what you are designing and the models you use to evaluate it. So there is a system for generating the models, a system for optimizing them, and a system for sampling them, with the record keeping track at every step. If it works, you get new fluids, materials, and energy, and the right physics model just in time for physical AI.
+
+I built this to give back, the way SigOpt was always free for academics. It is in private beta now, it launches open source at NeurIPS in December, and it will always be free for open science.
+
+## The talk, slide by slide
+
+Each slide below carries what I said over it, lightly cleaned up from the College of Science's recording.
+
+![Title slide: Accelerating Science with AI: Surfing the Frontier Between the Bitter Lesson and No Free Lunch. Scott Clark, Founder and CEO, with the Distributional and Talaria Scientific logos.](/images/blog/accelerating-science-with-ai/slide-01.png)
+
+The title slide was up while Dean Eleanor Feingold gave the introduction.
+
+### Three takeaways
+
+![Slide: three takeaways. 1. AI x Science can lead to abundance. 2. Researchers will always have a role. 3. Better tools can accelerate this.](/images/blog/accelerating-science-with-ai/slide-02.png)
+
+I have 60 minutes to convince you of three things, and I fundamentally believe all three. AI and science can lead to abundance, and I will explain what that means in a minute. Researchers will always have an extremely vital and fundamental role to play, even as AI continues to get better. And we can build tools to help accelerate this entire process.
+
+### What abundance with AI means
+
+![Slide: what abundance with AI actually means, a four-step build: new scientific discoveries, new materials and more efficient energy, advances in medicine, aerospace and more, living in a sci-fi future.](/images/blog/accelerating-science-with-ai/slide-06.png)
+
+When I think about what can happen as we accelerate the flywheel of discovery and understanding, it means new fundamental scientific discoveries, which can lead to new materials or more efficient energy, which can have downstream effects like better medicine and a better ability to explore the cosmos. Fundamentally, I think of this as: how do we live in a sci-fi future?
+
+### The real promise of abundance through AI
+
+![Slide: improving quality of life, not just replacing repetitive work.](/images/blog/accelerating-science-with-ai/slide-07.png)
+
+How do we get to a world where we can fundamentally improve quality of life, not just replace repetitive work? In my mind, the difference between abundance and doomerism is whether we solve the most pressing problems we have as humanity, as opposed to just making new ones.
+
+### The pieces are finally falling into place
+
+![Slide: we can now meaningfully accelerate science with AI.](/images/blog/accelerating-science-with-ai/slide-08.png)
+
+I firmly believe we are at this precipice where we can meaningfully accelerate science with AI. It is not just a tool anymore, not just a better way to do classification or data analysis on your massive data sets; we can fundamentally make the flywheel of discovery and innovation go faster. But there is this problem that everybody in the field talks about. Isn't AI just going to solve everything? Is it going to put us all out of a job? What is left for humans to do?
+
+### The Bitter Lesson meets No Free Lunch
+
+![Slide: scale beats cleverness, but specificity beats generality. Rich Sutton, The Bitter Lesson, 2019; Wolpert and Macready, No Free Lunch Theorems for Optimization, 1997.](/images/blog/accelerating-science-with-ai/slide-09.png)
+
+There are two concepts in the field that are at odds with each other. One is called the Bitter Lesson, from Richard Sutton in 2019, and the other is the No Free Lunch theorem. At a very high level, one says scale will always beat cleverness. Instead of coming up with a really clever way to detect whether there is a cat in a photo, saying this is what a cat looks like and here is how you tell where the ears are, you can give a computer a million examples and have it figure it out. Ten or fifteen years ago this was a hard, unsolved, open problem, and people did a lot of work in computer vision and natural language processing to make these better and better. But it turns out that if you have a multi-trillion-parameter model and you can throw 100,000 GPUs at it for six months, you can solve a lot of these problems. That is the bitter lesson: as clever as you are, if you can throw enough compute and data at it, eventually the computer will beat you and be more clever. You can brute-force a lot of problems. At the other end of the spectrum there is the set of theorems called the No Free Lunch theorems, which say that if you know the problem you are solving, if you know the test you are going to take, you can do better than a general-purpose algorithm. By knowing what you are trying to do, you can do quite a bit better than trying to brute-force everything.
+
+### The Bitter Lesson, drawn as a rising wave
+
+![Figure: the bitter lesson drawn as a rising wave. Problems arranged left to right by how much evidence exists for ones like them, performance on the vertical axis. Three waterlines, t1 to t3, each generation raising the water and washing further right; specialized methods drawn as narrow peaks, the left ones under water since t2, one held out until t3; past the dashed out-of-distribution line a specialized solver still stands above the waterline.](/images/blog/accelerating-science-with-ai/slide-12.png)
+
+I think of this as two ends of a spectrum. On one end we have problems where there is a ton of data. This is what is called in distribution for these models. There are millions of photos of cats on the internet, so there is lots of data to train on, and as these models have gotten better and better we solved which digit is written on the zip code on a piece of mail, then whether there is a cat in a photo, and now we can generate videos. This rising tide is eating more and more of the problems that are well understood, where we have a ton of data. But by construction there are always going to be things that are not fed into the system, problems that still need something more bespoke. As the water rises and the wave shifts, more and more things get absorbed, but that doesn't mean there isn't interesting work on the next horizon, the next frontier. It will continue to shift as we go.
+
+### But there is hope
+
+![Slide: there will always be a frontier. Surf the wave. Don't climb a static mountain that is about to be washed over.](/images/blog/accelerating-science-with-ai/slide-13.png)
+
+![Figure: the same wave with two annotations, a gray peak labeled "a static mountain" that the water has already covered, and an amber arrow labeled "surf here" pointing at the edge where the newest waterline meets the out-of-distribution region.](/images/blog/accelerating-science-with-ai/slide-14.png)
+
+A lot of problems are now just solved, and I know a lot of friends who worked in computer vision or natural language processing who are trying to figure out what to do next. But a lot of these problems have just shifted. So my advice to the students here, as you start to think about what it means to be in a world where AI can solve a lot of problems, is to not just climb some static mountain. Don't just go after the problems that have existed for many years. Try to figure out where things are shifting, and instead of climbing that mountain, think about surfing this wave as it continues to go. There is still really interesting research out there.
+
+### We are still a long way from "/goal solve stable fusion containment"
+
+![Slide: we are still a long way from /goal solve stable fusion containment.](/images/blog/accelerating-science-with-ai/slide-15.png)
+
+We are fundamentally a long way from going into ChatGPT or Claude and saying: solve stable fusion containment, cure cancer, whatever it may be. It is really good at making a binary classifier for you. It might be really good at seeing whether there is a cat in a photo. But there are a lot of pieces that still need to be solved, and a lot of intuition and imagination is going to go into really solving these problems.
+
+### AI is changing the game
+
+![Slide: things that were previously impractical are now achievable.](/images/blog/accelerating-science-with-ai/slide-16.png)
+
+The other thing AI is allowing us to do is attack some of the things that were previously unfeasible. If you had to spend months or years coming up with a simple classifier, maybe you weren't able to attack the harder problem, the interesting one.
+
+### AI now lets you do more, faster, with increasing quality
+
+![Figure: the cost, quality, speed triangle, with the feasible region at its center grown outward past the old edges.](/images/blog/accelerating-science-with-ai/slide-21.png)
+
+In engineering, in all of the startups I have built and all the places I have worked, we always had this trade-off. You have a project that needs to be done, and you can have it fast, you can have it cheap, or you can have it good. Maybe you can choose two, but you are picking from a feasible space on one of these edges, and you can never have all three. With AI, now that you have something that can code for you, a reasoning partner, things you can let run almost infinitely at your desk, the feasibility of this space has started to shift. Some of the calculus I would do when I was at Intel with a team of 200 was: I can spin up a team of 10 or 15 people, have them work on this problem for 18 months, and hope to get a result. Now we can have one or two people work for a week and get 95 percent of the way there. This fundamentally changes the breadth and depth of the problems we can attack.
+
+### Use the best of both worlds to push right
+
+![Figure: the rising wave again, with a callout reading "Use the best of both worlds to push right" and arrows from the top waterline and from the specialized solver toward the right edge.](/images/blog/accelerating-science-with-ai/slide-22.png)
+
+One of the things I am going to try to convince you of today, with what I am building in my new company, is that by combining the best of both of these we can do better than thinking of them individually. We can use AI to attack the in-distribution problems that have now become trivial, so that we have more time, energy, and ability to attack the out-of-distribution problems that are still hard, that are still meaningful, that can still get us to that sci-fi future. Instead of thinking of this as the humans or the AI, think of them together, and what we can do with a portfolio of solutions where the human pushes us out of distribution and the machine comes and fills in behind.
+
+### A culmination of my life's work
+
+![Slide: I have been trying to solve this problem for the last 20 years of my career, with varying degrees of success.](/images/blog/accelerating-science-with-ai/slide-24.png)
+
+I have been trying to solve this problem for the last 20 years, and as Eleanor said, I have attacked it in many different ways, with varying degrees of success. I will talk through a few of the approaches I have taken, and then come back to how you can put all of this together to make that flywheel spin as fast as possible.
+
+### Grad school: solving the same problem over and over
+
+![Slide: whatever the field, the final step was always parameter tuning. A timeline strip: Oregon State, finite elements, 2004 to 2008; UC Davis, protein folding, 2006; Max Planck, quantum, 2007; Cornell PhD, applied math, 2008 to 2012; Los Alamos, metagenomics, 2009; Berkeley Lab and JGI, genome assembly, 2010. Methods for efficient optimization given an objective.](/images/blog/accelerating-science-with-ai/slide-25.png)
+
+One thing I came to discover during my work at Oregon State and in grad school was that I was always working in a variety of different fields. I was in applied math and applied physics, and I was always the person who could translate between things and do a little bit of coding, which meant I got to work with a lot of really interesting people on a lot of really interesting problems. But every single problem I came to ended the same way. Whether I was working on finite element analysis with Malgo, who is in the room, or doing protein folding, or quantum physics simulations, we would come up with a great idea, create a simulator or an algorithm, and then there was a parameter tuning problem at the end. It could be hyperparameters or the architecture of a neural network, or the policies of a control problem, but there were all these little knobs and levers that, if you could get them just right, you could get a better result. Often this was left to the grad student in the group, to do what we jokingly called grad student descent: staying up late at night in a high-dimensional space, tweaking all of these parameters to get a slightly better result.
+
+### Bayesian optimization: a few evaluations are all you have
+
+![Figure: a one-dimensional knob on the horizontal axis, the quantity you care about on the vertical, and a handful of expensive evaluations drawn as dots.](/images/blog/accelerating-science-with-ai/slide-26.png)
+
+There are a bunch of ways to attack this problem. It is a classic design-of-experiments problem: you could lay out a grid of parameters and try them all, you could search randomly, you could search locally, there are genetic algorithms and simulated annealing, a wide field of research in black-box optimization. The way I like to think about it: say you are trying to climb a mountain, and the mountain is shrouded in fog. How would you get to the peak, and know you were at the peak, or at a good enough version of it? One way is to lay out a grid of latitudes and longitudes and sample your altitude at every one of them. That is incredibly inefficient, and it scales exponentially with the number of dimensions you are searching over; even in two dimensions it is a bad way to climb a mountain. In industry there were papers saying random search is better than that, which is like climbing a mountain by getting into an airplane, putting on a blindfold, and jumping out, hoping you land at the peak or close enough. If you can make certain assumptions about the mountain you get interesting bounds on how close you get, and it is more efficient than brute force. You could also look around you, sample a stencil, see a gradient, and always walk up. That forces you to look around, which can be expensive, and it can get you stuck on a local sub-peak, in the foothills instead of on the mountain. This is where the analogy starts to break down, but you could think of genetic algorithms as breeding a set of trees that do better at higher altitude, scattering seeds, and seeing where the trees are after many generations.
+
+### A Gaussian process turns a few evaluations into a belief about what you have not run yet
+
+![Figure: the same dots with a Gaussian process fit through them: a mean curve and an uncertainty band that pinches to nothing at the measured points and opens up between them.](/images/blog/accelerating-science-with-ai/slide-27.png)
+
+Bayesian optimization was my attack on this problem. I need to climb a mountain, so what if I make a map? Every time I get some piece of information about where I am, I write it down. Based on the information I have so far, what is my belief about where the rest of the mountain is? You can fit what are called surrogate functions to this; the classic one is a Gaussian process, where you assume the underlying function is drawn from a Gaussian. You end up with a map of where you think the mountain might be, and some uncertainty associated with it, because you haven't sampled there.
+
+### An acquisition function values the next evaluation
+
+![Figure: below the belief, an acquisition curve (expected improvement) scores every point on the knob; its peak marks the next evaluation.](/images/blog/accelerating-science-with-ai/slide-28.png)
+
+From there you decide, based on what the map is telling you, the best place to sample next. You apply what is called an acquisition function. There are many; a classic one is expected improvement: I want the best improvement on what I have seen so far, or I want to learn the most about the space on each step.
+
+### Measure, update, repeat
+
+![Figure: the new point added, the band collapsed where it was measured, the mean moved, and the acquisition function pointing to the next evaluation.](/images/blog/accelerating-science-with-ai/slide-29.png)
+
+You apply this in a very offline way: instead of very expensively sampling where the mountain is, you very cheaply pore over the map, use it to select your next point, which updates your map, which tells you the next place to sample, and on and on. It turns out this is an incredibly efficient way to solve this problem. It can be orders of magnitude more efficient than other black-box optimization techniques like evolutionary search.
+
+### SigOpt: optimize everything
+
+![Slide: SigOpt, Bayesian optimization as a service. A timeline strip: founding, 2014, with the Y Combinator and Andreessen Horowitz logos; building, 2015 to 2020, with the American Express, Netflix, and OpenAI logos; scaling, 2020 to 2023, with the Intel logo. Optimization at scale for problems that mattered.](/images/blog/accelerating-science-with-ai/slide-30.png)
+
+When I came to the conclusion that there was a better way to solve this problem, I decided: when you have a problem and you have a solution, you start a company. That is what I did with SigOpt. I took some of the work from my PhD, open-sourced some of it, and started a firm in 2014, and we got to solve a lot of really fun problems. We worked with Netflix to tune their recommendation engine, American Express to tune their fraud detection systems, about a trillion dollars worth of hedge funds tuning their algorithmic trading policies, and we always gave it away for free to academics too. Hundreds of academics from national labs and universities around the world used it to solve materials design problems, detect COVID, all sorts of things. It was a really fun problem, and I worked on it for about seven years before selling it to Intel, where we used it to tune chips and to overfit the machine learning benchmarks they cared about four or five years ago.
+
+### Learning I was only solving half the problem
+
+![Slide: the optimizer worked, except when it didn't. It overfit, or optimized the "wrong" thing.](/images/blog/accelerating-science-with-ai/slide-33.png)
+
+The great thing about this is that it worked. Except when it didn't. It would sometimes give people answers, and they would come back and say: that was wrong. It made this one number go up, but it made some other number that I didn't tell you about go down. Or: it made this number go up, but instead of finding the peak of the mountain, you put me right on the edge of a cliff, and that is really dangerous for me, because if the market moves a little bit, I fall off. I used to trick myself into thinking this wasn't a me problem, it was a you problem: you told me to make a number go up, and I made that number go up; if you wanted a different number to go up, you should have given me a different number. But that is not how business works. You have to solve the other side of the problem.
+
+### The problem with optimizers
+
+![Slide: the best thing about a black box optimizer is that it will optimize anything you tell it to. The worst part about a black box optimizer is that it will optimize exactly what you tell it to.](/images/blog/accelerating-science-with-ai/slide-35.png)
+
+The best thing about a black box optimizer is that it will optimize anything you tell it to. And the very worst thing about a black box optimizer is that it will blindly optimize exactly what you tell it to.
+
+### Optimization was only half the problem
+
+![Slide: you need to be able to trust the numbers.](/images/blog/accelerating-science-with-ai/slide-36.png)
+
+After solving this problem for 10 or 15 years I came to the conclusion that, wait a minute, maybe this isn't something that I should start to try to attack. You need to be able to trust the numbers that are coming out. You need to know what actually matters.
+
+### Have a problem? Start a startup!
+
+![Slide: pre-production AI testing, 2023 to 2025. High dimensional Bayesian statistical tests for chaotic and non-stationary AI systems and agents. Stamped: It failed. 1. People didn't know what to test (or have the data before deployment). 2. They couldn't understand tests well enough to act. 3. They shipped to prod anyway.](/images/blog/accelerating-science-with-ai/slide-40.png)
+
+This is when I started Distributional, and as Eleanor said, it started out as a testing company. I said: the only thing preventing people from getting the right number is that they aren't applying enough Bayesian statistics. So I created a big, complex system to do high-dimensional Bayesian analysis and tell them where their inputs are chaotic and when their models would shift underneath them. It didn't really work out, because it was a solution looking for a problem. People still didn't know what to test, they couldn't understand the outputs, and they didn't have enough data.
+
+### Have a problem? Pivot!
+
+![Slide: a second column, post-production agent analytics, 2025 to 2026. Post-production analytics on agent traces to find the evals that you aren't monitoring for. Stamped: It failed. A feature, not a product (let alone a business or a startup).](/images/blog/accelerating-science-with-ai/slide-44.png)
+
+So I shifted again. I had found a solution and started a company; when you have another problem, you pivot the company. Instead of having people test on the metrics they already knew about, we were going to help them find better metrics: post-production analysis, unsupervised learning, to find the numbers they didn't even know to look for, the patterns in the data that had slipped through the current guardrails and metrics. This also didn't work. I think it is a really interesting part of a larger observability and monitoring stack, but on its own it is more of a feature, let alone a company.
+
+### But through failure comes wisdom
+
+![Slide: knowing what to measure matters. Trusting what you measure matters.](/images/blog/accelerating-science-with-ai/slide-45.png)
+
+Through these failures, through pivoting around, I got a little bit more wisdom. I still believe that knowing what to measure matters: doing objective function solicitation, understanding what metrics you care about. And trusting those numbers at the end also really matters. While we developed very general-purpose tools to help solve these problems, the real thing you need to do is apply them to a problem that matters. So for those of you thinking of starting companies: don't just come up with a solution and then look for the problem. Make sure you are solving the problem you care about.
+
+### Have a problem? Solve the version you care about
+
+![Slide: a third column, computational science harness, 2026 and on. A multi-agent, multi-FM harness for computational science research acceleration, using domain specific guardrails rooted in physics and simulation to ensure trustworthiness.](/images/blog/accelerating-science-with-ai/slide-48.png)
+
+That is what has taken me back to my roots. What we are doing now with Talaria Scientific is helping people solve this complete problem, from optimization to trust and understanding, in the scientific process: a harness to help use AI to do the parts of science that are undifferentiated, that slow you down from discovering what is next. The idea is that we can use domain-specific knowledge, we can understand how physics works, in order to harness or force the AI to do things that make sense. That is what prevents it from hallucinating, from going off the rails and creating growing, cascading errors in a sequential design process.
+
+### The pace of science is set by validation
+
+![Slide: ideas move science forward, but testing them is expensive in researcher time.](/images/blog/accelerating-science-with-ai/slide-49.png)
+
+I believe that ideas, imagination, and intuition are what drive science forward, but the biggest bottleneck is testing them. I think back to grad school: once a week I would go to my advisor, we would fill up a whiteboard with cool ideas, pick one, and I would go away for a week and come back with a single matplotlib plot. It was a bunch of environment spinning-up and baseline building and debugging and coding, and then, based on that one plot, we would decide what to do next. That was a lot of expert time, or at least a lot of tedious time, to get an incremental next step.
+
+### Where the week goes
+
+![Figure: from idea to trusted result, where the week goes. Panel 1, today: the scientist walks the whole span by hand, with the science (ideas, taste, judgment) getting the scraps above a gray band labeled the validation schlep: data wrangling, environments, baselines, sweeps, checking. Caption on the slide: AI is now good at the mechanical middle of research.](/images/blog/accelerating-science-with-ai/slide-51.png)
+
+This is something AI is incredibly good at. There is a lot of what I call validation schlep that goes into in silico hypothesis validation. You need to wrangle the data. You need to spin up a potentially heterogeneous compute environment. You need to port your code from MATLAB to run on a GPU, figure out how the NERSC Slurm cluster works, reimplement someone's paper from 10 or 15 years ago that they stopped updating, and restart the machine that dies at 3 a.m. All of this work is extremely important and necessary for getting a trusted, validated result at the end, but it has nothing to do with the idea you had that is going to change the world. So let the AI do what it is good at. Let it do the menial tasks, the repeatable processes that are in distribution, the things it can be very good at, especially if you harness it and put the guardrails on to make sure it follows a very specific path.
+
+### The same span, worn as equipment
+
+![Figure: the second panel of the same figure, in the suit: the scientist holds ideas, taste, and judgment end to end, with no schlep between idea and trusted result; below a dashed boundary labeled "judgment is proposed, never assumed", the harness carries the same five mechanical steps plus the full search recorded, adversarial review, and provenance on every run.](/images/blog/accelerating-science-with-ai/slide-52.png)
+
+This frees up the scientist to work at the idea level. It frees up that grad student, instead of maintaining Fortran code for a few years as an apprentice, to start asking their own questions. Instead of earning your chops by doing grad student descent, now you can be asking the questions. I think this is going to be transformational to a lot of fields: instead of only getting to do the really interesting problems five, six, eight, ten years into your degree, you can start to ask the really hard questions now, and maybe fundamentally change the world that much faster.
+
+### A computational science "what-if" machine
+
+![Slide: a computational science what-if machine. Start new research from scratch. Respond to reviewers. Convert old academic software. Extend current papers.](/images/blog/accelerating-science-with-ai/slide-53.png)
+
+I think of this as a what-if machine. Every time I read a paper I think: that is really cool, what if they applied this other technique, what if we tried this other PDE, what if we tried this other result? And like many of you, I imagine, you think: someday I will get back to that. Maybe on a sabbatical. Maybe someday I will have two months to sit down and answer that what-if question. You have an infinite list of these. Or reviewer number two comes back and says: why didn't you apply my technique? And you think: how am I going to explain this away so I don't have to do that, because it is two or three months of my time and I don't think it advances the paper. What if you could do that really quickly, because it is just another what-if, another pass through the harness? Or converting old academic software: my first paper, as an undergrad here doing an REU at UC Davis, was finding the structure of a left-handed beta helix and what you can do with that for prion diseases, and I wrote it in crappy academic Java 20 years ago. It would be interesting to go back and make that faster and better, but I don't have the time. If I can harness an algorithm to do that overnight, maybe it gets more citations, or helps the next student working on a similar problem, or just extends your current research. What if you had a team of postdocs in a box that could do the undifferentiated work, so your current postdocs can do the interesting work?
+
+### The Talaria architecture: a research loop on a system of record
+
+![Figure: the Talaria architecture. A research loop of five actions, idea, plan, implement, run, synthesize, with supporting actions and gates between them, all depositing into a system of record (references, concepts, hypotheses, results, findings, an append-only event journal) kept as markdown and JSONL in a git repository; record inspection, extra rigor, maintenance, and meta-usage actions hang off the record.](/images/blog/accelerating-science-with-ai/slide-54.png)
+
+What I have built is a harness. A harness is something you put on top of a language model or an AI system to force it to do something very specific. The term comes from horses: you can have a bunch of wild horses running around, but if you are trying to run a farm, you put them in a harness to do specific work that you know exactly what you want from. You can think of this as a state machine where at each step you make the AI do something very specific and then validate it in a very specific way. There is a big blog post behind this that goes into a ton of detail, but at the highest level it is five steps. You come up with an idea, and you want the AI to do the literature review and look at everything that has been done, to help beat up your idea, because the best thing you can do as a scientist is early termination: falsify something as fast as possible so you can get on to the next idea. Once you have beaten up the idea and seen whether you have something novel, the next step is to plan. How am I going to run this hypothesis through a system to the point where I will trust the result when it comes out? That means the right compute, the right approach, the right algorithms, the right baselines to compare against, so you are not accidentally pushing a state of the art that isn't really state of the art. Once you have a good plan, the AI can run with it and do a lot of the implementation for you, whether you are using Codex or Claude or an open-weight model, and then run it. I have been using Linux and distributed compute for 20 or 30 years, and these algorithms are way better than me at being sysadmins, way better than me at code review, way better than me at a lot of the work required to get to that end result, and they do it way faster. That lets you synthesize with the computer: what did I get at the end, what is this interesting graph that, instead of taking a week or two months, is going to lead to the next idea. At each point in the state machine you move an idea further through validation to get to the interesting result. If you hit a bottleneck, you jump back to the previous state. At the end you repeat the process and get to the next idea faster. That is the fundamental flywheel. If you can move it fast enough, you can attack research agendas that would have taken a team a decade, yourself, very quickly, or falsify them very quickly.
+
+### Receipts: every idea, run, result, and decision, with its provenance
+
+![Slide: receipts. Hypotheses, what you asked, frozen; results, what ran, immutable; findings, what you now believe. Every run pinned to exact code, configuration, and environment, so a rerun is a reproduction. A result with no hypothesis is not allowed to exist, because orphan numbers are how spurious findings start. Kept whether or not it worked. The lab notebook, inverted: a record the work keeps of itself.](/images/blog/accelerating-science-with-ai/slide-55.png)
+
+The real unlock isn't just being able to turn things out faster. It is being able to trust what you are turning out. Underneath it is a system of record that keeps track of everything you did, why you did it, what the results were, and the exact byte-identical way to reproduce it, which lets someone else stand on your work, or lets you come back two months later and pick up exactly where you left off. I can't tell you how many spiral notebooks I have with a config parameter in them, and then when you go to write the paper you think: how do I even get my own plots back, let alone hand this to someone else to extend. If you have a lab notebook that writes itself, at the level of verbosity that lets you perfectly reproduce everything you did, now you can go faster and faster, and let others build on what you have done.
+
+### A mech suit instead of a replacement
+
+![Slide: a mech suit instead of a replacement. The scientist pushes out of distribution, and the model fills in behind. So what can we do with it?](/images/blog/accelerating-science-with-ai/slide-57.png)
+
+This is still very human-centered. I like to think of it as a mech suit instead of an android. It is a tool you put on that lets you do better and do more, run faster, lift heavier things. It is not an android replacing you, because these models are extremely good at what they are good at, but they are still biased toward the median, biased toward the simple results, and not necessarily good at sampling outside the convex hull of their distribution and saying: here is an actually interesting, novel idea. The human does that, and then together you synthesize the results and repeat. The human is pushing out of distribution, forcing through that wave, and the model is filling in behind. So what can we do with this?
+
+### Every field that simulates the physical world keeps a portfolio of models
+
+![Slide: every field that simulates the physical world keeps a portfolio of models, from the full-fidelity solvers it trusts to the cheap surrogates it can afford. Surrogate: any cheap model standing in for an expensive one. Fidelity: how faithfully it reproduces the metric you care about, in the regime you care about.](/images/blog/accelerating-science-with-ai/slide-58.png)
+
+Let's assume we have this great system that lets us do computational physics simulation generation better. Every field has a portfolio of things it uses when it is attacking a problem. These could be different surrogate models, or multiscale problems where different models work better or worse, and almost every field is becoming more and more computational. Each of these surrogates is a representation of what you think is going to happen in the real world, and every simulation has its own trade-offs with respect to speed, fidelity, and what you are trying to model. I think of physics as a distillation attack on the universe: you are trying to learn as much as you can so that you can model the universe and use that to ask the next question.
+
+### The portfolio has always been sparse
+
+![Figure: a plane with cost per answer on a log scale across and fidelity up. A handful of points: empirical fits and crude heuristics at the cheap end, a few reduced-order models and response surfaces in the middle, full-order solvers at the expensive end; open circles mark hand-built historical one-offs.](/images/blog/accelerating-science-with-ai/slide-59.png)
+
+Historically this regime of models has been relatively sparse, because coming up with a new method, like finite element methods or a new meshing strategy, was a decade of work or a massive insight you needed to have. So when you are solving a problem, say designing a new material, you start with the cheap stuff, see whether it works, hope that translates to the more expensive stuff, and then hope that translates in vitro or in vivo and works in the lab. But you only had a few things to pick from. You could simulate the quantum mechanics, or the molecular dynamics, or some larger heuristic system, but not a lot else.
+
+### Learned surrogates sit at points the classical stack could not cheaply reach
+
+![Figure: the same plane with a new row of blue points, neural operators and learned surrogates, filling the cheap-but-decent region the classical stack left empty; cheap per answer once trained, valid where validated.](/images/blog/accelerating-science-with-ai/slide-60.png)
+
+Now, with these methods, not only do you have a mechanism, a harness, for turning out more models and validating whether they work, but you can use physics-informed neural networks and new AI techniques to fill in the gaps between these surrogates as well. Instead of having to pick between sampling at the smallest scale or the macro scale, we can start to say: what is in between? How do I slowly scaffold my way up as I understand this system better and better?
+
+### Validation travels with every switch
+
+![Figure: the multi-fidelity loop. Explore with cheap surrogates, exploit what they learn to call the next, costlier rung, verify the answers that matter with the reference solver or the lab; every run lands in the record, cheap or dear, with its provenance, in a model ledger and a run ledger, and the record feeds the next pass.](/images/blog/accelerating-science-with-ai/slide-62.png)
+
+Fundamentally this is about trading off exploration and exploitation, the two concepts in optimization. You explore to learn, and then you exploit to get to the best possible result, and going back and forth between those gets you to better and better results, pushing that Pareto frontier out, both the speed and the accuracy at which you are able to model the universe, further and further.
+
+### A harness that manufactures validated surrogates cheaply makes the frontier dense
+
+![Figure: the same cost-fidelity plane with the frontier drawn as a curve through today's models and a dashed amber curve above it marking where a harness pushes it, with amber circles for the points a harness would add.](/images/blog/accelerating-science-with-ai/slide-63.png)
+
+Not only can we use AI to generate more of these models and have a denser feasible Pareto frontier of these trade-offs, but we can use optimization strategies like Bayesian optimization to make those models better themselves.
+
+### The models and the search improve each other
+
+![Slide: the models, validated surrogates on a dense frontier, and the optimizer, the right model per job via multi-fidelity Bayesian optimization. A denser frontier makes a sharper search; the search buys the runs that train and validate the next models; the policy itself can be learned, over surrogates, acquisition functions, and fidelities.](/images/blog/accelerating-science-with-ai/slide-64.png)
+
+Instead of using intuition to find the right meshing parameters for finite elements, or the right hyperparameters for your larger system, we can use surrogate or physics-informed Bayesian optimization methods to get to better and better results. So let's say that, whatever the field may be, we now have more models and better simulators, and we are able to fill in the gaps a little bit better.
+
+### Manufacture the models, densify the frontier, pick the right one per job, keep the record
+
+![Figure: the strategy in four parts. 1, Talaria manufactures validated physics surrogate models; a dense Pareto frontier of accuracy versus cost per job; 2, TauOpt picks the right model per job and optimizes and searches over them; 3, the harness keeps the research reproducible and self-improves the process; 4, the outputs: fluids, materials, and energy search and design, and just-in-time physics models for robotics and world models.](/images/blog/accelerating-science-with-ai/slide-65.png)
+
+Then you flip it on its head and say: we can use this as a search problem. Say we want an electromagnetic material with a very specific property, a new material that can survive the harshness of space, a protein that can bind to a very specific disease. Now that we have a lot of different models to search with, we can jointly search both the parameters of what we are synthesizing, the new molecule, and the models themselves. By searching over parameter space and model space, you get more efficiently to: this is what I want to fabricate in the lab, this is what I want to do a phase one trial on. So you have a system for generating the models, a system for optimizing them, and a system for sampling them, and all of it is underpinned by making sure that at every step of the way you know exactly what you tried, how you tried it, and how to reproduce it.
+
+### Search over surrogates toward what you build next
+
+![Slide: search over surrogates toward what you build next. Materials discovery, energy, physical AI: the classic multi-fidelity design search, with a dense set of validated models to search over parameter and model space.](/images/blog/accelerating-science-with-ai/slide-66.png)
+
+If this all works out, then you are throwing off the ability to create new fluids, materials, and energy, as well as to better sample the real world by having the right physics model just in time for the specific task you are attacking in physical AI or robotics. This is abundance through discovery. I think we are at this interesting precipice where there are still so many hard problems out there, such a long tail of interesting things to do, in materials, in energy, in physical AI. By doing this faster, better, cheaper, and more trustworthy, we can get there together.
+
+### Built in the open, free for open science
+
+![Slide: built in the open, free for open science. Private beta today. Public, open source, and always free for open scientific work. Public launch at NeurIPS, December 2026.](/images/blog/accelerating-science-with-ai/slide-67.png)
+
+I have built this system, and one of the things that is really important to me is that it is always giving back. I think that having a denser frontier of surrogates is good for everyone, and having better optimization algorithms is better for everyone. So, similar to SigOpt, it is given away for free to anyone doing science, anyone doing open work. We are in private beta today, but we will be launching this open source at NeurIPS in December.
+
+### Thank you
+
+![Slide: thank you, with QR codes for talariasci.com and scottclark.io. Researching computational physics or applied math? Running physics simulations? Private beta signups, open source launch at NeurIPS 2026, always free for open science.](/images/blog/accelerating-science-with-ai/slide-68.png)
+
+I would love to chat with anyone here who is doing computational physics, who is trying to simulate, who is trying to use AI, whether that is physics-informed neural networks or solving the difficult inverse problem with uncertainty, to search these systems. And that's me. Questions?
+
+## Questions from the room
+
+The Q&A ran about twenty minutes. The questions are compressed and the askers are not named; the answers are what I said, lightly cleaned.
+
+**The eternal problem is our own ability to specify the problem: the right objective function and the right constraints. When we get that wrong, we put it into a black box and are too sloppy or not smart enough to see that the result is wrong. How does this help?**
+
+It is a great question. I think of this as letting you go faster to fail faster. Say you have an objective and you think it is pretty good, you have modeled everything and understood all the failure modes, and then it takes you six months to get the result. By the time you figure out that you messed up and didn't account for some other free variable, the whole thing has failed, or you try to cover it up with a very specific, niche result instead. I think back to some of the work I did in grad school at the Joint Genome Institute, on metagenomic genome assembly. The genome assembly problem is that you have a whole bunch of little snippets of DNA, like puzzle pieces, and you have to put the puzzle back together. Metagenomic assembly is when you sample someone's gut microbiome and you have a whole bunch of different puzzles mixed together and have to assemble them all simultaneously. I was the computational guy in the group, so I came up with a really clever way to use GPUs to do this matching problem. And every single time I went back to the biologists, they would say: well, sometimes the machine just reads them wrong, so there will be errors. Or: sometimes you get a whole bunch of copies of the exact same piece and no copies of another piece. My favorite was: sometimes there is a bubble in the machine and the laser shoots off randomly. But every time we came to one of these issues, we were able to incorporate it into the likelihood function we were optimizing. By making that flywheel spin really fast, you get to see all of these different edges and say, I should incorporate this, and this, until hopefully you get to enough that you know what is going wrong. The worst thing you can do, like when we were helping people with algorithmic trading, is to mess up, lose a lot of money, and have the firm go out of business. If you can do that in silico instead, you can sample more, fail faster, learn faster.
+
+**You talked about offloading the menial tasks to agents. Isn't there alpha in doing the tough work yourself, reproducing someone's code or going through their R package, where you find the choices they made that they didn't note in the paper?**
+
+Really great question. There is a spectrum of approaches people are taking with respect to how automated you make this versus how augmented you make it, and I am very much in the augmented camp. At each of these states you are in the loop: the human has to decide whether you go to the next step, with all of the tests and all of the validation, and at any point you can keep diving deeper or loop all the way back. When it comes to the implementation, maybe you are looking at the actual code and you say: wait a minute, this is going to be numerically unstable in this regime, I need to go back and plan better boundary conditions. So you are still in the weeds at that level, but not at the level of digging through someone's Java code and finding that the paper had a minus sign where the code has a plus sign, which took you three months to figure out. That is the type of thing it can do for you. There is a trade-off, because that pain can be really helpful when you are learning how to do research, to build up the intuition that lets you look at something and say it is going to be numerically unstable; the model doesn't know what it is doing there. So I think this is much more designed for scientists who know what they want to ask and want to ask it extremely efficiently, as opposed to training scientists in what is interesting to ask about. I do think the two can be coupled, and there is a lot of mentorship that goes into that: if you can ask those questions very efficiently, maybe you build up better intuition. One of the sub-skills here is an explain tool: as you build up the record, you can go back and say, tell me exactly what is in here, what statistical method was used, why, what the trade-offs were, and that can help when a result surprises you. Better tooling, and then better teaching on how to use these tools together, but it is not going to replace that.
+
+**A question on cybersecurity: with Q-Day approaching (the day quantum computers break cryptography, expected in the early 2030s), and with employees already using AI tools their employers don't know about, how are you preparing to keep all of this research data safe?**
+
+If I understand the question, it is how you keep this safe, especially in a world where quantum computers break cryptography, and I think that is closer to 2030 than 2035. AI can help advance in silico hypothesis validation for computational physics, and it is also helping security researchers come up with post-quantum cryptography. I believe in letting a thousand flowers bloom: a lot of people attacking the problem from many different directions, with open AI models and open researchers, will make all of us a little bit safer. More specifically, the way I am attacking this is that it is going to be open source. You can run it on your own computer and air-gap it if you want. You could have your own LLM running on a Mac Studio that never touches the internet. There is always a spectrum of what you have and how much security you are willing to put into it. My goal is that this makes it easier to do more open science and more reproducible science, because you won't be afraid to publish your code when it is well written, well validated, and easy to reproduce. I just want people to publish more open science, and hopefully other fields are embracing this to make things more secure too.
+
+**A question from precision medicine: how tightly should you harness it? I might harness it to look for the protein response to a drug when I should have been looking at a lipid or a genetic response.**
+
+That is a great question, and it hints at the serendipity of discovery that can happen when you let things run a little looser. There is a fundamental trade-off between doing something very specific, writing down your hypothesis ahead of time and not peeking at the data, versus having a p-hacking machine that searches everything and finds spurious results. It is up to the scientist to decide the breadth and depth of that search, and that is tunable in the way you use the system. You can still have serendipitous results. You can speculatively say, let's try a bunch of things, I can't articulate the hypothesis yet, and based on those findings come up with something you can then do with some level of precision. It can be a very powerful tool, but as scientists we have to hold ourselves to that level of rigor, so that we are not p-hacking or finding spurious results. That goes back to the training: knowing what it is to do that deeper statistical analysis, making sure you are not fabricating something you want to see that might not be there. There always needs to be serendipity in science, that apple-falling-on-your-head moment, occasionally.
+
+**On the architecture slide: Claude can already do some of what is on there. What do you do better?**
+
+Claude helped me make a lot of this. It can do it really well, but the purpose of a harness is to make it do what you want repeatably and consistently, with a very specific path. When you know what you want, or you can build a state machine like this, you take a lot of the randomness out, and that can help you go faster or trust what you are doing a little bit more. You could feed this diagram into Claude and say, build me this system, and it would probably get you a good 80 percent solution. But sometimes an 80 percent solution is worse than no solution, because you don't know when to trust it or when to dig in. A lot of this is taking the parts that can be deterministic and making them deterministic, as opposed to letting the entire process be non-deterministic. There is a trade-off there. It could be that in five years it can one-shot this at 100 percent accuracy, and that will be a great time to be alive, because then we can just say, solve stable fusion containment, and all of our energy problems are gone, or solve cancer. That sounds like a fun world to be in too, and I hope we get there.
+
+**One of our implicit jobs is mentoring students to come up with ideas, and to have the right amount of cynicism, so they don't believe everything someone hands them. Could this harness, or a slightly different one, help with that?**
+
+That is an excellent question. This could be one of many tools you use as part of that process; you could pair-program, or pair-synthesize, as you go. What I have seen with some grad students, and I remember feeling this myself going through school, is: I can't wait until I have done enough that I can start doing my own thing and be the PI. What I hope is that this empowers them to do that earlier and faster, and to make those mistakes earlier and faster too, because that is where a lot of the learning comes from. You need to know you have made a mistake to learn from that mistake, and that is what the mentor and the advisor are there for. By being able to sample more, hopefully you can learn more.
+
+**You are doing science with an LLM that is broadly trained, that went to liberal arts school. Does your system need to go to grad school, trained specifically on science, without the wasted neurons from all that Shakespeare?**
+
+You could use a system like this to train a small language model, or a more fine-tuned model, that is specifically good at this. It doesn't matter that Claude has an 1800 Elo at chess when you are having it do physics research. That can help with efficiency, but some of it doesn't really matter: if I am willing to eat the cost of the wasted neurons, it doesn't necessarily hurt. In my mind, having the most capable general model is extremely valuable for running this, and then you use that to build either very deterministic systems or more specific models, like a physics-informed neural network, to solve the specific questions you have. It is always a portfolio of options. And there is just so much physics yet to be discovered and so much data yet to be collected that even if you trained it on what there is today, there is always going to be something new, especially as we build bigger detectors and do deeper research. It is using the tool to build the tool to solve the problem to build the tool. Turtles all the way down. I think there is room for both.
+
+**Thank you for putting all the provenance and tracking in this. Recent results from the big labs in theoretical physics and mathematics build on other people's work without documenting it, and the finest theorists in my field end up checking answers that came from a corporation with a thousand times my NSF grant. How do we keep doing original research and interest those companies in our problems? It sounds like you are helping.**
+
+That is the dream. Getting scooped has been an issue since Newton and Leibniz; you never know what is going to happen out there. My hope is that more open-source tooling and more open models make this more democratized. I think a world where a handful of labs control everything, through regulatory capture or whatever it may be, is a much more dangerous world than one where everyone can advance things. Hopefully my little open-source contribution helps there, and hopefully that is the way the world is going as well.
+
+## If you're building in this space
+
+If you are working on computational physics, applied math, materials, energy, fluids, or physical AI, I would love to hear from you, especially if you are an Oregon State student who wants to try this on your own research: [talariasci.com](https://talariasci.com). The longer version of the Distributional story is in [Making New Mistakes Faster as a Second-Time Founder](/blog/make-all-new-mistakes-faster), and the five-minute version of this talk, from the Agentic AI Summit in August, is in [How Better Evals Can Bring Abundance through Accelerated Scientific Discovery](/blog/better-evals-abundance).
+
+*Recorded at the [College of Science AI+Science Seminar](https://events.oregonstate.edu/event/accelerating-science-with-ai-surfing-the-frontier-between-the-bitter-lesson-and-no-free-lunch) in the Memorial Union Horizon Room, Oregon State University, Corvallis, October 5, 2026. Thanks to Vrushali Bokil and Nathan Gibson for hosting, to Dean Eleanor Feingold for the introduction, and to the College of Science for recording and publishing the [full session](https://www.youtube.com/watch?v=uMbylhLlhOc), Q&A included. The College also published a [preview of the talk](https://science.oregonstate.edu/impact/2026/09/how-can-ai-accelerate-discovery-while-keeping-scientists-at-the-center-scott-clark).*
