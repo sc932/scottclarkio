@@ -360,19 +360,20 @@ const breadcrumbTrail = [
     margin: 40px 0;
   }
 
-  /* Plain markdown images (rasters the inline-SVG Figure lane can't carry)
-     stay bounded to the column on the same plate language as Figure —
-     hairline border, never a shadow; white mat. */
+  /* Markdown images (rasters: talk-recap slides, screenshots) render BARE:
+     no mat, no hairline, no padding (Scott, 2026-10-19: "just pngs that the
+     user can click to zoom in, but without the extra border"). Every site
+     image is a figure (rehype-figure-focus fails the build otherwise), so this
+     rule only ever meets an <img> inside .post-figure; the white mat that
+     lived here sat INSIDE the figure plate and double-framed every slide
+     (two hairlines, 20px of white, the slide's own #F7F8FA surface reading
+     as a grey panel). */
   .prose img {
     display: block;
     box-sizing: border-box;
     max-width: 100%;
     height: auto;
-    margin: 24px 0;
-    background: #fff;
-    border: 1px solid var(--rule);
-    border-radius: 4px;
-    padding: 12px;
+    margin: 0;
   }
 
   /* Figures: white plate + hairline border (never a shadow — rules are the
@@ -482,8 +483,33 @@ const breadcrumbTrail = [
   .post-figure .fig-panel {
     position: relative;
   }
+  /* Raster figures carry no plate: the image IS the figure (a slide brings
+     its own surface). House SVG figures keep the white plate + hairline above.
+     A deep-linked or keyboard-focused raster shows a quiet outline instead of
+     the plate's lit hairline. */
   .post-figure--img .fig-panel {
-    padding: 8px;
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+  }
+  .post-figure--img:target .fig-open {
+    outline: 2px solid var(--accent);
+    outline-offset: 4px;
+  }
+  /* The corner "#" (the captionless image's deep link) is quiet until the
+     figure is hovered, focused, or targeted — the same discipline as the
+     expand bracket (Scott, 2026-10-19: an always-on "#" read as a stray glyph). */
+  .fig-anchor--corner,
+  .post-figure--img .fig-expand {
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .post-figure:hover .fig-anchor--corner,
+  .post-figure:focus-within .fig-anchor--corner,
+  .post-figure:target .fig-anchor--corner,
+  .fig-anchor--corner:focus-visible {
+    opacity: 1;
   }
 
   .post-figure figcaption {
