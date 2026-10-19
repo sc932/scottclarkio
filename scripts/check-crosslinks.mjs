@@ -33,6 +33,13 @@ const RULES = [
     target: /^https?:\/\/(www\.)?distributional\.com/,
     needles: [/Distributional/],
   },
+  {
+    // tauopt.com went live 2026-10-14; the first post naming TauOpt (the OSU
+    // recap, 2026-10-19) carries the link, so the law gets its tooth here.
+    id: "tauopt",
+    target: /^https?:\/\/(www\.)?tauopt\.com/,
+    needles: [/TauOpt/],
+  },
 ];
 // Deliberate opt-outs: { path: <regex>, rule: <id>, why: <reason> }. Logged
 // as KNOWN-EXEMPT notes; an exclude that stops suppressing anything fails.
@@ -46,6 +53,11 @@ const EXCLUDE = [
     path: /^figures\/index\.html$/,
     rule: "talaria",
     why: "the figures index quotes captions and post titles verbatim from the posts; the source posts carry the property links (figure focus, 2026-10-01)",
+  },
+  {
+    path: /^figures\/index\.html$/,
+    rule: "tauopt",
+    why: "the figures index quotes captions and post titles verbatim from the posts; the source posts carry the property links (figure focus, 2026-10-01; the tauopt rule, 2026-10-19)",
   },
   {
     path: /^press\/index\.html$/,
