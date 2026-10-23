@@ -66,6 +66,14 @@ const talks = defineCollection({
     date: z.coerce.date(),
     videoUrl: z.string().optional(),
     slidesUrl: z.string().optional(),
+    // Blog slug of the talk's recap post (2026-10-23). The /talks page and
+    // its .md twin render the POST's title as the link text — never a bare
+    // slug or path (the cross-link gate's bare-path rule fails that) — and
+    // a slug that is not a published post fails the build (src/lib/talks.ts).
+    recap: z
+      .string()
+      .regex(/^[a-z0-9-]+$/, "recap must be a blog slug")
+      .optional(),
     description: z.string(),
   }),
 });

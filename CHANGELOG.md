@@ -7,10 +7,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [Unreleased]
 
 ### Added
+- Cross-link gate v2 (`scripts/check-crosslinks.mjs`, 2026-10-23): two rule classes derived from the build — `bare-path` (a site-internal path as visible prose fails; a path is never link text) and `post:<slug>` (every published post's JSON-LD headline, plus a recap's headline minus its "(… recap)" qualifier, must be linked by the phrase wherever it is named). Read-next cards are out of scope. Founding incident: `/talks` showed its two recap posts as bare `/blog/<slug>` text.
+- Talks collection: `recap: <blog-slug>` (schema + `src/lib/talks.ts`). The `/talks` row renders "Recap: <post title>" linked, the JSON-LD `PresentationDigitalDocument` carries `subjectOf` → the post's `BlogPosting` node, and the `.md` twin carries the same markdown link; a slug that is not a published post fails the build.
 - Talk-recap post format, first instance `better-evals-abundance` (DRAFT: videoId/date/slide-render/PDF placeholders — replace via the vault piece note's deploy checklist before this ever lands on main): video facade with self-hosted poster, slide-by-slide walkthrough as plain markdown images under lesson-sentence h3s, downloadable slides PDF at /slides/, companion talks-collection entry. Estate contract: vault blog-grammar.md § Talk-recap format.
 - `YouTubeFacade` `posterSrc` prop + `videoPoster` blog schema field: self-hosted posters (lane-open requirement).
 
 ### Changed
+- The two recap-bearing talk entries (Agentic AI Summit 2026, OSU AI+Science Seminar 2026) moved their recap reference from a bare path in the description to the structured `recap` field.
 - VIDEO LANE OPENED (2026-08-06): feed-safe facade rewrite in `rss.xml.ts` `feedifyHtml` (facade div -> anchor-wrapped absolutized poster; script strip); `aio-check` `VIDEO_LANE_OPEN = true` with inverted teeth — no i.ytimg.com hotlinks on post pages, every local `<img>` must exist in dist, published video posts must embed the facade.
 
 ## [1.0.0] - 2026-02-27

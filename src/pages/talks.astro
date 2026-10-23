@@ -3,13 +3,21 @@ import "@fontsource-variable/source-serif-4";
 import "@fontsource-variable/ibm-plex-sans";
 import { getCollection } from "astro:content";
 import SiteLayout from "../components/SiteLayout.astro";
+import TitleParts from "../components/TitleParts.astro";
 import { v2Theme } from "../lib/site-theme";
 import { siteUrl, buildCollectionPageSchema } from "../lib/site-content";
 import { htmlToText } from "../lib/md-helpers";
+import { postPath, postUrl } from "../lib/blog";
+import { recapPosts } from "../lib/talks";
 
 const talks = (await getCollection("talks")).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
 );
+// A talk that declares `recap: <slug>` links its recap post BY THE POST'S
+// TITLE (2026-10-23, Scott: a slug shown as prose is never right); the
+// lookup fails the build on a dangling slug.
+const recaps = await recapPosts(talks);
+const rows = talks.map((t) => ({ t, recap: recaps.get(t.id) }));
 
 const fmtPeriod = (d: Date) => {
   const month = d.toLocaleString("en-US", { month: "short" });
@@ -21,7 +29,7 @@ const talksPageSchema = buildCollectionPageSchema({
   name: "Talks — Scott Clark",
   description:
     "Conference talks, podcast appearances, and fireside chats by Scott Clark on AI reliability, Bayesian optimization, and AI testing.",
-  items: talks.map((t) => ({
+  items: rows.map(({ t, recap }) => ({
     "@type": "PresentationDigitalDocument",
     name: t.data.title,
     creator: { "@id": `${siteUrl}/#person` },
@@ -29,6 +37,17 @@ const talksPageSchema = buildCollectionPageSchema({
     description: htmlToText(t.data.description),
     publisher: { "@type": "Organization", name: t.data.event },
     ...(t.data.videoUrl && { url: t.data.videoUrl }),
+    // The recap post is ABOUT the talk (schema.org subjectOf); it points at
+    // the post page's own BlogPosting node (@id = canonical#article, the
+    // identity the AIO gate pins) so the two pages' graphs join.
+    ...(recap && {
+      subjectOf: {
+        "@type": "BlogPosting",
+        "@id": `${postUrl(recap)}#article`,
+        url: postUrl(recap),
+        headline: recap.data.title,
+      },
+    }),
   })),
 });
 ---
@@ -48,7 +67,7 @@ const talksPageSchema = buildCollectionPageSchema({
 
   <ol class="rows">
     {
-      talks.map((t) => (
+      rows.map(({ t, recap }) => (
         <li class="row">
           <div class="row-period">{fmtPeriod(t.data.date)}</div>
           <div class="row-body">
@@ -59,6 +78,14 @@ const talksPageSchema = buildCollectionPageSchema({
             {/* Descriptions are our own site copy (titles/events stay verbatim
                 artifact names) — HTML allowed so estate mentions can link. */}
             <p class="row-desc" set:html={t.data.description} />
+            {recap && (
+              <p class="row-recap">
+                Recap:{" "}
+                <a href={postPath(recap)}>
+                  <TitleParts title={recap.data.title} />
+                </a>
+              </p>
+            )}
             {(t.data.videoUrl || t.data.slidesUrl) && (
               <p class="row-links">
                 {t.data.videoUrl && <a href={t.data.videoUrl} target="_blank" rel="noopener">Video</a>}

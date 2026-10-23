@@ -24,6 +24,7 @@ import {
   selectedTalks,
 } from "./cv-content";
 import { htmlToMd } from "./md-helpers";
+import { recapPosts } from "./talks";
 import {
   getPublishedPosts,
   postUrl,
@@ -163,16 +164,23 @@ export async function renderTalksMd(): Promise<string> {
   const talks = (await getCollection("talks")).sort(
     (a, b) => b.data.date.valueOf() - a.data.date.valueOf()
   );
+  const recaps = await recapPosts(talks);
   const items = talks
     .map((t) => {
       const date = t.data.date.toISOString().slice(0, 10);
+      const recap = recaps.get(t.id);
+      // The recap post by its own title (never a slug) — same line the
+      // HTML page renders, so the twin and the page cannot drift.
+      const recapLine = recap
+        ? `\n\nRecap: [${recap.data.title}](${postUrl(recap)})`
+        : "";
       const links = [
         t.data.videoUrl ? `[Video](${t.data.videoUrl})` : null,
         t.data.slidesUrl ? `[Slides](${t.data.slidesUrl})` : null,
       ]
         .filter(Boolean)
         .join(" · ");
-      return `## ${t.data.title}\n\n**${date}** · ${t.data.event}${
+      return `## ${t.data.title}\n\n**${date}** · ${t.data.event}${recapLine}${
         links ? `\n\n${links}` : ""
       }\n\n${htmlToMd(t.data.description)}`;
     })

@@ -275,6 +275,8 @@ src/
                         experience[], education[], pageTitle, pageDescription.
                         Edit here for home-page wordsmithing.
     site-theme.ts       Palette + font stacks (v2Theme). Single export.
+    talks.ts            Talk -> recap-post resolution (`recap:` slug -> the
+                        published post; dangling slug fails the build).
   pages/
     index.astro         Home. Imports HomeContent + v2Theme + the two fontsource pkgs.
     cv.astro            Long-form CV. Inline content for awards/advisory/focus/
@@ -328,6 +330,20 @@ on the `scripts/deploy.sh` manual path; per-repo rules + deliberate EXCLUDEs
 script. Estate contract: vault `Projects/content_factory/blog-grammar.md`
 § cross-link gate.
 
+**Cross-link gate v2 (2026-10-23, Scott: `/talks` named its recap posts by
+slug, as plain text — "the correct way to do this is to have the title of
+the post and have it actually link"):** two rule classes are DERIVED from
+the build, so no per-post needle is ever hand-maintained. (1) `bare-path`:
+a site-internal path (`/blog/<slug>`, `/talks`, `scottclark.io/…`) as
+visible prose fails outright — a path is never link text, the target's
+title is (prose = `<main>` minus `<code>`/`<pre>`). (2) `post:<slug>`: one
+rule per published post page in `dist/` (needle = its JSON-LD headline,
+plus the headline minus a trailing "(… recap)" qualifier — the talk's own
+title), same must-link-by-the-phrase semantics as the property rules.
+Read-next cards (`<section class="related">`) are navigation chrome, out
+of scope for mentions and anchors. Exempt a page with an `EXCLUDE` row
+(rule id `bare-path` or `post:<slug>`) and a reason — never by rewording.
+
 For Terraform changes, the workflow is:
 
 ```bash
@@ -350,6 +366,11 @@ terraform apply                                           # commit changes
 - Location: `src/content/<type>/<name>.yaml`. One YAML file per entry.
 - Schemas defined in `src/content.config.ts` (zod) — update schema first when adding fields.
 - Source for facts: dossier first, then Scott. **Never invent publications/citations/dates.**
+- **A talk with a recap post declares `recap: <blog-slug>`** (2026-10-23). The
+  page, its JSON-LD (`subjectOf`), and the `.md` twin render the POST's own
+  title as the link text via `src/lib/talks.ts`; a slug that is not a
+  published post fails the build. Never write a post's path or slug into a
+  description as prose — the cross-link gate fails it; link the title.
 
 ## Coding Standards
 

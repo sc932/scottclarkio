@@ -608,6 +608,17 @@ const relMeLinks = [...personSchema.sameAs, `mailto:${personSchema.email}`];
         margin: 0 6px;
         color: var(--soft);
       }
+      /* Talk → recap post (2026-10-23): the post's own title as the link
+         text, ink like the description's inline links, above the muted
+         Video · Slides line. */
+      .row-recap {
+        margin: 6px 0 0;
+        font-size: 15px;
+        line-height: 1.5;
+        color: var(--mute);
+      }
+      .row-recap a { color: var(--ink); }
+      .row-recap a:hover { color: var(--accent); }
 
       /* Project rows — full width, no period column */
       .project-rows { list-style: none; padding: 0; margin: 0; }
