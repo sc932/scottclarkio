@@ -150,12 +150,13 @@ const proseRegion = (region) =>
     .replace(/<pre\b[\s\S]*?<\/pre>/gi, " ")
     .replace(/<code\b[\s\S]*?<\/code>/gi, " ");
 
-// A site path as prose: optional own-host prefix, a known root, optional
-// segments (a dot only INSIDE a segment, so a sentence-ending period stays
-// out of the capture), bounded by whitespace/punctuation on both sides so an
-// unrelated token ("A/B", "argmax f(x)") cannot match.
+// A site path as prose: optional own-host prefix (with or without a scheme —
+// "scottclark.io/talks" is the same defect as "/talks"), a known root,
+// optional segments (a dot only INSIDE a segment, so a sentence-ending period
+// stays out of the capture), bounded by whitespace/punctuation on both sides
+// so an unrelated token ("A/B", "argmax f(x)") cannot match.
 const BARE_PATH = new RegExp(
-  `(?:^|[\\s(\\["'“‘])((?:https?://(?:www\\.)?scottclark\\.io)?/(?:${PATH_ROOTS})(?:/[A-Za-z0-9_~-]+(?:\\.[A-Za-z0-9_~-]+)*)*/?)(?=$|[\\s)\\]"'”’.,;:!?])`,
+  `(?:^|[\\s(\\["'“‘])((?:(?:https?://)?(?:www\\.)?scottclark\\.io)?/(?:${PATH_ROOTS})(?:/[A-Za-z0-9_~-]+(?:\\.[A-Za-z0-9_~-]+)*)*/?)(?=$|[\\s)\\]"'”’.,;:!?])`,
   "g",
 );
 
