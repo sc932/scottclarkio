@@ -334,22 +334,35 @@ script. Estate contract: vault `Projects/content_factory/blog-grammar.md`
 **Cross-link gate v2 (2026-10-23, Scott: `/talks` named its recap posts by
 slug, as plain text — "the correct way to do this is to have the title of
 the post and have it actually link"):** two rule classes join the property
-rules. (1) `bare-path` (static, from the gate's `PATH_ROOTS` list): a
-site-internal path (`/blog/<slug>`, `/talks`, `scottclark.io/…`) as visible
-prose fails outright — a path is never link text, the target's title is
-(prose = `<main>` minus `<code>`/`<pre>`). (2) `post:<slug>` (DERIVED from
-`dist/`, one rule per published post page): needle = its JSON-LD headline,
-plus the headline minus a trailing "(… recap)" qualifier — the talk's own
-title; a page that names the post by title (any case) must link it by that
-title at least once on that page, as anchor text; the post's hyphenated
-slug as prose fails too. Read-next cards (`<section class="related">`) are
-navigation chrome, out of scope for mentions and anchors. The gate runs its
-own self-test (matcher + page semantics) before every dist walk — extend
-it when the matcher changes. Exempt a page with an `EXCLUDE` row (rule id
-`bare-path` or `post:<slug>`) and a reason — never by rewording. Still
-unseen (follow-up, vault Backlog 2026-10-23): a talk named by title without
-a link (no per-talk anchor exists), the `.md`/`.txt`/RSS outputs (generated
-from the same sources), a new top-level route until it joins `PATH_ROOTS`.
+rules. (1) `bare-path` (static, from the gate's `PATH_ROOTS` list — every
+top-level route, downloads included): a site-internal path (`/blog/<slug>`,
+`/talks`, `scottclark.io/…`, a `#fragment`/`?query` suffix allowed) as
+visible prose fails outright — a path is never link text, the target's
+title is (prose = `<main>` minus `<code>`/`<pre>`). (2) `post:<slug>`
+(DERIVED from `dist/`, one rule per published post page): needle = its
+JSON-LD headline, plus the headline minus a trailing "(… recap)" qualifier
+— the talk's own title; a page whose prose names the post by title (any
+case, word-bounded; a headline that is a prefix of a longer one is owned by
+the longer wherever the longer is the mention) must link it by that title
+at least once on that page, as anchor text, with an href matching the
+emitted route byte-for-byte; the post's hyphenated slug as prose fails
+outright, linked or not. Read-next cards (a `<section>` with the class
+token `related`) are navigation chrome, out of scope for mentions and
+anchors. The text model mirrors a browser's (inline tags vanish; block
+tags, `span` and `sup`/`sub` are word boundaries; named entities decode;
+soft hyphens vanish; curly quotes fold). An `EXCLUDE` row (rule id
+`bare-path` or `post:<slug>`, with a reason) counts as used only when it
+suppressed a failure — a row on a page that links correctly is stale and
+fails; never exempt by rewording. TEETH ON THE TEETH: the gate runs ~64
+self-tests (matcher + page semantics) before every dist walk and exits 3
+on a miss, and `scripts/check-crosslinks.mutants.mjs` (CI step; part of
+`npm run check:links`) breaks each pinned code path and requires the
+self-test to catch it — a new matcher rule ships with a self-test case
+that NAMES the failure it expects (`expect:`/`capture:`) and a mutant that
+makes that case fail. Still unseen (follow-up, vault Backlog 2026-10-23):
+a talk named by title without a link (no per-talk anchor exists), the
+`.md`/`.txt`/RSS outputs (generated from the same sources), a new
+top-level route until it joins `PATH_ROOTS`.
 
 For Terraform changes, the workflow is:
 

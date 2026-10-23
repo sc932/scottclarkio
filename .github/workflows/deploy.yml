@@ -35,6 +35,12 @@ jobs:
       - name: Cross-link gate
         run: node scripts/check-crosslinks.mjs
 
+      # Each mutant breaks one code path the gate's self-test claims to pin;
+      # the mutated gate must fail its own self-test (a surviving mutant = a
+      # vacuous pin — the round-2 finding class, 2026-10-23).
+      - name: Cross-link gate mutants
+        run: node scripts/check-crosslinks.mutants.mjs
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
         with:
