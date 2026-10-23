@@ -322,7 +322,8 @@ npm run deploy     # Manual deploy via scripts/deploy.sh (uses .env + local
 ```
 
 **Cross-link gate (2026-07-24):** any page naming a sibling estate property
-(Talaria → talariasci.com, Distributional → distributional.com) must carry the
+(Talaria → talariasci.com, Distributional → distributional.com, TauOpt →
+tauopt.com since 2026-10-19) must carry the
 phrase itself as a link — "a link to the host exists somewhere" does not pass.
 Enforced by `scripts/check-crosslinks.mjs` in CI (between build and sync) and
 on the `scripts/deploy.sh` manual path; per-repo rules + deliberate EXCLUDEs
@@ -332,17 +333,23 @@ script. Estate contract: vault `Projects/content_factory/blog-grammar.md`
 
 **Cross-link gate v2 (2026-10-23, Scott: `/talks` named its recap posts by
 slug, as plain text — "the correct way to do this is to have the title of
-the post and have it actually link"):** two rule classes are DERIVED from
-the build, so no per-post needle is ever hand-maintained. (1) `bare-path`:
-a site-internal path (`/blog/<slug>`, `/talks`, `scottclark.io/…`) as
-visible prose fails outright — a path is never link text, the target's
-title is (prose = `<main>` minus `<code>`/`<pre>`). (2) `post:<slug>`: one
-rule per published post page in `dist/` (needle = its JSON-LD headline,
+the post and have it actually link"):** two rule classes join the property
+rules. (1) `bare-path` (static, from the gate's `PATH_ROOTS` list): a
+site-internal path (`/blog/<slug>`, `/talks`, `scottclark.io/…`) as visible
+prose fails outright — a path is never link text, the target's title is
+(prose = `<main>` minus `<code>`/`<pre>`). (2) `post:<slug>` (DERIVED from
+`dist/`, one rule per published post page): needle = its JSON-LD headline,
 plus the headline minus a trailing "(… recap)" qualifier — the talk's own
-title), same must-link-by-the-phrase semantics as the property rules.
-Read-next cards (`<section class="related">`) are navigation chrome, out
-of scope for mentions and anchors. Exempt a page with an `EXCLUDE` row
-(rule id `bare-path` or `post:<slug>`) and a reason — never by rewording.
+title; a page that names the post by title (any case) must link it by that
+title at least once on that page, as anchor text; the post's hyphenated
+slug as prose fails too. Read-next cards (`<section class="related">`) are
+navigation chrome, out of scope for mentions and anchors. The gate runs its
+own self-test (matcher + page semantics) before every dist walk — extend
+it when the matcher changes. Exempt a page with an `EXCLUDE` row (rule id
+`bare-path` or `post:<slug>`) and a reason — never by rewording. Still
+unseen (follow-up, vault Backlog 2026-10-23): a talk named by title without
+a link (no per-talk anchor exists), the `.md`/`.txt`/RSS outputs (generated
+from the same sources), a new top-level route until it joins `PATH_ROOTS`.
 
 For Terraform changes, the workflow is:
 

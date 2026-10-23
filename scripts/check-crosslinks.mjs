@@ -9,38 +9,48 @@
 // Rule semantics, per rendered page and per rule: IF the page's <main>
 // visible text matches any of the rule's `needles`, THEN the page must carry
 // >=1 <a> whose href matches `target` AND whose own visible text matches a
-// needle of the SAME rule — the brand/title PHRASE must be a link somewhere
-// on the page, never only plain text. "A link to the host exists elsewhere"
-// does not pass: the pivot post linked talariasci.com three times while
-// "Talaria Scientific" stayed plain text (the founding incident of this
+// needle of the SAME rule — the brand/title PHRASE must be a link at least
+// once on that page, never only plain text. "A link to the host exists
+// elsewhere" does not pass: the pivot post linked talariasci.com three times
+// while "Talaria Scientific" stayed plain text (the founding incident of this
 // gate). Pages whose own path IS a relative target are exempt (a post never
 // links itself); EXCLUDE carries deliberate opt-outs, each WITH a reason,
 // and a stale exclude (one that no longer suppresses anything) FAILS.
 //
 // v2 (2026-10-23, Scott: /talks named its recap posts by SLUG, as plain
 // text — "the correct way to do this is to have the title of the post and
-// have it actually link"). Two rule classes DERIVED from the build join the
-// hand-written property rules, so no per-post needle is ever maintained:
-//   1. bare-path — a site-internal path (`/blog/<slug>`, `/talks`,
-//      `scottclark.io/…`) appearing as visible PROSE fails outright, linked
-//      or not: a path is never link text; the target's TITLE is. Prose =
-//      <main> minus <code>/<pre> (a how-I-built-this post may quote a path
-//      as a path).
-//   2. post-title — one rule per published post page in dist/ (its JSON-LD
-//      BlogPosting headline, the identity the AIO gate pins): a page that
-//      names the post by title must link it by that title. A recap post's
-//      headline minus its "(… recap)" qualifier is the talk's own title, so
-//      the needle carries both forms and /talks must link each recap.
+// have it actually link"). Two rule classes join the hand-written property
+// rules:
+//   1. bare-path (static, from PATH_ROOTS) — a site-internal path
+//      (`/blog/<slug>`, `/talks`, `scottclark.io/…`) appearing as visible
+//      PROSE fails outright, linked or not: a path is never link text; the
+//      target's TITLE is. Prose = <main> minus <code>/<pre> (a how-I-built-
+//      this post may quote a path as a path).
+//   2. post:<slug> (DERIVED from dist/) — one rule per published post page,
+//      from its JSON-LD BlogPosting headline (the identity the AIO gate
+//      pins): a page that names the post by title (any case) must link it by
+//      that title; a recap's headline minus its "(… recap)" qualifier is the
+//      talk's own title, so the needle carries both forms and /talks must
+//      link each recap; the post's hyphenated slug as prose fails too (a slug
+//      is never prose). The post's own page is exempt.
 // Read-next cards (`<section class="related">`) are navigation chrome, not
 // body citations: out of scope for mentions AND anchors (estate rule
-// 2026-08-28, previously only on talaria-site).
+// 2026-08-28). The text model mirrors a browser's: inline tags vanish
+// ("<em>AI</em>:" reads "AI:"), block tags are word boundaries, entities
+// decode, soft hyphens vanish, curly quotes fold to ASCII for matching.
+// A SELF-TEST of the matcher + page semantics runs before every dist walk
+// (round-1 ruling, 2026-10-23: this regex gates every deploy, so its pins
+// live here, not in a review record).
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 
 // ---- per-repo config ----
-const SITE_HOST = /^https?:\/\/(?:www\.)?scottclark\.io/;
-// Site-internal path roots that are never prose. `/slides/…` is a download
-// (its anchor text is "Slides"/"Download the slides"), never a reference.
+// This property's host — the ONE owner of the pattern (the bare-path class
+// and the derived post targets both build from it).
+const OWN_HOST = "(?:www\\.)?scottclark\\.io";
+// Site-internal path roots that are never prose (a hand list: a new top-level
+// route joins it here). `/slides/…` is a download whose anchor text is
+// "Slides"/"Download the slides", never a reference.
 const PATH_ROOTS = "blog|talks|press|projects|publications|cv|figures|slides";
 // Sibling properties this site must link when it names them. "Scott Clark"
 // is this property. Post rules are DERIVED below (postRulesFromDist).
@@ -92,8 +102,6 @@ const EXCLUDE = [
 // -------------------------
 
 const DIST = "dist";
-const failures = [];
-const notes = [];
 
 function walk(dir) {
   const out = [];
@@ -111,22 +119,41 @@ const decodeEntities = (s) =>
     .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
     .replace(/&rsquo;/g, "’")
     .replace(/&lsquo;/g, "‘")
+    .replace(/&rdquo;/g, "”")
+    .replace(/&ldquo;/g, "“")
+    .replace(/&apos;/g, "'")
+    .replace(/&mdash;/g, "—")
+    .replace(/&ndash;/g, "–")
+    .replace(/&hellip;/g, "…")
+    .replace(/&shy;/g, "­")
     .replace(/&nbsp;/g, " ")
     .replace(/&quot;/g, '"')
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
     .replace(/&amp;/g, "&");
 
-// Visible text of an HTML region: scripts/styles/SVG out, tags out,
-// entities decoded, whitespace collapsed.
+// Inline elements vanish from the text model (a browser renders "<em>AI</em>:"
+// as "AI:"); everything else is a word boundary. `span` is NOT here: this
+// site stacks block-styled spans (the talk row's title/event) with no
+// whitespace between them, and TitleParts separates its spans with a text
+// node, so a boundary is right for span.
+const INLINE_TAGS = "a|abbr|b|cite|code|em|i|kbd|mark|q|s|small|strong|sub|sup|time|u|var";
+const INLINE_TAG_RE = new RegExp(`</?(?:${INLINE_TAGS})\\b[^>]*>`, "gi");
+
+// Visible text of an HTML region: scripts/styles/SVG out, inline tags gone,
+// other tags to spaces, entities decoded, soft hyphens removed, whitespace
+// collapsed.
 const visibleText = (s) =>
   decodeEntities(
     s
       .replace(/<script[\s\S]*?<\/script>/gi, " ")
       .replace(/<style[\s\S]*?<\/style>/gi, " ")
       .replace(/<svg[\s\S]*?<\/svg>/gi, " ")
+      .replace(INLINE_TAG_RE, "")
       .replace(/<[^>]+>/g, " "),
-  ).replace(/\s+/g, " ");
+  )
+    .replace(/­/g, "")
+    .replace(/\s+/g, " ");
 
 // Typographic quotes → ASCII so a title with a curly apostrophe matches its
 // straight-quoted mention (and vice versa). Applied to needle sources and to
@@ -137,33 +164,65 @@ const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 // Content region = <main>; chrome (nav/footer) stays out of scope so a
 // site-wide footer mention can't trip (or satisfy) a per-page rule. Read-next
-// cards are chrome too.
+// cards (`class` containing the token `related`, any other attributes) are
+// chrome too.
+const RELATED_RE = /<section\b[^>]*\bclass="[^"]*\brelated\b[^"]*"[^>]*>[\s\S]*?<\/section>/gi;
 const mainRegion = (html) => {
   const m = html.match(/<main\b[\s\S]*?<\/main>/i);
   const region = m ? m[0] : (html.match(/<body\b[\s\S]*?<\/body>/i)?.[0] ?? html);
-  return region.replace(/<section class="related">[\s\S]*?<\/section>/gi, " ");
+  return region.replace(RELATED_RE, " ");
 };
 
-// Prose region for the bare-path class: code samples may quote a path.
+// Prose region for the bare-path and slug classes: code samples may quote a
+// path or a slug.
 const proseRegion = (region) =>
   region
     .replace(/<pre\b[\s\S]*?<\/pre>/gi, " ")
     .replace(/<code\b[\s\S]*?<\/code>/gi, " ");
 
 // A site path as prose: optional own-host prefix (with or without a scheme —
-// "scottclark.io/talks" is the same defect as "/talks"), a known root,
-// optional segments (a dot only INSIDE a segment, so a sentence-ending period
-// stays out of the capture), bounded by whitespace/punctuation on both sides
-// so an unrelated token ("A/B", "argmax f(x)") cannot match.
+// "scottclark.io/talks" is the same defect as "/talks"), a known root with an
+// optional extension (`/figures.json`), optional segments (a dot only INSIDE
+// a segment, so a sentence-ending period stays out of the capture), bounded
+// by whitespace/punctuation on both sides so an unrelated token ("A/B",
+// "argmax f(x)", a path on another host) cannot match. `#` and the dashes
+// are boundaries too (`/blog/x#slides`, `/talks—`).
+const SEG = "[A-Za-z0-9_~-]+(?:\\.[A-Za-z0-9_~-]+)*";
 const BARE_PATH = new RegExp(
-  `(?:^|[\\s(\\["'“‘])((?:(?:https?://)?(?:www\\.)?scottclark\\.io)?/(?:${PATH_ROOTS})(?:/[A-Za-z0-9_~-]+(?:\\.[A-Za-z0-9_~-]+)*)*/?)(?=$|[\\s)\\]"'”’.,;:!?])`,
-  "g",
+  `(?:^|[\\s(\\["'“‘])((?:(?:https?://)?${OWN_HOST})?/(?:${PATH_ROOTS})(?:\\.[A-Za-z0-9]+)?(?:/${SEG})*/?)(?=$|[\\s)\\]"'”’.,;:!?#—–…])`,
+  "gi",
 );
+
+const titleNeedle = (phrase) =>
+  new RegExp(`(?<![A-Za-z0-9])${escapeRe(phrase)}(?![A-Za-z0-9])`, "i");
+
+// Build one derived rule for a published post. Exported-by-shape for the
+// self-test; the dist walk feeds it real headlines.
+function postRule(slug, headline) {
+  const title = norm(headline);
+  const bare = title.replace(/\s*\([^()]*\brecap\)$/i, "");
+  const needles = [titleNeedle(title)];
+  if (bare !== title) needles.push(titleNeedle(bare));
+  return {
+    id: `post:${slug}`,
+    derived: true,
+    title,
+    selfPath: `/blog/${slug}`,
+    target: new RegExp(`^(?:https?://${OWN_HOST})?/blog/${escapeRe(slug)}/?(?:[#?].*)?$`, "i"),
+    needles,
+    // The slug as prose ("the better-evals-abundance post"): hyphenated slugs
+    // only — a one-word slug is an ordinary word. A leading "/" or "-" means
+    // the token is part of a path (the bare-path class reports that one).
+    slugNeedle: slug.includes("-")
+      ? new RegExp(`(?<![A-Za-z0-9/-])${escapeRe(slug)}(?![A-Za-z0-9-])`, "i")
+      : null,
+  };
+}
 
 // One rule per published post page: needles = the BlogPosting headline (the
 // AIO gate pins headline == frontmatter title) and, for recaps, the headline
 // without its trailing "(… recap)" qualifier — the talk's own title.
-function postRulesFromDist(htmlFiles) {
+function postRulesFromDist(htmlFiles, failures) {
   const rules = [];
   for (const file of htmlFiles) {
     const m = file.match(/^dist\/blog\/([^/]+)\/index\.html$/);
@@ -171,11 +230,13 @@ function postRulesFromDist(htmlFiles) {
     const slug = m[1];
     const html = readFileSync(file, "utf8");
     let headline = null;
+    let broken = false;
     for (const s of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
       let data;
       try {
         data = JSON.parse(s[1]);
       } catch {
+        broken = true;
         failures.push(`blog/${slug}/index.html: unparseable JSON-LD — the post-title rule cannot be derived`);
         continue;
       }
@@ -184,32 +245,174 @@ function postRulesFromDist(htmlFiles) {
       if (post) headline = post.headline;
     }
     if (!headline) {
-      failures.push(`blog/${slug}/index.html: no BlogPosting headline in JSON-LD — the post-title rule cannot be derived`);
+      if (!broken) failures.push(`blog/${slug}/index.html: no BlogPosting headline in JSON-LD — the post-title rule cannot be derived`);
       continue;
     }
-    const title = norm(headline);
-    const bare = title.replace(/\s*\([^()]*\brecap\)$/i, "");
-    const needles = [new RegExp(escapeRe(title))];
-    if (bare !== title) needles.push(new RegExp(escapeRe(bare)));
-    rules.push({
-      id: `post:${slug}`,
-      derived: true,
-      target: new RegExp(`^(?:https?://(?:www\\.)?scottclark\\.io)?/blog/${escapeRe(slug)}/?(?:[#?].*)?$`),
-      selfPath: `/blog/${slug}`,
-      needles,
-      title,
-    });
+    rules.push(postRule(slug, headline));
   }
   return rules;
 }
+
+// Check ONE rendered page. Pure: returns its failures, the KNOWN-EXEMPT notes
+// it logged, and the EXCLUDE rows it actually used (a row is "used" only when
+// it suppressed a failure — a row on a page that mentions AND links correctly
+// is stale and must die loudly).
+function checkPage({ rel, html, rules, exclude }) {
+  const failures = [];
+  const notes = [];
+  const used = new Set();
+  const region = mainRegion(html);
+  const text = norm(visibleText(region));
+  const prose = norm(visibleText(proseRegion(region)));
+  const anchors = [...region.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)].map((m) => ({
+    href: m[1].match(/\bhref=(["'])(.*?)\1/)?.[2] ?? "",
+    text: norm(visibleText(m[2])),
+  }));
+  // This page's own site-relative path ("blog/x/index.html" -> "/blog/x").
+  const pagePath = "/" + rel.replace(/(^|\/)index\.html$/, "$1").replace(/\/$/, "").replace(/^\//, "");
+  const exemption = (ruleId) => {
+    const ex = exclude.find((e) => e.rule === ruleId && e.path.test(rel));
+    if (ex) {
+      used.add(ex);
+      notes.push(`KNOWN-EXEMPT ${rel} [${ruleId}]: ${ex.why}`);
+    }
+    return Boolean(ex);
+  };
+  const snippetOf = (s, i, len) => s.slice(Math.max(0, i - 40), i + len + 40).trim();
+
+  // Class 1: bare paths in prose — every occurrence on the page, so one run
+  // names the whole fix.
+  const bares = [...prose.matchAll(BARE_PATH)];
+  if (bares.length && !exemption("bare-path")) {
+    for (const bare of bares) {
+      const i = (bare.index ?? 0) + bare[0].indexOf(bare[1]);
+      failures.push(
+        `${rel}: site path "${bare[1]}" appears as prose ("…${snippetOf(prose, i, bare[1].length)}…") — a path is never link text; link the target by its title`,
+      );
+    }
+  }
+
+  // Class 0 (properties) + class 2 (derived post titles): same semantics.
+  for (const rule of rules) {
+    if (rule.selfPath && pagePath === rule.selfPath) continue;
+    const hit = rule.needles.map((n) => n.exec(text)).find(Boolean);
+    if (hit) {
+      const linked = anchors.some(
+        (a) => rule.target.test(a.href) && rule.needles.some((n) => n.test(a.text)),
+      );
+      if (!linked && !exemption(rule.id)) {
+        const what = rule.derived ? `the post "${rule.title}" (${rule.selfPath})` : rule.id;
+        failures.push(
+          `${rel}: mentions ${what} ("…${snippetOf(text, hit.index ?? 0, hit[0].length)}…") but no <a> to ${rule.target} carries the phrase — link the mention`,
+        );
+      }
+    }
+    // Class 2b: the post's slug as prose.
+    if (rule.slugNeedle) {
+      const s = rule.slugNeedle.exec(prose);
+      if (s && !exemption(rule.id))
+        failures.push(
+          `${rel}: names the post "${rule.title}" by its slug ("…${snippetOf(prose, s.index ?? 0, s[0].length)}…") — a slug is never prose; link the title (${rule.selfPath})`,
+        );
+    }
+  }
+  return { failures, notes, used };
+}
+
+// The gate's own pins: the matcher and the page semantics, run before every
+// dist walk. A failing self-test means the gate cannot be trusted: exit 3.
+function selfTest() {
+  const page = (body) => `<html><head><title>t</title></head><body><nav>/cv</nav><main>${body}</main><footer>/talks</footer></body></html>`;
+  const probe = postRule("probe-post", "Probe Post: A Title (talk recap)");
+  const curly = postRule("scotts-probe", "Scott’s Probe");
+  const rules = [...RULES, probe, curly];
+  const T = [];
+  const t = (name, body, want, opts = {}) => T.push({ name, body, want, ...opts });
+  // bare-path matcher
+  t("bare path, sentence period out of the capture", "<p>walkthrough at /blog/better-evals-abundance.</p>", 1, { capture: "/blog/better-evals-abundance" });
+  t("bare path with a fragment", "<p>see /blog/x#slides today</p>", 1, { capture: "/blog/x" });
+  t("bare path with a query", "<p>see /blog/x?from=home today</p>", 1);
+  t("bare path, trailing slash, in parens", "<p>(/blog/x/)</p>", 1, { capture: "/blog/x/" });
+  t("bare path in quotes", "<p>\"/press\"</p>", 1, { capture: "/press" });
+  t("bare path before an em dash", "<p>see /talks—then</p>", 1, { capture: "/talks" });
+  t("scheme-less own host", "<p>see scottclark.io/talks, then</p>", 1, { capture: "scottclark.io/talks" });
+  t("absolute own host", "<p>see https://www.scottclark.io/blog/x/ and</p>", 1, { capture: "https://www.scottclark.io/blog/x/" });
+  t("dotted root file", "<p>see /figures.json</p>", 1, { capture: "/figures.json" });
+  t("upper-case root", "<p>See /CV.</p>", 1, { capture: "/CV" });
+  t("two paths, two lines", "<p>/blog/a and /blog/b.</p>", 2);
+  t("path inside em", "<p>at <em>/talks</em> today</p>", 1, { capture: "/talks" });
+  t("path split by a soft hyphen entity", "<p>at /blog/better&shy;-evals today</p>", 1, { capture: "/blog/better-evals" });
+  t("path in code", "<p>see <code>/blog/x</code></p>", 0);
+  t("path in pre", "<pre>/talks</pre>", 0);
+  t("other host", "<p>see https://talariasci.com/blog/x and talariasci.com/talks</p>", 0);
+  t("fractions, A/B, dates, functions", "<p>A/B tests at 10/23/2026 and f(x)/g(x), 1/2</p>", 0);
+  t("word-interior slash", "<p>a path/blog/x inside a word</p>", 0);
+  t("bare host only", "<p>visit scottclark.io today</p>", 0);
+  t("path in an attribute only", '<p><img alt="/talks" src="/images/x.png"></p>', 0);
+  // post-title semantics
+  t("title unlinked", "<p>Read Probe Post: A Title now.</p>", 1);
+  t("talk-title form unlinked (recap qualifier stripped)", "<p>Read Probe Post: A Title (talk recap) now.</p>", 1);
+  t("title in lower case unlinked", "<p>read probe post: a title now.</p>", 1);
+  t("title split by em", "<p>Read Probe Post: <em>A</em> Title now.</p>", 1);
+  t("title linked by title", '<p>Read <a href="/blog/probe-post">Probe Post: A Title</a> now.</p>', 0);
+  t("title linked by title, absolute + fragment", '<p>Read <a href="https://scottclark.io/blog/probe-post/#x">Probe Post: A Title</a>.</p>', 0);
+  t("title linked by title, single-quoted href", "<p>Read <a href='/blog/probe-post'>Probe Post: A Title</a>.</p>", 0);
+  t("title linked by other text", '<p>Read Probe Post: A Title <a href="/blog/probe-post">here</a>.</p>', 1);
+  t("title linked to a prefix slug", '<p>Read <a href="/blog/probe-post-2">Probe Post: A Title</a>.</p>', 1);
+  t("title only in a read-next card", '<p>x</p><section class="related extra" data-astro-cid-x><a href="/blog/probe-post">Probe Post: A Title</a></section>', 0);
+  t("title as part of a longer word is no mention", "<p>Probe Post: A Titles</p>", 0);
+  t("curly-apostrophe title, straight-quoted mention", "<p>Read Scott's Probe now.</p>", 1);
+  t("curly-apostrophe title, &apos; mention", "<p>Read Scott&apos;s Probe now.</p>", 1);
+  t("curly-apostrophe title, linked with &#8217;", '<p>Read <a href="/blog/scotts-probe">Scott&#8217;s Probe</a>.</p>', 0);
+  t("slug as prose", "<p>the probe-post post</p>", 1);
+  t("slug inside a bare path counts once", "<p>see /blog/probe-post.</p>", 1);
+  t("slug in code", "<p>the <code>probe-post</code> file</p>", 0);
+  t("self page exempt", "<h1>Probe Post: A Title</h1><p>probe-post</p>", 0, { rel: "blog/probe-post/index.html" });
+  t("sub-page is not the self page", "<h1>Probe Post: A Title</h1>", 1, { rel: "blog/probe-post/extra/index.html" });
+  t("fooindex.html is not the self page", "<h1>Probe Post: A Title</h1>", 1, { rel: "blog/probe-postindex.html" });
+  t("property mention unlinked", "<p>Talaria is great</p>", 1);
+  t("property mention linked", '<p><a href="https://talariasci.com">Talaria</a> is great</p>', 0);
+  // EXCLUDE semantics
+  t("exclude suppresses the title failure", "<p>Read Probe Post: A Title now.</p>", 0, {
+    exclude: [{ path: /^probe\/index\.html$/, rule: "post:probe-post", why: "t" }],
+    usedCount: 1,
+  });
+  t("exclude on a page that links correctly is unused (stale)", '<p>Read <a href="/blog/probe-post">Probe Post: A Title</a>.</p>', 0, {
+    exclude: [{ path: /^probe\/index\.html$/, rule: "post:probe-post", why: "t" }],
+    usedCount: 0,
+  });
+  t("bare-path exclude suppresses", "<p>see /talks.</p>", 0, {
+    exclude: [{ path: /^probe\/index\.html$/, rule: "bare-path", why: "t" }],
+    usedCount: 1,
+  });
+
+  const bad = [];
+  for (const c of T) {
+    const r = checkPage({ rel: c.rel ?? "probe/index.html", html: page(c.body), rules, exclude: c.exclude ?? [] });
+    const got = r.failures.length;
+    let ok = got === c.want;
+    if (ok && c.capture !== undefined) ok = r.failures.some((f) => f.includes(`site path "${c.capture}"`));
+    if (ok && c.usedCount !== undefined) ok = r.used.size === c.usedCount;
+    if (!ok) bad.push(`  ${c.name}: want ${c.want}${c.capture ? ` capture "${c.capture}"` : ""}${c.usedCount !== undefined ? ` used ${c.usedCount}` : ""}, got ${got}${r.failures.length ? "\n    " + r.failures.join("\n    ") : ""}`);
+  }
+  if (bad.length) {
+    console.error(`check-crosslinks: SELF-TEST FAILED (${bad.length}/${T.length}) — the gate cannot be trusted:\n${bad.join("\n")}`);
+    process.exit(3);
+  }
+  return T.length;
+}
+
+const selfTests = selfTest();
 
 if (!existsSync(DIST)) {
   console.error("check-crosslinks: no dist/ — run the build first");
   process.exit(2);
 }
 
+const failures = [];
+const notes = [];
 const htmlFiles = walk(DIST).filter((f) => f.endsWith(".html"));
-const postRules = postRulesFromDist(htmlFiles);
+const postRules = postRulesFromDist(htmlFiles, failures);
 const allRules = [...RULES, ...postRules];
 const excludeUsed = new Set();
 
@@ -221,57 +424,10 @@ for (const file of htmlFiles) {
   const headEnd = html.indexOf("</head>");
   const stubScope = headEnd > -1 ? html.slice(0, headEnd) : html.slice(0, 1000);
   if (stubScope.includes('<meta http-equiv="refresh"')) continue;
-
-  const region = mainRegion(html);
-  const text = norm(visibleText(region));
-  const anchors = [...region.matchAll(/<a\b([^>]*)>([\s\S]*?)<\/a>/gi)].map((m) => ({
-    href: m[1].match(/href="([^"]*)"/)?.[1] ?? "",
-    text: norm(visibleText(m[2])),
-  }));
-  // This page's own site-relative path ("blog/x/index.html" -> "/blog/x").
-  const pagePath = "/" + rel.replace(/index\.html$/, "").replace(/\/$/, "").replace(/^\//, "");
-
-  const exemption = (ruleId) => {
-    const ex = EXCLUDE.find((e) => e.rule === ruleId && e.path.test(rel));
-    if (ex) {
-      excludeUsed.add(ex);
-      notes.push(`KNOWN-EXEMPT ${rel} [${ruleId}]: ${ex.why}`);
-    }
-    return Boolean(ex);
-  };
-
-  // Class 1: bare paths in prose — every occurrence on the page, so one
-  // run names the whole fix.
-  const prose = norm(visibleText(proseRegion(region)));
-  const bares = [...prose.matchAll(BARE_PATH)];
-  if (bares.length && !exemption("bare-path")) {
-    for (const bare of bares) {
-      const i = (bare.index ?? 0) + bare[0].indexOf(bare[1]);
-      const snippet = prose.slice(Math.max(0, i - 40), i + bare[1].length + 40).trim();
-      failures.push(
-        `${rel}: site path "${bare[1]}" appears as prose ("…${snippet}…") — a path is never link text; link the target by its title`,
-      );
-    }
-  }
-
-  // Class 0 (properties) + class 2 (derived post titles): same semantics.
-  for (const rule of allRules) {
-    if (rule.selfPath && pagePath === rule.selfPath) continue;
-    const hit = rule.needles.map((n) => n.exec(text)).find(Boolean);
-    if (!hit) continue;
-    if (exemption(rule.id)) continue;
-    const linked = anchors.some(
-      (a) => rule.target.test(a.href) && rule.needles.some((n) => n.test(a.text)),
-    );
-    if (!linked) {
-      const i = hit.index ?? 0;
-      const snippet = text.slice(Math.max(0, i - 40), i + hit[0].length + 40).trim();
-      const what = rule.derived ? `the post "${rule.title}" (${rule.selfPath})` : rule.id;
-      failures.push(
-        `${rel}: mentions ${what} ("…${snippet}…") but no <a> to ${rule.target} carries the phrase — link the mention`,
-      );
-    }
-  }
+  const r = checkPage({ rel, html, rules: allRules, exclude: EXCLUDE });
+  failures.push(...r.failures);
+  notes.push(...r.notes);
+  for (const e of r.used) excludeUsed.add(e);
 }
 
 // A dead exclude is a stale declaration — exemptions must die loudly.
@@ -288,5 +444,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  `check-crosslinks: OK — ${htmlFiles.length} pages, ${RULES.length} property rules + ${postRules.length} derived post rules + bare-path, every named property/post is linked`,
+  `check-crosslinks: OK — ${htmlFiles.length} pages, ${RULES.length} property rules + ${postRules.length} derived post rules + bare-path (${selfTests} self-tests green), every named property/post is linked`,
 );

@@ -30,8 +30,11 @@ echo "==> Building site..."
 cd "$PROJECT_DIR"
 npm run build
 
-# The manual path carries the same gate as CI — a hand deploy must not be
-# able to ship what a push could not.
+# The manual path carries the same gates as CI — a hand deploy must not be
+# able to ship what a push could not (the AIO gate was missing here until
+# 2026-10-23).
+echo "==> Gate (AIO)..."
+npm run check:aio
 echo "==> Gate (cross-links)..."
 npm run check:links
 

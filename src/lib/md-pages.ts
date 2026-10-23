@@ -176,7 +176,11 @@ export async function renderTalksMd(): Promise<string> {
         : "";
       const links = [
         t.data.videoUrl ? `[Video](${t.data.videoUrl})` : null,
-        t.data.slidesUrl ? `[Slides](${t.data.slidesUrl})` : null,
+        // Root-relative on the page; absolute in the twin, which agents read
+        // at /talks.md and inside /llms-full.txt (round-1 fold, 2026-10-23).
+        t.data.slidesUrl
+          ? `[Slides](${t.data.slidesUrl.startsWith("/") ? siteUrl + t.data.slidesUrl : t.data.slidesUrl})`
+          : null,
       ]
         .filter(Boolean)
         .join(" · ");
