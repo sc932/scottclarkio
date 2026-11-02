@@ -12,7 +12,8 @@ import { join } from "node:path";
 import { parseFrontmatter } from "@astrojs/markdown-remark";
 import { scanFigures, decodeEntities as decodeXmlEntities } from "../src/lib/figures-scan.mjs";
 import { attributeSvg } from "../src/lib/figure-attribution.mjs";
-import { renderFigurePng, prepareForResvg, inkFraction } from "../src/lib/figure-png.mjs";
+import { renderFigurePng, prepareForResvg, inkFraction, vendoredFamilies, FONT_ALIASES, FIGURE_PNG_SCALE } from "../src/lib/figure-png.mjs";
+import { Resvg } from "@resvg/resvg-js";
 
 // ---- per-repo config ----
 const SITE_URL = "https://scottclark.io";
@@ -752,27 +753,51 @@ if (existsSync(SVG_SRC)) {
 // start marker must point DOWN (its base above the vertex, never left of it), and a
 // Helvetica-first list must render byte-identical to Liberation Sans and not to DejaVu.
 {
-  const arrow = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60"><defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#000"/></marker></defs><rect width="200" height="60" fill="#fff"/><line x1="100" y1="50" x2="100" y2="10" stroke="#000" stroke-width="2" marker-start="url(#m)" marker-end="url(#m)"/></svg>`;
-  const r = renderFigurePng(arrow, { scale: 1 });
-  const dark = (x, y) => r.pixels[(y * r.width + x) * 4] < 128;
-  if (!dark(100, 44) || dark(94, 50) || !dark(100, 16))
-    failures.push(`figures: the renderer's auto-start-reverse emulation is wrong (start base above=${dark(100, 44)}, left=${dark(94, 50)}, end base below=${dark(100, 16)})`);
-  if (!/id="m-fig-rev"/.test(prepareForResvg(arrow)) || !/marker-start="url\(#m-fig-rev\)"/.test(prepareForResvg(arrow)))
-    failures.push("figures: prepareForResvg did not re-point marker-start at the reversed twin");
-  const text = (fam) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 40" width="300" height="40"><rect width="300" height="40" fill="#fff"/><text x="4" y="28" font-family="${fam}" font-size="20">Resonance is not pull</text></svg>`;
-  const helv = renderFigurePng(text("Helvetica, Arial, sans-serif"), { scale: 1 }).png;
-  if (!helv.equals(renderFigurePng(text("Liberation Sans"), { scale: 1 }).png) || helv.equals(renderFigurePng(text("DejaVu Sans"), { scale: 1 }).png))
-    failures.push("figures: a Helvetica-first font list does not render as the vendored Liberation Sans");
-  // Every committed figure's font lists name a vendored family (or an aliased one) FIRST:
-  // a generic keyword or an unknown family first would render in DejaVu Sans silently.
-  const VENDORED_FIRST = /^(DejaVu Sans|DejaVu Sans Mono|IBM Plex Sans|IBM Plex Mono|Liberation Sans|Helvetica|Helvetica Neue|Arial)$/;
+  // (a) the marker emulation, pinned against a HAND-AUTHORED reversed twin (an asymmetric refY so the
+  // mirror is exercised): every spelling of the start reference must render byte-equal to it, and
+  // the raw (unprepared) markup must not (round 3, 2026-11-02).
+  const mk = (orient, use) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60"><defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="2" markerWidth="8" markerHeight="8" orient=${orient}><path d="M0,0 L10,5 L0,10 z" fill="#000"/></marker></defs><rect width="200" height="60" fill="#fff"/><line x1="100" y1="50" x2="100" y2="10" stroke="#000" stroke-width="2" ${use}/></svg>`;
+  const expected = renderFigurePng(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 60" width="200" height="60"><defs><marker id="m" viewBox="0 0 10 10" refX="9" refY="2" markerWidth="8" markerHeight="8" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#000"/></marker><marker id="r" viewBox="0 0 10 10" refX="1" refY="8" markerWidth="8" markerHeight="8" orient="auto"><path d="M10,10 L0,5 L10,0 z" fill="#000"/></marker></defs><rect width="200" height="60" fill="#fff"/><line x1="100" y1="50" x2="100" y2="10" stroke="#000" stroke-width="2" marker-start="url(#r)" marker-end="url(#m)"/></svg>`, { scale: 1 }).png;
+  const spellings = {
+    'double-quoted': mk('"auto-start-reverse"', 'marker-start="url(#m)" marker-end="url(#m)"'),
+    "single-quoted orient + url('#m')": mk("'auto-start-reverse'", "marker-start=\"url('#m')\" marker-end=\"url(#m)\""),
+    "style marker-start": mk('"auto-start-reverse"', 'style="marker-start:url(#m);marker-end:url(#m)"'),
+    "marker shorthand": mk('"auto-start-reverse"', 'marker="url(#m)"'),
+    "style marker shorthand": mk('"auto-start-reverse"', 'style="marker:url( #m )"'),
+  };
+  for (const [name, svg] of Object.entries(spellings))
+    if (!renderFigurePng(svg, { scale: 1 }).png.equals(expected)) failures.push(`figures: the auto-start-reverse emulation differs from the hand-authored twin for the ${name} spelling`);
+  if (Buffer.from(new Resvg(spellings["double-quoted"], { fitTo: { mode: "zoom", value: 1 } }).render().asPng()).equals(expected))
+    failures.push("figures: the renderer pin is vacuous — raw resvg already matches the reversed twin");
+  // (b) the font alias: a Helvetica / Arial-first list (any spelling) renders as the vendored Liberation Sans, never DejaVu
+  const text = (fam, style) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 40" width="300" height="40"><rect width="300" height="40" fill="#fff"/><text x="4" y="28" ${style ? `style="font-family:${fam};font-size:20px"` : `font-family=${fam} font-size="20"`}>Resonance is not pull</text></svg>`;
+  const lib = renderFigurePng(text('"Liberation Sans"'), { scale: 1 }).png;
+  const dj = renderFigurePng(text('"DejaVu Sans"'), { scale: 1 }).png;
+  if (lib.equals(dj)) failures.push("figures: Liberation Sans and DejaVu Sans render alike — a face is missing");
+  for (const [name, svg] of [["double-quoted", text('"Helvetica, Arial, sans-serif"')], ["single-quoted lower-case", text("'helvetica, Arial'")], ["quoted Helvetica Neue in a style", text("'Helvetica Neue', Arial", true)], ["Arial with Liberation named later", text('"Arial, DejaVu Sans, Liberation Sans"')]])
+    if (!renderFigurePng(svg, { scale: 1 }).png.equals(lib)) failures.push(`figures: a Helvetica/Arial-first font list (${name}) does not render as the vendored Liberation Sans`);
+  // (c) every committed figure's font lists name a face THIS lane vendors (or an aliased one) FIRST —
+  // the inventory read from the fonts directory, never a hand list (astra, round 3)
+  const vendored = vendoredFamilies();
   for (const f of walk(SVG_SRC).filter((x) => x.endsWith(".svg"))) {
     const src = readFileSync(f, "utf8");
-    for (const m of src.matchAll(/font-family\s*[:=]\s*["']?([^;"']+)/g)) {
-      const first = m[1].split(",")[0].trim().replace(/^['"]|['"]$/g, "");
-      if (!VENDORED_FIRST.test(first)) failures.push(`figures: ${f} names "${first}" first in a font-family list — not a vendored face (the PNG would render it in DejaVu Sans)`);
+    for (const m of src.matchAll(/font-family\s*[:=]\s*(?:"([^"]*)"|'([^']*)'|([^;}"']+))/g)) {
+      const first = (m[1] ?? m[2] ?? m[3]).split(",")[0].trim().replace(/^['"]|['"]$/g, "");
+      if (!vendored.has(first) && !FONT_ALIASES[first.toLowerCase()]) failures.push(`figures: ${f} names "${first}" first in a font-family list — not a face this lane vendors or aliases (the PNG would render it in DejaVu Sans)`);
     }
   }
+}
+
+// ---- the ProfilePage stamp's tether (round 3, 2026-11-02): the profile fields' hash ----
+{
+  const { createHash } = await import("node:crypto");
+  const sc = await import("../src/lib/site-content.ts");
+  const { image: _img, ...personSansImage } = sc.personSchema;
+  const fields = JSON.stringify([sc.lede, sc.byline, sc.bullets, sc.experience, sc.education, personSansImage, sc.profileCreated]);
+  const hash = createHash("sha256").update(fields).digest("hex").slice(0, 16);
+  if (hash !== sc.profileHash)
+    failures.push(`profile: the profile fields moved (hash ${hash}, pinned ${sc.profileHash}) — bump profileUpdated AND set profileHash = "${hash}" in src/lib/site-content.ts (one edit, both lines)`);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(sc.profileUpdated) || sc.profileUpdated < sc.profileCreated) failures.push(`profile: profileUpdated ${sc.profileUpdated} is not a calendar day on or after profileCreated`);
 }
 
 // ---- figure focus: derived SVGs, index, manifest, twin, sitemap ----
@@ -795,7 +820,7 @@ if (existsSync(SVG_SRC)) {
       const rawTitle = raw.match(/<title\b[^>]*>([\s\S]*?)<\/title>/)?.[1]?.trim();
       const title = rawTitle === undefined ? undefined : decodeXmlEntities(rawTitle);
       const date = asDate(f.postDate);
-      const { svg, backgroundExtended } = attributeSvg(raw, {
+      const { svg, backgroundExtended, band } = attributeSvg(raw, {
         holder: figureAttribution.holder,
         publisher: figureAttribution.publisher,
         creator: figureAttribution.creator,
@@ -834,8 +859,11 @@ if (existsSync(SVG_SRC)) {
         else if (!buf.equals(png)) failures.push(`figures: ${f.downloadPng} differs from renderFigurePng(attributeSvg(${f.svgSource})) — the build and the gate disagree`);
         // Blankness by PIXELS, not bytes (a blank 2080x1430 PNG is ~15 KB; byte equality
         // shares the renderer with the build and cannot see a blank — the tree seat, round 1).
-        const ink = inkFraction(pixels, width, height);
-        if (ink < 0.005) failures.push(`figures: ${f.downloadPng} is a blank render (${(ink * 100).toFixed(2)}% of pixels differ from the background)`);
+        // The DRAWING's rows only (above the attribution band), against the region's most common colour:
+        // a footer-only render fails; a title band is not mistaken for the background. A sparse-but-real
+        // drawing sits far above 0.5 % (the live figures: 0.118-0.430).
+        const ink = inkFraction(pixels, width, height, height - Math.round(band * FIGURE_PNG_SCALE));
+        if (ink < 0.005) failures.push(`figures: ${f.downloadPng} is a blank drawing (${(ink * 100).toFixed(2)}% of the drawing's pixels differ from its background)`);
       }
       if (!built.includes(`<cc:license rdf:resource="${figureAttribution.license.url}"/>`) || !built.includes(`>${figureAttribution.license.name}<`))
         failures.push(`figures: ${f.download} lacks the ${figureAttribution.license.name} footer word / <cc:license> (Scott, 2026-10-02)`);

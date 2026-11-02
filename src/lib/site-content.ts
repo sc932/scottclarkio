@@ -184,7 +184,6 @@ export const profileImage = {
   encodingFormat: "image/jpeg",
   width: 2000,
   height: 2000,
-  representativeOfPage: true,
   creator: {
     "@type": "Organization",
     "@id": "https://distributional.com/#organization",
@@ -284,6 +283,10 @@ export const websiteSchema = {
 // § Bio fact propagation). Emitted as midnight UTC, the press-kit convention.
 export const profileCreated = "2026-05-05";
 export const profileUpdated = "2026-11-02";
+// The stamp's tether (the press manifest's content-hash pattern): sha256 of the profile-bearing
+// exports, pinned here; the AIO gate recomputes it and FAILS when the fields moved without the
+// stamp — set both together (the gate prints the new hash).
+export const profileHash = "f2ce70dc23388164";
 const asDateTime = (ymd: string) => new Date(`${ymd}T00:00:00Z`).toISOString();
 
 // ProfilePage schema for pages whose primary subject is Scott (home, /cv).

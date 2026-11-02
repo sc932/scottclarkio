@@ -8,9 +8,10 @@ AIO gate recomputes every PNG through the same renderer on the machine that
 built and compares bytes. Keep the set equal to the FACES the committed figure
 SVGs are meant to render in — family AND weight AND style, resolved with
 inheritance (a bold `<tspan>` under a Plex `<text>` is a Plex Bold run):
-Helvetica / Helvetica Neue / Arial at the head of a list are aliased to the
-vendored Liberation Sans (Arial-metric, the face the Chrome-rendered twins
-drew through fontconfig's aliases) by `figure-png.mjs`; Verdana, Consolas
+Helvetica / Helvetica Neue / Arial at the head of a list (any case, either
+quote, attribute or style) are aliased to the vendored Liberation Sans
+(Arial-metric; the Chrome-rendered twins drew Nimbus Sans, fontconfig's
+Helvetica alias — the same width class; Nimbus is AGPL) by `figure-png.mjs`; Verdana, Consolas
 and the generic keywords (`sans-serif`, `monospace`) fall through to DejaVu
 Sans — resvg-js 2.6.2 resolves no generic family and honours no
 sansSerifFamily / monospaceFamily knob, so a monospace list must NAME DejaVu
@@ -21,7 +22,8 @@ style a vendored family lacks renders in that family's nearest loaded face
 Sans at normal / bold / italic, DejaVu Sans Mono at normal / bold, IBM Plex
 Sans at normal / 600 / italic, IBM Plex Mono at normal / 600, Helvetica-list
 runs at normal / 600 / bold / italic (→ Liberation Sans) — every combination
-below is vendored.
+below is vendored or one nearest-face step away (a 600 under Liberation Sans
+→ Bold).
 
 - DejaVu Sans (Book, Bold, Oblique) and DejaVu Sans Mono (Book, Bold) —
   Bitstream Vera license + public-domain DejaVu changes, `LICENSE-DejaVu.txt`.

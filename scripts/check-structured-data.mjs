@@ -37,9 +37,7 @@
 //  R1 a bare {"@id"} reference resolves: on the SAME page for the properties
 //     a rich result reads (mainEntity, creator, author, publisher); elsewhere,
 //     on any page of this site or in the estate's cross-domain identity set
-//     (TRUSTED by name, never fetched — the OK line counts them apart); a node
-//     carrying @type beside its @id is a definition, not a reference (the
-//     `mainEntityOfPage: {@type WebPage, @id <page>}` shape on every post)
+//     (TRUSTED by name, never fetched — the OK line counts them apart)
 //  R2 one @id, one type SET per page — the estate's authoring policy, stricter
 //     than JSON-LD (which would merge compatible types into one node whose type
 //     is whichever the consumer picks; two descriptions with different @type
@@ -50,9 +48,12 @@
 //     dropping out of the scan — a producer drift the tag match could not
 //     follow — fails; so does a listed page that grows a graph)
 //  A typed all-@-keys node ({"@id", "@type"}) is a reference too: it resolves
-//  when a node WITH properties describes its @id on this page or site, when
-//  the @id is a page or file this site built (mainEntityOfPage's WebPage), or
-//  when it is an estate identity; a typed reference to nothing is dangling.
+//  when a node WITH properties describes its @id on this page or site (on the
+//  SAME page for mainEntity / creator / author / publisher), when its
+//  fragment-free @id is a page or file this site built (mainEntityOfPage's
+//  WebPage), or when it is an estate identity; a typed reference to nothing is
+//  dangling, and a resolved one is judged by its definition, never as a node.
+//  Parent types ride as SETS (a ["Thing", "ListItem"] parent is a ListItem).
 //  An ImageObject's on-site contentUrl must be an IMAGE file (png jpg jpeg gif
 //  webp avif svg), never a page or a redirect stub; a license and an
 //  acquireLicensePage are absolute http(s) URLs.
@@ -76,7 +77,7 @@ const ESTATE_IDS = new Set([
   "https://talariasci.com/#organization",
   "https://distributional.com/#organization",
 ]);
-// The built pages that carry NO JSON-LD, exactly (dist-relative paths).
+// The built pages that carry NO JSON-LD, exactly (dist-relative paths); N1 below.
 const NO_JSONLD_PAGES = new Set(["about/index.html"]);
 // -------------------------
 
@@ -94,9 +95,18 @@ const ARTICLE_TYPES = new Set([
 ]);
 // (type, property) pairs Google documents as DateTime (the full form).
 const DATETIME_FIELDS = new Set(["ProfilePage.dateCreated", "ProfilePage.dateModified", "VideoObject.uploadDate"]);
-const DATE_PROPS_EXTRA = new Set(["validFrom", "validThrough", "expires", "lastReviewed", "availabilityStarts", "availabilityEnds", "priceValidUntil", "startTime", "endTime", "doorTime", "sdDatePublished", "contentReferenceTime"]);
+// (startTime / endTime / doorTime take Time-only values — "09:00:00" — so they stay out: astra, round 3)
+const DATE_PROPS_EXTRA = new Set(["validFrom", "validThrough", "expires", "lastReviewed", "availabilityStarts", "availabilityEnds", "priceValidUntil", "sdDatePublished", "contentReferenceTime"]);
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|svg)$/i;
-const isHttpUrl = (v) => typeof v === "string" && /^https?:\/\/\S+$/.test(v);
+const isHttpUrl = (v) => {
+  if (typeof v !== "string") return false;
+  try {
+    const u = new URL(v);
+    return u.protocol === "http:" || u.protocol === "https:"; // (a special scheme never parses with an empty host — WHATWG)
+  } catch {
+    return false;
+  }
+};
 const SAME_PAGE_PROPS = new Set(["mainEntity", "creator", "author", "publisher"]);
 const CREATOR_TYPES = new Set(["Person", "Organization"]);
 const CREDIT_PROPS = ["creditText", "copyrightNotice", "license"];
@@ -132,7 +142,7 @@ export function parseLdBlocks(html) {
   // tag match would go blind on the drift and pass every page as "without
   // JSON-LD" (K3, round 1). A page that mentions ld+json but yields no block
   // is an error, below.
-  for (const m of html.matchAll(/<script\b[^>]*\btype=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
+  for (const m of html.matchAll(/<script\b[^>]*\stype\s*=\s*["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
     try {
       const j = JSON.parse(m[1]);
       if (!isNode(j) || !(Array.isArray(j["@graph"]) || j["@type"])) errors.push("JSON-LD block is neither a @graph nor a typed node");
@@ -141,28 +151,36 @@ export function parseLdBlocks(html) {
       errors.push(`unparseable JSON-LD: ${e.message}`);
     }
   }
-  if (!blocks.length && !errors.length && /ld\+json/i.test(html)) errors.push("the page mentions ld+json but no JSON-LD block was recognized (a producer drift the tag match could not follow?)");
+  if (!blocks.length && !errors.length && /<script\b[^>]*ld\+json/i.test(html)) errors.push("a script tag mentions ld+json but no JSON-LD block was recognized (a producer drift the tag match could not follow?)");
   return { blocks, errors };
 }
 
-/** Flatten a block into visited nodes: {node, path, top, parentType, prop}. */
+/** N1: the verdict for one page's JSON-LD presence against the exact no-JSON-LD set; null = fine. */
+export function noJsonLdVerdict(rel, blocks, errors, set) {
+  if (!blocks.length && !errors.length && !set.has(rel)) return `${rel}: no JSON-LD block, and the page is not in NO_JSONLD_PAGES — a page dropped out of the scan`;
+  if (blocks.length && set.has(rel)) return `${rel}: listed in NO_JSONLD_PAGES but carries a graph — update the set`;
+  return null;
+}
+
+/** Flatten a block into visited nodes: {node, path, top, parentTypes, prop}. */
 function collect(block, rel, index) {
   const out = [];
-  const visit = (v, path, top, parentType, prop) => {
+  const visit = (v, path, top, parentTypes, prop) => {
     if (Array.isArray(v)) {
-      v.forEach((x, i) => visit(x, `${path}[${i}]`, top, parentType, prop));
+      v.forEach((x, i) => visit(x, `${path}[${i}]`, top, parentTypes, prop));
       return;
     }
     if (!isNode(v)) return;
-    out.push({ node: v, path, top, parentType, prop });
-    const t = typeOf(v) ?? parentType;
+    out.push({ node: v, path, top, parentTypes, prop });
+    const t = typesOf(v).length ? typesOf(v) : parentTypes;
     for (const [k, val] of Object.entries(v)) {
-      if (k === "@graph" && Array.isArray(val)) val.forEach((x, i) => visit(x, `${path}.@graph[${i}]`, top, null, null)); // a nested graph's members are nodes too
+      if (k === "@graph" && Array.isArray(val)) val.forEach((x, i) => visit(x, `${path}.@graph[${i}]`, top, [], null)); // a nested graph's members are nodes too
       else if (!k.startsWith("@")) visit(val, `${path}.${k}`, false, t, k);
     }
   };
-  const roots = Array.isArray(block["@graph"]) ? block["@graph"] : [block];
-  roots.forEach((n, i) => visit(n, `${rel} block ${index} @graph[${i}]`, true, null, null));
+  // a typed block that ALSO carries a @graph is a node itself (its members ride the nested walk)
+  const roots = Array.isArray(block["@graph"]) && !block["@type"] ? block["@graph"] : [block];
+  roots.forEach((n, i) => visit(n, `${rel} block ${index} @graph[${i}]`, true, [], null));
   return out;
 }
 
@@ -177,7 +195,16 @@ export function checkPages(pages, { siteUrl, estateIds, fileExists, imageExists 
   const perPage = [];
   const globalDefs = new Set(); // every typed @id on the site
   const globalFull = new Set(); // typed @ids described WITH properties somewhere on the site
-  const onSitePath = (id) => (typeof id === "string" && id.startsWith(`${siteUrl}/`) ? decodeURIComponent(new URL(id).pathname) : null);
+  // the fragment-free path of an on-site id (a `#fragment` names an entity, never a page); null when undecodable
+  const onSitePath = (id) => {
+    if (typeof id !== "string" || !id.startsWith(`${siteUrl}/`)) return null;
+    try {
+      const u = new URL(id);
+      return u.hash ? null : decodeURIComponent(u.pathname);
+    } catch {
+      return null;
+    }
+  };
   for (const page of pages) {
     const nodes = page.blocks.flatMap((b, i) => collect(b, page.rel, i));
     const defs = new Map(); // @id -> { types: Set of type-set keys, node, full }
@@ -186,7 +213,7 @@ export function checkPages(pages, { siteUrl, estateIds, fileExists, imageExists 
       const t = typeOf(node);
       if (typeof id !== "string" || !t) continue;
       if (!defs.has(id)) defs.set(id, { types: new Set(), node, full: false });
-      defs.get(id).types.add([...typesOf(node)].sort().join("+")); // one key per distinct type set
+      defs.get(id).types.add([...new Set(typesOf(node))].sort().join("\u0000")); // one key per distinct type set (deduped)
       if (!defs.get(id).node.name && node.name) defs.get(id).node = node;
       if (!isTypedRef(node)) {
         defs.get(id).full = true;
@@ -203,11 +230,12 @@ export function checkPages(pages, { siteUrl, estateIds, fileExists, imageExists 
       if (types.size > 1) failures.push(`${rel}: @id ${id} is defined with different types on one page: ${[...types].join(", ")}`);
     const resolvesOnPage = (ref) => isRef(ref) && defs.has(ref["@id"]);
     const creatorOk = (c) => isNode(c) && !isRef(c) && hasType(c, CREATOR_TYPES) && typeof c.name === "string" && !!c.name.trim();
-    for (const { node, path, top, parentType, prop } of nodes) {
+    for (const { node, path, top, parentTypes, prop } of nodes) {
       const type = typeOf(node);
+      const underImageCreator = parentTypes.includes("ImageObject") && prop === "creator";
       // R1: bare references resolve (a creator reference is I2's finding).
       if (isRef(node)) {
-        if (parentType === "ImageObject" && prop === "creator") continue;
+        if (underImageCreator) continue;
         const id = node["@id"];
         const resolved = defs.has(id) || globalDefs.has(id) || estateIds.has(id);
         if (!resolved) failures.push(`${path}: dangling reference — nothing defines @id ${id} (on this page, this site, or the estate set)`);
@@ -215,12 +243,18 @@ export function checkPages(pages, { siteUrl, estateIds, fileExists, imageExists 
           failures.push(`${path}: the ${prop} reference ${id} must resolve on the same page — a rich result reads it there`);
         continue;
       }
-      // R1 for a TYPED reference ({"@id", "@type"} and nothing else): something must describe it.
-      if (isTypedRef(node) && prop !== null && !(parentType === "ImageObject" && prop === "creator") && prop !== "mainEntity") {
+      // R1 for a TYPED reference ({"@id", "@type"} and nothing else): something must describe it —
+      // on the SAME page for the properties a rich result reads; then it is judged by its definition.
+      if (isTypedRef(node) && !underImageCreator) {
         const id = node["@id"];
         const pathOnSite = onSitePath(id);
-        const resolved = defs.get(id)?.full || globalFull.has(id) || estateIds.has(id) || (pathOnSite !== null && fileExists(pathOnSite.split("#")[0]));
+        const here = !!defs.get(id)?.full;
+        // the built-page escape only for page-typed references (a Person typed as a page URL is not described by the page existing — the tree seat, round 3)
+        const pageTyped = typesOf(node).some((t) => /Page$|^WebSite$/.test(t));
+        const resolved = here || globalFull.has(id) || estateIds.has(id) || (pageTyped && pathOnSite !== null && fileExists(pathOnSite));
         if (!resolved) failures.push(`${path}: typed reference ${id} (${typesOf(node).join("/")}) — nothing describes it on this page or site, and it is not a page this site built`);
+        else if (SAME_PAGE_PROPS.has(prop) && !here) failures.push(`${path}: the ${prop} reference ${id} must be described on the same page — a rich result reads it there`);
+        continue;
       }
       const types = typesOf(node);
       // D1 / D2: dates.
@@ -239,7 +273,7 @@ export function checkPages(pages, { siteUrl, estateIds, fileExists, imageExists 
             failures.push(`${path}.${k}: "${value}" is not a real calendar day`);
             continue;
           }
-          const full = types.some((t) => DATETIME_FIELDS.has(`${t}.${k}`)) || (parentType !== "ListItem" && types.some((t) => ARTICLE_TYPES.has(t)) && (k === "datePublished" || k === "dateModified"));
+          const full = types.some((t) => DATETIME_FIELDS.has(`${t}.${k}`)) || (!parentTypes.includes("ListItem") && types.some((t) => ARTICLE_TYPES.has(t)) && (k === "datePublished" || k === "dateModified"));
           if (full && !ISO_DATETIME.test(value))
             failures.push(`${path}.${k}: "${value}" must be a full ISO 8601 date-time with a time zone (Google types ${type}.${k} as DateTime)`);
         }
@@ -277,11 +311,11 @@ export function checkPages(pages, { siteUrl, estateIds, fileExists, imageExists 
       // P1: ProfilePage.mainEntity; P2: both dates present.
       if (types.includes("ProfilePage")) {
         for (const d of ["dateCreated", "dateModified"])
-          if (node[d] === undefined) failures.push(`${path}: ProfilePage has no ${d} (Google's recommended DateTime; its absence is a notice of the founding class)`);
+          if (node[d] === undefined || (Array.isArray(node[d]) && !node[d].length)) failures.push(`${path}: ProfilePage has no ${d} (Google's recommended DateTime; its absence is a notice of the founding class)`);
         const mes = Array.isArray(node.mainEntity) ? node.mainEntity : [node.mainEntity];
         if (!node.mainEntity || !mes.length) failures.push(`${path}: ProfilePage has no mainEntity`);
         else {
-          const resolved = mes.map((me) => (isRef(me) ? defs.get(me["@id"])?.node : isNode(me) ? me : null));
+          const resolved = mes.map((me) => (isRef(me) || isTypedRef(me) ? defs.get(me["@id"])?.node : isNode(me) ? me : null));
           if (!resolved.some((target) => target && hasType(target, CREATOR_TYPES) && typeof target.name === "string" && target.name.trim()))
             failures.push(`${path}: ProfilePage.mainEntity does not resolve (on this page) to a named Person or Organization`);
         }
@@ -406,9 +440,29 @@ export function selfTest() {
   expectRed("a ProfilePage typed second in its @type array, without mainEntity", run(page("p", org(), web(), person(), { ...profile(), "@type": ["WebPage", "ProfilePage"], mainEntity: undefined })), /has no mainEntity/);
   expectRed("an ImageObject inside a nested @graph is checked", run(page("p", ...base(), { "@type": "WebPage", "@id": `${site}/n`, "@graph": [{ ...img(), creator: undefined }] })), /names no creator/);
   expectRed("a BlogPosting under Blog.blogPost with a calendar date", run(page("l", ...base(), { "@type": "Blog", "@id": `${site}/blog#blog`, blogPost: [{ "@type": "BlogPosting", "@id": `${site}/b/y#article`, headline: "y", datePublished: "2026-07-24" }] })), /datePublished: "2026-07-24" must be a full/);
-  expectGreen("a ProfilePage whose mainEntity is an array with one resolving member", run(page("p", org(), web(), person(), { ...profile(), mainEntity: [{ "@id": `${site}/#nowhere-typed`, "@type": "Thing" }, { "@id": `${site}/#person` }] })));
+  expectGreen("a ProfilePage whose mainEntity is an array with one resolving member", run(page("p", org(), web(), person(), { ...profile(), mainEntity: [{ "@type": "Thing", name: "Inline thing" }, { "@id": `${site}/#person` }] })));
   expectRed("a malformed percent-encoding in an on-site contentUrl", withImg({ contentUrl: `${site}/ok/%zz.jpg` }), /not a decodable URL/);
   expectGreen("the live photo shape: creator + creditText, no license, no copyrightNotice", withImg({ license: undefined, acquireLicensePage: undefined }));
+  // round-3 folds (2026-11-02): typed references everywhere, parent type sets, root blocks, URLs, P2, N1
+  expectGreen("a typed mainEntity reference to the page's named Person", run(page("p", org(), web(), person(), { ...profile(), mainEntity: { "@type": "Person", "@id": `${site}/#person` } })));
+  expectRed("a typed mainEntity reference to nothing, on a ProfilePage", run(page("p", org(), web(), person(), { ...profile(), mainEntity: { "@type": "Person", "@id": `${site}/#ghost` } })), /typed reference .* nothing describes it/);
+  expectRed("a typed mainEntity reference to nothing, on another page", run(page("w", ...base(), { "@type": "WebPage", "@id": `${site}/w`, mainEntity: { "@type": "Thing", "@id": `${site}/#ghost` } })), /typed reference .* nothing describes it/);
+  expectRed("a typed author reference described only on another page", run(page("a", ...base(), article({ author: { "@type": "Person", "@id": `${site}/#other` } })), page("b", { "@type": "Person", "@id": `${site}/#other`, name: "Other" })), /author reference .* must be described on the same page/);
+  expectRed("a page-typed reference whose @id is a fragment of a built page", run(page("b", ...base(), article({ about: { "@type": "WebPage", "@id": `${site}/ok/b/x#nowhere` } }))), /typed reference .* nothing describes it/);
+  expectRed("a Person typed reference whose @id is a built page", run(page("b", ...base(), article({ about: { "@type": "Person", "@id": `${site}/ok/b/x` } }))), /typed reference .* nothing describes it/);
+  expectGreen("a typed ImageObject reference to a node described on the page", run(page("p", org(), web(), person(), { ...profile(), primaryImageOfPage: { "@type": "ImageObject", "@id": `${site}/ok/a.jpg#image` } })));
+  expectGreen("a ListItem typed [Thing, ListItem] keeps the exemption", run(page("l", ...base(), { "@type": "CollectionPage", "@id": `${site}/l#page`, mainEntity: { "@type": "ItemList", itemListElement: [{ "@type": ["Thing", "ListItem"], position: 1, item: { "@type": "ScholarlyArticle", headline: "y", datePublished: "2008" } }] } })));
+  expectGreen("one @id typed [Person, Person] and Person", run(page("p", ...base(), { "@type": ["Person", "Person"], "@id": `${site}/#person`, name: "Someone" })));
+  expectRed("a typed root block with properties AND a @graph is a node too", run({ rel: "r", blocks: [{ "@context": "https://schema.org", "@type": "ProfilePage", "@id": `${site}/r#page`, dateCreated: "2026-09-14", dateModified: "2026-09-14T00:00:00Z", mainEntity: { "@type": "Person", name: "Inline" }, "@graph": [org()] }] }), /dateCreated: "2026-09-14" must be a full/);
+  expectRed("a license URL without a host", withImg({ license: "https://#terms" }), /license must be an absolute http/);
+  expectRed("dateCreated as an empty array", run(page("p", org(), web(), person(), { ...profile(), dateCreated: [] })), /has no dateCreated/);
+  expectRed("a prose sdDatePublished", run(page("b", ...base(), article({ sdDatePublished: "soon" }))), /sdDatePublished: "soon" is not a valid ISO 8601/);
+  const dataType = parseLdBlocks('<script data-type="application/ld+json">{"@context":"https://schema.org","@graph":[]}</script>');
+  if (dataType.blocks.length || dataType.errors.length !== 1) problems.push("parse: data-type= is not the type attribute (and the page then mentions ld+json with no block)");
+  const n1set = new Set(["about/index.html"]);
+  if (noJsonLdVerdict("x/index.html", [], [], n1set) === null) problems.push("N1: a page without JSON-LD outside the set must fail");
+  if (noJsonLdVerdict("about/index.html", [], [], n1set) !== null) problems.push("N1: a listed page without JSON-LD is fine");
+  if (noJsonLdVerdict("about/index.html", [{}], [], n1set) === null) problems.push("N1: a listed page that grew a graph must fail");
   // parse
   const bad = parseLdBlocks('<script type="application/ld+json">{bad</script>');
   if (bad.errors.length !== 1 || bad.blocks.length || !/unparseable JSON-LD/.test(bad.errors[0])) problems.push(`parse: an unparseable block must be one 'unparseable' error (got ${JSON.stringify(bad)})`);
@@ -418,8 +472,9 @@ export function selfTest() {
   if (good.errors.length || good.blocks.length !== 1) problems.push("parse: a @graph block must parse");
   const drifted = parseLdBlocks("<script data-astro='x' type='application/ld+json'>{\"@context\":\"https://schema.org\",\"@graph\":[]}</script>");
   if (drifted.errors.length || drifted.blocks.length !== 1) problems.push("parse: a tag with other attributes / single quotes must still parse");
-  const blind = parseLdBlocks('<div>ld+json</div><scriptx type="application/ld+json">{}</scriptx>');
-  if (blind.errors.length !== 1) problems.push("parse: a page mentioning ld+json with no recognized block must be an error");
+  const blind = parseLdBlocks('<script nonce="x" typ="application/ld+json">{}</script>');
+  if (blind.errors.length !== 1) problems.push("parse: a script tag mentioning ld+json with no recognized block must be an error");
+  if (parseLdBlocks("<p>a post about application/ld+json</p>").errors.length) problems.push("parse: prose mentioning ld+json is not an error");
   // The GREEN-expectation cases above are self-pinning: a source edit that wrongly
   // rejects a correct shape turns the case RED and fails this self-test (exit 3),
   // which the mutants harness's base run would expose; the strictness mutants in
@@ -446,10 +501,9 @@ function main() {
     const rel = f.slice(DIST.length + 1);
     const { blocks, errors } = parseLdBlocks(readFileSync(f, "utf8"));
     for (const e of errors) failures.push(`${rel}: ${e}`);
-    if (!blocks.length) {
-      skipped++;
-      if (!errors.length && !NO_JSONLD_PAGES.has(rel)) failures.push(`${rel}: no JSON-LD block, and the page is not in NO_JSONLD_PAGES — a page dropped out of the scan`);
-    } else if (NO_JSONLD_PAGES.has(rel)) failures.push(`${rel}: listed in NO_JSONLD_PAGES but carries a graph — update the set`);
+    if (!blocks.length) skipped++;
+    const n1 = noJsonLdVerdict(rel, blocks, errors, NO_JSONLD_PAGES);
+    if (n1) failures.push(n1);
     pages.push({ rel, blocks });
   }
   for (const rel of NO_JSONLD_PAGES) if (!existsSync(join(DIST, rel))) failures.push(`NO_JSONLD_PAGES names ${rel}, which did not build — update the set`);
@@ -460,8 +514,8 @@ function main() {
     for (const [i, b] of p.blocks.entries())
       for (const { node } of collect(b, p.rel, i)) {
         stats.nodes++;
-        if (typeOf(node) === "ImageObject") stats.images++;
-        if (isRef(node)) {
+        if (typesOf(node).includes("ImageObject") && !isTypedRef(node)) stats.images++;
+        if (isRef(node) || isTypedRef(node)) {
           stats.refs++;
           if (ESTATE_IDS.has(node["@id"])) stats.trusted++;
         }
