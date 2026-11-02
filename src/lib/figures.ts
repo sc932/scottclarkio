@@ -9,6 +9,7 @@ import { siteUrl, figureAttribution } from "./site-content";
 import { getPublishedPosts, postUrl, type Post } from "./blog";
 import { scanBody, figureId, decodeEntities } from "./figures-scan.mjs";
 import { attributeSvg } from "./figure-attribution.mjs";
+import { renderFigurePng } from "./figure-png.mjs";
 
 export { figureId };
 
@@ -30,9 +31,12 @@ export interface Figure {
   svgSource: string | null;
   /** Root-relative download URL (the attributed SVG, or the raster itself). */
   download: string;
+  /** Root-relative PNG download (the attributed SVG rasterized at build; null for rasters). */
+  downloadPng: string | null;
   /** Absolute deep link to the figure in its post. */
   pageUrl: string;
   downloadUrl: string;
+  downloadPngUrl: string | null;
   srcUrl: string;
 }
 
@@ -58,6 +62,7 @@ function figuresOf(post: Post): Figure[] {
     postUpdated: post.data.updated,
     pageUrl: `${postUrl(post)}#${f.id}`,
     downloadUrl: `${siteUrl}${f.download}`,
+    downloadPngUrl: f.downloadPng ? `${siteUrl}${f.downloadPng}` : null,
     srcUrl: `${siteUrl}${f.src}`,
   }));
 }
@@ -100,6 +105,12 @@ export function attributedSvg(fig: Figure) {
   return r;
 }
 
+/** The PNG download (2026-11-02): the attributed SVG rasterized at 2x with the
+ * vendored fonts — the same footer, the same bytes the gate recomputes. */
+export function attributedPng(fig: Figure) {
+  return renderFigurePng(attributedSvg(fig).svg);
+}
+
 /** Human label: caption, else alt, else an ordinal within its post — never a
  * raw file name (the archive's alt-less screenshots; fable r1 F9). */
 export const figureLabel = (fig: Figure) =>
@@ -108,6 +119,9 @@ export const figureLabel = (fig: Figure) =>
 /** Download filename offered by the focus view (`<a download>`). */
 export const downloadName = (fig: Figure) =>
   `${fig.post}-${fig.name}${fig.kind === "svg" ? ".svg" : fig.download.slice(fig.download.lastIndexOf("."))}`;
+
+/** Download filename of the PNG twin (house figures only). */
+export const downloadPngName = (fig: Figure) => `${fig.post}-${fig.name}.png`;
 
 /** schema.org ImageObject for a figure (Google's image-license fields; the
  * CC BY-ND 4.0 grant rides house SVG figures only — Scott, 2026-10-02). */

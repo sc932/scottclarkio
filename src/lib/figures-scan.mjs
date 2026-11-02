@@ -114,10 +114,13 @@ export function scanBody(slug, body) {
         caption,
         alt: attr(m[1], "alt") ?? caption,
         // The inline page copy renders the committed SVG; the PNG twin feeds
-        // twins/feeds/social; the attributed SVG is the download.
+        // twins/feeds/social; the attributed SVG is the download, and since
+        // 2026-11-02 so is its PNG (the same attributed drawing rasterized at
+        // build — Scott: "offer both svg and png formats").
         src: `/images/blog/${figSlug}/${name}.png`,
         svgSource: `src/assets/blog/${figSlug}/${name}.svg`,
         download: `/figures/${figSlug}/${name}.svg`,
+        downloadPng: `/figures/${figSlug}/${name}.png`,
       });
     } else {
       const url = m[3];
@@ -153,6 +156,7 @@ export function scanBody(slug, body) {
         src: url,
         svgSource: null,
         download: url,
+        downloadPng: null, // a raster's download IS its file
       });
     }
   }

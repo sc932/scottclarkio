@@ -9,6 +9,7 @@
     "preview": "astro preview",
     "check:aio": "node scripts/aio-check.mjs",
     "check:links": "node scripts/check-crosslinks.mjs && node scripts/check-crosslinks.mutants.mjs",
+    "check:schema": "node scripts/check-structured-data.mjs && node scripts/check-structured-data.mutants.mjs",
     "deploy": "bash scripts/deploy.sh"
   },
   "dependencies": {

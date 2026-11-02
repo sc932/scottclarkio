@@ -12,6 +12,7 @@ import { join } from "node:path";
 import { parseFrontmatter } from "@astrojs/markdown-remark";
 import { scanFigures, decodeEntities as decodeXmlEntities } from "../src/lib/figures-scan.mjs";
 import { attributeSvg } from "../src/lib/figure-attribution.mjs";
+import { renderFigurePng } from "../src/lib/figure-png.mjs";
 
 // ---- per-repo config ----
 const SITE_URL = "https://scottclark.io";
@@ -205,6 +206,13 @@ function checkFigures(rel, html, slug) {
     }
     if (exp && open[1] !== exp.download)
       failures.push(`${rel}: figure ${f.id} opens ${open[1]}, expected ${exp.download}`);
+    // The PNG download (2026-11-02): a house figure's link names its PNG twin
+    // (the focus view's second format); a raster's link must not.
+    const pngAttr = open[0].match(/\bdata-png-download="([^"]*)"/)?.[1];
+    if (exp && (exp.kind === "svg" ? pngAttr !== exp.downloadPng : pngAttr !== undefined))
+      failures.push(`${rel}: figure ${f.id} data-png-download is ${pngAttr ?? "(absent)"}, expected ${exp.downloadPng ?? "(absent)"}`);
+    if (pngAttr && !existsSync(join(DIST, pngAttr.replace(/^\//, ""))))
+      failures.push(`${rel}: figure ${f.id} PNG download did not build: ${pngAttr}`);
     if (!existsSync(join(DIST, open[1].replace(/^\//, ""))))
       failures.push(`${rel}: figure ${f.id} download target did not build: ${open[1]}`);
     if (!f.body.includes(`<a class="fig-anchor`) || !f.body.includes(`href="#${f.id}"`))
@@ -280,7 +288,7 @@ for (const file of htmlFiles) {
   const licensed = [
     isPostPage && html.includes('class="yt-facade"') ? (t) => moduleCarries(t, [".yt-facade", "iframe"]) : null,
     rel === "blog/index.html" && html.includes("<script data-pillar-sort>") ? (t) => t.startsWith("<script data-pillar-sort>") : null,
-    figMarker ? (t) => moduleCarries(t, ["figfocus-stage", "showModal", "data-act", "figfocus:"]) : null,
+    figMarker ? (t) => moduleCarries(t, ["figfocus-stage", "showModal", "data-act", "figfocus:", "pngDownload"]) : null,
   ].filter(Boolean);
   // One-to-one: every licensed shape is matched by EXACTLY one tag and every
   // tag matches exactly one shape — two facade tags and no focus module used
@@ -774,6 +782,25 @@ if (existsSync(SVG_SRC)) {
         failures.push(`figures: ${f.download} lacks the attribution footer (holder + deep link)`);
       if (!built.includes("<dc:source>") || !built.includes("<dc:rights>"))
         failures.push(`figures: ${f.download} lacks Dublin Core metadata`);
+      // The PNG twin (2026-11-02): built, a real PNG of the renderer's size, and
+      // BYTE-EXACT against renderFigurePng over the same attributed SVG (the
+      // vendored fonts make the bytes machine-independent).
+      const pngOut = join(DIST, f.downloadPng.replace(/^\//, ""));
+      if (!existsSync(pngOut)) failures.push(`figures: ${f.downloadPng} did not build`);
+      else {
+        const buf = readFileSync(pngOut);
+        const { png, width, height } = renderFigurePng(svg);
+        const isPng =
+          buf.length > 33 &&
+          buf.readUInt32BE(0) === 0x89504e47 &&
+          buf.readUInt32BE(4) === 0x0d0a1a0a &&
+          buf.toString("ascii", 12, 16) === "IHDR";
+        const w = isPng ? buf.readUInt32BE(16) : 0;
+        const h = isPng ? buf.readUInt32BE(20) : 0;
+        if (!isPng || w !== width || h !== height) failures.push(`figures: ${f.downloadPng} is not a ${width}x${height} PNG (got ${w}x${h})`);
+        else if (!buf.equals(png)) failures.push(`figures: ${f.downloadPng} differs from renderFigurePng(attributeSvg(${f.svgSource})) — the build and the gate disagree`);
+        if (buf.length < 5000) failures.push(`figures: ${f.downloadPng} suspiciously small (<5KB) — a blank render?`);
+      }
       if (!built.includes(`<cc:license rdf:resource="${figureAttribution.license.url}"/>`) || !built.includes(`>${figureAttribution.license.name}<`))
         failures.push(`figures: ${f.download} lacks the ${figureAttribution.license.name} footer word / <cc:license> (Scott, 2026-10-02)`);
       if (/<script\b|<foreignObject\b|\son[a-z]+\s*=/i.test(built)) failures.push(`figures: ${f.download} carries script/handlers/foreignObject`);
@@ -837,9 +864,9 @@ if (existsSync(SVG_SRC)) {
 
   // Derived set is EXACT: nothing under dist/figures/ the scan did not ask for.
   const derived = existsSync(join(DIST, "figures"))
-    ? walk(join(DIST, "figures")).filter((x) => x.endsWith(".svg")).map((x) => "/" + x.slice(DIST.length + 1))
+    ? walk(join(DIST, "figures")).filter((x) => /\.(svg|png)$/.test(x)).map((x) => "/" + x.slice(DIST.length + 1))
     : [];
-  const wanted = figuresExpected.filter((f) => f.kind === "svg").map((f) => f.download);
+  const wanted = figuresExpected.filter((f) => f.kind === "svg").flatMap((f) => [f.download, f.downloadPng]);
   if (!eqSets(new Set(derived), new Set(wanted)))
     failures.push(`figures: built derivatives [${derived}] != expected [${wanted}]`);
   // The index page lists every figure (id + download + in-post link), the
@@ -851,6 +878,7 @@ if (existsSync(SVG_SRC)) {
     for (const f of figuresExpected) {
       if (!page.includes(`id="${f.post}--${f.id}"`)) failures.push(`figures: index lacks ${f.post}--${f.id}`);
       if (!page.includes(`href="${f.download}"`)) failures.push(`figures: index lacks the download for ${f.id}`);
+      if (f.downloadPng && !page.includes(`href="${f.downloadPng}"`)) failures.push(`figures: index lacks the PNG download for ${f.id}`);
       if (!page.includes(`href="/blog/${f.post}#${f.id}"`)) failures.push(`figures: index lacks the in-post link for ${f.id}`);
     }
     // One page, many posts: every id on the index must be unique (glmfull r1 F2).
@@ -871,9 +899,9 @@ if (existsSync(SVG_SRC)) {
   else {
     const m = JSON.parse(readFileSync(manifestPath, "utf8"));
     // Identities AND URLs, exact and duplicate-free (astra r1 F8).
-    const actual = (m.figures ?? []).map((f) => JSON.stringify([f.post?.slug, f.id, f.url, f.download, f.license ?? null]));
+    const actual = (m.figures ?? []).map((f) => JSON.stringify([f.post?.slug, f.id, f.url, f.download, f.downloadPng ?? null, f.license ?? null]));
     const expected = figuresExpected.map((f) =>
-      JSON.stringify([f.post, f.id, `${SITE_URL}/blog/${f.post}#${f.id}`, `${SITE_URL}${f.download}`, f.kind === "svg" ? figureAttribution.license.url : null]),
+      JSON.stringify([f.post, f.id, `${SITE_URL}/blog/${f.post}#${f.id}`, `${SITE_URL}${f.download}`, f.downloadPng ? `${SITE_URL}${f.downloadPng}` : null, f.kind === "svg" ? figureAttribution.license.url : null]),
     );
     if (m.count !== expected.length || actual.length !== expected.length || new Set(actual).size !== actual.length || !eqSets(new Set(actual), new Set(expected)))
       failures.push("figures: /figures.json identities or URLs != the scan (or duplicates)");
@@ -882,8 +910,10 @@ if (existsSync(SVG_SRC)) {
   if (!existsSync(twinPath)) failures.push("figures: /figures.md twin did not build");
   else {
     const md = readFileSync(twinPath, "utf8");
-    for (const f of figuresExpected)
+    for (const f of figuresExpected) {
       if (!md.includes(`${SITE_URL}${f.download}`)) failures.push(`figures: twin lacks the download for ${f.id}`);
+      if (f.downloadPng && !md.includes(`${SITE_URL}${f.downloadPng}`)) failures.push(`figures: twin lacks the PNG download for ${f.id}`);
+    }
     if (!llmsFull.includes(md.trim())) failures.push("llms-full.txt does not embed the figures twin verbatim");
   }
   if (!llms.includes(`${SITE_URL}/figures.md`)) failures.push("llms.txt does not link the figures twin");

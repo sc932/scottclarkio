@@ -4,7 +4,9 @@
 // zoom runs from 25 % to 800 % of that fit (buttons, ctrl/cmd+wheel = trackpad
 // pinch, touch pinch, double-tap), pan by drag / touch / scroll; the full
 // caption sits under the stage, readable; download (the attributed SVG with
-// the caption burned in, for house figures), copy-link, Esc/Back close.
+// the caption burned in, for house figures — and since 2026-11-02 its PNG
+// twin beside it: "offer both svg and png formats. Many sites prefer png."),
+// copy-link, Esc/Back close.
 // Scott's review folds (2026-10-01): fit means fit, minus works below fit,
 // the caption is never clipped, the download carries the caption; the zoom
 // buttons walk a FIXED grid (25 50 75 100 125 150 175 200 250 300 400 500 600
@@ -32,7 +34,13 @@
       <output class="figfocus-zoom" aria-live="polite" aria-label="Zoom level">100%</output>
       <button type="button" data-act="in" aria-label="Zoom in" title="Zoom in (+)">+</button>
       <button type="button" data-act="fit" title="Fit the whole figure on screen (0)">Fit</button>
-      <a class="figfocus-dl" href="#" download>Download SVG</a>
+      {/* Download: house figures offer the attributed SVG AND its PNG twin
+          (the same attributed drawing, rendered at build); rasters offer the
+          file itself and the PNG link hides. The format is the visible label;
+          "Download" is always in the accessible name and visible where the
+          bar has room. */}
+      <a class="figfocus-dl" href="#" download><span class="figfocus-dl-word">Download </span><span class="figfocus-dl-fmt">SVG</span></a>
+      <a class="figfocus-dl figfocus-dl-png" href="#" download hidden><span class="figfocus-dl-word">Download </span><span class="figfocus-dl-fmt">PNG</span></a>
       <button type="button" data-act="link" title="Copy a link to this figure">Copy link</button>
       <button type="button" data-act="close" aria-label="Close" title="Close (Esc)">&times;</button>
     </div>
@@ -48,7 +56,11 @@
     const stage = q<HTMLElement>(".figfocus-stage");
     const cap = q<HTMLElement>(".figfocus-caption");
     const zoomOut = q<HTMLOutputElement>(".figfocus-zoom");
-    const dl = q<HTMLAnchorElement>(".figfocus-dl");
+    const dl = q<HTMLAnchorElement>(".figfocus-dl:not(.figfocus-dl-png)");
+    const dlPng = q<HTMLAnchorElement>(".figfocus-dl-png");
+    const dlFormat = (a: HTMLAnchorElement, fmt: string) => {
+      (a.querySelector(".figfocus-dl-fmt") as HTMLElement).textContent = fmt;
+    };
     const linkBtn = q<HTMLButtonElement>('[data-act="link"]');
     const MIN = 0.25;
     const MAX = 8;
@@ -299,7 +311,14 @@
       }
       dl.href = a.href;
       dl.download = a.dataset.download ?? "";
-      dl.textContent = /\.svg(\?|$)/i.test(a.href) ? "Download SVG" : "Download image";
+      dlFormat(dl, /\.svg(\?|$)/i.test(a.href) ? "SVG" : "image");
+      // The PNG download (2026-11-02): a house figure's fig-open link carries
+      // data-png-download (the attributed SVG rasterized at build, the same
+      // footer); a raster's download IS its file, so the second link hides.
+      const png = a.dataset.pngDownload ?? "";
+      dlPng.hidden = !png;
+      dlPng.href = png || "#";
+      dlPng.download = png ? (a.dataset.pngName ?? "") : "";
       // Every open owns ONE history entry — also when the page was reached
       // via this very deep link, or Back would leave the page. Push BEFORE
       // the body lock: the lock clamps window.scrollY to 0 and the browser
@@ -689,6 +708,9 @@
     cursor: pointer;
     transition: color 0.15s ease, border-color 0.15s ease;
   }
+  .figfocus-dl-png[hidden] {
+    display: none;
+  }
   .figfocus-tools button:hover,
   .figfocus-tools .figfocus-dl:hover {
     color: var(--accent);
@@ -772,6 +794,16 @@
     }
     .figfocus-tools [data-act="close"] {
       margin-left: auto;
+    }
+    /* Phones: the two download links read "SVG" / "PNG"; the word stays in
+       the accessible name (clipped, never display:none). */
+    .figfocus-dl-word {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
     }
     /* Phones: zoom and pan are the device's gestures (Scott, 2026-10-01) —
        the toolbar keeps Download, Copy link, and close. */

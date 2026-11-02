@@ -41,6 +41,14 @@ jobs:
       - name: Cross-link gate mutants
         run: node scripts/check-crosslinks.mutants.mjs
 
+      # Structured-data gate (2026-11-02): every JSON-LD date is ISO 8601 with
+      # Google's DateTime fields in full, every ImageObject names its creator,
+      # every @id reference resolves — the two Search Console notice classes
+      # of 2026-10-28 (talariasci.com) as teeth; the mutants prove each
+      # self-test can fail.
+      - name: Structured-data gate
+        run: node scripts/check-structured-data.mjs && node scripts/check-structured-data.mutants.mjs
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@8df5847569e6427dd6c4fb1cf565c83acfa8afa7 # v6.0.0
         with:

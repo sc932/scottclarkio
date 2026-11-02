@@ -344,7 +344,8 @@ export async function renderFiguresMd(): Promise<string> {
           const a = attributionFor(f);
           const label = figureLabel(f);
           const safe = label.replace(/[\\[\]]/g, "\\$&"); // a `]` — or a backslash before one — in a caption would break the link (round-2 glmfull F9 / round-3 astra F8)
-          return `- [${safe}](${f.pageUrl}) - ${f.kind === "svg" ? "SVG" : "image"}: ${f.downloadUrl} (${"©"} ${a.year} ${a.holder}${f.kind === "svg" ? `; ${figureAttribution.license.name}` : ""})`;
+          const downloads = f.kind === "svg" && f.downloadPngUrl ? `SVG: ${f.downloadUrl}; PNG: ${f.downloadPngUrl}` : `image: ${f.downloadUrl}`;
+          return `- [${safe}](${f.pageUrl}) - ${downloads} (${"©"} ${a.year} ${a.holder}${f.kind === "svg" ? `; ${figureAttribution.license.name}` : ""})`;
         })
         .join("\n");
       return `## ${first.postTitle}\n\n${first.pageUrl.split("#")[0]}\n\n${items}`;

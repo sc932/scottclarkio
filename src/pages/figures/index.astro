@@ -11,13 +11,14 @@ import {
   figuresDescription,
   figuresText,
 } from "../../lib/site-content";
-import { getFigures, figureImageObject, downloadName, attributionFor, figureLabel } from "../../lib/figures";
+import { getFigures, figureImageObject, downloadName, downloadPngName, attributionFor, figureLabel } from "../../lib/figures";
 import { formatDate } from "../../lib/blog";
 
 // /figures (2026-10-01) — the index of every figure the blog renders, grouped
 // by post in listing order. Each card is the same focusable figure markup as
-// the posts (plate = fig-open link to the attributed SVG; the focus view
-// upgrades it), with the deep link into the post and the download. Data =
+// the posts (plate = fig-open link to the attributed SVG, + its PNG twin
+// since 2026-11-02; the focus view upgrades it), with the deep link into the
+// post and the downloads (SVG and PNG for house figures). Data =
 // src/lib/figures.ts, the same source as /figures.json, the .md twin and the
 // AIO gate; JSON-LD = CollectionPage + ItemList of the figures' ImageObjects.
 const figures = await getFigures();
@@ -94,6 +95,8 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
                       class="fig-open"
                       href={f.download}
                       data-download={downloadName(f)}
+                      data-png-download={f.downloadPng ?? undefined}
+                      data-png-name={f.downloadPng ? downloadPngName(f) : undefined}
                       aria-label={`Open figure: ${label}`}
                     >
                       <img src={f.src} alt={f.alt || label} loading="lazy" decoding="async" />
@@ -107,6 +110,11 @@ const breadcrumbTrail = [{ name: figuresTitle, item: pageUrl }];
                       <a href={f.download} download={downloadName(f)}>
                         {f.kind === "svg" ? "Download SVG" : "Download"}
                       </a>
+                      {f.downloadPng && (
+                        <a href={f.downloadPng} download={downloadPngName(f)}>
+                          Download PNG
+                        </a>
+                      )}
                       <span class="figures-copy">{"©"} {a.year} {a.holder}{f.kind === "svg" ? ` · ${figureAttribution.license.name}` : ""}</span>
                     </span>
                   </figcaption>

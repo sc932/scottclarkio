@@ -10,10 +10,13 @@
 // the caption's "Figure N" label is the self-link, like the wrapped heading
 // anchors), and the plate is a link to the figure's DOWNLOADABLE version —
 // the attributed SVG at /figures/<slug>/<name>.svg (footer: copyright + this
-// deep link; built by the figures endpoint). With JS, FigureFocus.astro
+// deep link; built by the figures endpoint) — and, since 2026-11-02, the link
+// also names the PNG twin of that same attributed drawing
+// (/figures/<slug>/<name>.png, data-png-download) so the focus view offers
+// BOTH formats (Scott: "Many sites prefer png"). With JS, FigureFocus.astro
 // upgrades that link into the in-page focus view (full width, zoom, pan,
-// download); without JS the browser opens the SVG itself. Same markup
-// contract as rehype-figure-focus.mjs (markdown images).
+// download SVG / PNG); without JS the browser opens the SVG itself. Same
+// markup contract as rehype-figure-focus.mjs (markdown images).
 import { figureId } from "../lib/figures-scan.mjs";
 interface Props {
   slug: string;
@@ -54,6 +57,7 @@ const svg = raw.replace(/<svg\b[^>]*>/, (root) => {
 });
 const id = figureId(name);
 const download = `/figures/${slug}/${name}.svg`;
+const downloadPng = `/figures/${slug}/${name}.png`;
 ---
 
 <figure
@@ -71,6 +75,8 @@ const download = `/figures/${slug}/${name}.svg`;
       class="fig-open"
       href={download}
       data-download={`${slug}-${name}.svg`}
+      data-png-download={downloadPng}
+      data-png-name={`${slug}-${name}.png`}
       aria-label={`Open figure: ${alt ?? caption}`}
     >
       <Fragment set:html={svg} />

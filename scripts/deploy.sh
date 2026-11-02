@@ -37,6 +37,8 @@ echo "==> Gate (AIO)..."
 npm run check:aio
 echo "==> Gate (cross-links)..."
 npm run check:links
+echo "==> Gate (structured data)..."
+npm run check:schema
 
 echo "==> Syncing to S3 (s3://$S3_BUCKET)..."
 aws s3 sync dist/ "s3://$S3_BUCKET" \

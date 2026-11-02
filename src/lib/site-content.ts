@@ -245,6 +245,35 @@ export const websiteSchema = {
   copyrightYear: 2026,
 };
 
+// The site headshot as an ImageObject — Google's image-metadata fields:
+// contentUrl plus a named creator and a credit (Search Console flags an
+// ImageObject that names no creator: "Missing field creator", seen on
+// talariasci.com 2026-10-28). The 2000x2000 frame is from the 2024-10-03
+// Distributional company shoot (the arms-crossed frame of the press kit's
+// set 2; the photographer is not recorded in the files — Gmail + the vault
+// searched 2026-11-02 — so the company whose shoot produced it is the
+// creator of record, as on talariasci.com/press). No license grant: the
+// redistribution terms are not confirmed.
+export const profileImage = {
+  "@type": "ImageObject",
+  "@id": `${siteUrl}/images/scott-clark.jpg#image`,
+  contentUrl: `${siteUrl}/images/scott-clark.jpg`,
+  url: `${siteUrl}/images/scott-clark.jpg`,
+  name: "Scott Clark",
+  caption: "Scott Clark",
+  encodingFormat: "image/jpeg",
+  width: 2000,
+  height: 2000,
+  representativeOfPage: true,
+  creator: {
+    "@type": "Organization",
+    "@id": "https://distributional.com/#organization",
+    name: "Distributional, Inc.",
+    url: "https://distributional.com",
+  },
+  creditText: "Distributional, Inc.",
+};
+
 // ProfilePage schema for pages whose primary subject is Scott (home, /cv).
 export function buildProfilePageSchema(opts: {
   pathname: string;
@@ -262,11 +291,7 @@ export function buildProfilePageSchema(opts: {
     inLanguage: "en-US",
     isPartOf: { "@id": `${siteUrl}/#website` },
     mainEntity: { "@id": `${siteUrl}/#person` },
-    primaryImageOfPage: {
-      "@type": "ImageObject",
-      url: `${siteUrl}/images/scott-clark.jpg`,
-      caption: "Scott Clark",
-    },
+    primaryImageOfPage: profileImage,
   };
 }
 
@@ -369,8 +394,12 @@ export const figureAttribution = {
   siteName: "Scott Clark",
   /** Author of the figures (+ the schema.org type and canonical URL). */
   creator: "Scott Clark",
-  /** The JSON-LD creator — a reference to the site graph's own node. */
-  creatorNode: { "@id": "https://scottclark.io/#person" },
+  /** The JSON-LD creator — the site graph's own Person identity (its @id is
+   * on every page, so consumers merge to ONE node), carrying its type and
+   * name on the node itself: Google reads an ImageObject's creator from the
+   * node, and a bare @id reference reads as "Missing field creator" (Search
+   * Console on talariasci.com, 2026-10-28). */
+  creatorNode: { "@type": "Person", "@id": "https://scottclark.io/#person", name: "Scott Clark", url: siteUrl },
   /** Reuse terms for HOUSE figures (Scott, 2026-10-02: CC BY-ND 4.0): verbatim
    * reproduction with the footer intact, no modified versions. Raster images
    * (slides, screenshots) carry no grant. */
@@ -381,14 +410,14 @@ export const figureAttribution = {
 // /figures (2026-10-01): the index of every figure the blog renders.
 export const figuresTitle = "Figures";
 export const figuresDescription =
-  "Every diagram and image from Scott Clark's writing, linked to its source essay. House diagrams download as attributed SVGs; other images download in their original format.";
+  "Every diagram and image from Scott Clark's writing, linked to its source essay. House diagrams download as attributed SVGs or PNGs; other images download in their original format.";
 export const figuresText = {
   intro:
-    "Diagrams and images from the essays, in one place. Open any figure to zoom and pan, follow the link to read it in context, or download it. House diagrams download as SVGs with a copyright line and the link back to their source essay bottom-right; other images download as the original files.",
+    "Diagrams and images from the essays, in one place. Open any figure to zoom and pan, follow the link to read it in context, or download it. House diagrams download as SVG or PNG, each with a copyright line and the link back to their source essay bottom-right; other images download as the original files.",
   attribution:
-    "Figures are the work of Scott Clark and are copyright Scott Clark. Each SVG download carries its attribution and the link to its source essay.",
+    "Figures are the work of Scott Clark and are copyright Scott Clark. Each SVG or PNG download carries its attribution and the link to its source essay.",
   reuse: [
-    "House diagrams (the SVG downloads) are licensed CC BY-ND 4.0: reproduce them unmodified, anywhere, with the attribution footer intact. The download already carries the credit, the source link, and the license. No modified versions: no cropping, re-labeling, or re-branding, and nothing that implies endorsement.",
+    "House diagrams (the SVG and PNG downloads) are licensed CC BY-ND 4.0: reproduce them unmodified, anywhere, with the attribution footer intact. The download already carries the credit, the source link, and the license. No modified versions: no cropping, re-labeling, or re-branding, and nothing that implies endorsement.",
     "Talk slides and other raster images on these pages are not under that license; they carry third-party marks. Ask before reusing them.",
   ],
 };
