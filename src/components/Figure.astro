@@ -15,8 +15,11 @@
 // (/figures/<slug>/<name>.png, data-png-download) so the focus view offers
 // BOTH formats (Scott: "Many sites prefer png"). With JS, FigureFocus.astro
 // upgrades that link into the in-page focus view (full width, zoom, pan,
-// download SVG / PNG); without JS the browser opens the SVG itself. Same
-// markup contract as rehype-figure-focus.mjs (markdown images).
+// download SVG / PNG); without JS the browser opens the SVG itself — a no-JS
+// post reader reaches the PNG through the /figures index cards (plain links),
+// on purpose: the plate link stays the licensed canonical SVG. The markup
+// contract matches rehype-figure-focus.mjs (markdown images) except the two
+// PNG dataset keys, which only a house SVG figure carries.
 import { figureId } from "../lib/figures-scan.mjs";
 interface Props {
   slug: string;

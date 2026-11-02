@@ -132,6 +132,10 @@ export function figureImageObject(fig: Figure) {
     "@id": fig.pageUrl,
     name: figureLabel(fig),
     ...(fig.caption && { caption: fig.caption, description: fig.caption }),
+    // contentUrl = the attributed SVG (the licensed canonical artifact; Google keys
+    // image metadata on it); thumbnailUrl = the bare PNG twin the page/cards show.
+    // The attributed PNG download (downloadPngUrl) is a derivative for readers,
+    // deliberately not a second contentUrl (round-1 seats, 2026-11-02: keep).
     contentUrl: fig.downloadUrl,
     ...(fig.kind === "svg" && { thumbnailUrl: fig.srcUrl, encodingFormat: "image/svg+xml" }),
     url: fig.pageUrl,

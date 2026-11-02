@@ -165,6 +165,36 @@ export const personDescription =
 
 export const siteUrl = "https://scottclark.io";
 
+// The site headshot as an ImageObject — Google's image-metadata fields:
+// contentUrl plus a named creator and a credit (Search Console flags an
+// ImageObject that names no creator: "Missing field creator", seen on
+// talariasci.com 2026-10-28). The 2000x2000 frame is from the 2024-10-03
+// Distributional company shoot (the arms-crossed frame of the press kit's
+// set 2; the photographer is not recorded in the files — Gmail + the vault
+// searched 2026-11-02 — so the company whose shoot produced it is the
+// creator of record, as on talariasci.com/press). No license grant: the
+// redistribution terms are not confirmed.
+export const profileImage = {
+  "@type": "ImageObject",
+  "@id": `${siteUrl}/images/scott-clark.jpg#image`,
+  contentUrl: `${siteUrl}/images/scott-clark.jpg`,
+  url: `${siteUrl}/images/scott-clark.jpg`,
+  name: "Scott Clark",
+  caption: "Scott Clark",
+  encodingFormat: "image/jpeg",
+  width: 2000,
+  height: 2000,
+  representativeOfPage: true,
+  creator: {
+    "@type": "Organization",
+    "@id": "https://distributional.com/#organization",
+    name: "Distributional, Inc.",
+    url: "https://distributional.com",
+  },
+  creditText: "Distributional, Inc.",
+};
+
+
 // JSON-LD Person schema — emitted in <head> on every page.
 // Cross-checked against ~/dev/content_finder/dossier/. Update here when bio facts change;
 // CLAUDE.md propagation order is dossier → resume md → vault bio → site.
@@ -180,7 +210,9 @@ export const personSchema = {
   jobTitle: "Co-founder & CEO",
   description: personDescription,
   url: siteUrl,
-  image: `${siteUrl}/images/scott-clark.jpg`,
+  // The headshot as the ONE ImageObject node (creator, credit, size) rather than
+  // a bare URL beside it; the ProfilePages reference it by @id (round 1, 2026-11-02).
+  image: profileImage,
   email: "scott@scottclark.io",
   worksFor: {
     "@type": "Organization",
@@ -245,34 +277,14 @@ export const websiteSchema = {
   copyrightYear: 2026,
 };
 
-// The site headshot as an ImageObject — Google's image-metadata fields:
-// contentUrl plus a named creator and a credit (Search Console flags an
-// ImageObject that names no creator: "Missing field creator", seen on
-// talariasci.com 2026-10-28). The 2000x2000 frame is from the 2024-10-03
-// Distributional company shoot (the arms-crossed frame of the press kit's
-// set 2; the photographer is not recorded in the files — Gmail + the vault
-// searched 2026-11-02 — so the company whose shoot produced it is the
-// creator of record, as on talariasci.com/press). No license grant: the
-// redistribution terms are not confirmed.
-export const profileImage = {
-  "@type": "ImageObject",
-  "@id": `${siteUrl}/images/scott-clark.jpg#image`,
-  contentUrl: `${siteUrl}/images/scott-clark.jpg`,
-  url: `${siteUrl}/images/scott-clark.jpg`,
-  name: "Scott Clark",
-  caption: "Scott Clark",
-  encodingFormat: "image/jpeg",
-  width: 2000,
-  height: 2000,
-  representativeOfPage: true,
-  creator: {
-    "@type": "Organization",
-    "@id": "https://distributional.com/#organization",
-    name: "Distributional, Inc.",
-    url: "https://distributional.com",
-  },
-  creditText: "Distributional, Inc.",
-};
+// The ProfilePage stamps (Google's recommended DateTime fields; their absence
+// is a Search Console notice of the 2026-10-28 class). `profileCreated` = the
+// day the public site went live; `profileUpdated` = the last day the profile
+// facts on / or /cv changed — BUMP IT in the bio-propagation step (CLAUDE.md
+// § Bio fact propagation). Emitted as midnight UTC, the press-kit convention.
+export const profileCreated = "2026-05-05";
+export const profileUpdated = "2026-11-02";
+const asDateTime = (ymd: string) => new Date(`${ymd}T00:00:00Z`).toISOString();
 
 // ProfilePage schema for pages whose primary subject is Scott (home, /cv).
 export function buildProfilePageSchema(opts: {
@@ -291,7 +303,9 @@ export function buildProfilePageSchema(opts: {
     inLanguage: "en-US",
     isPartOf: { "@id": `${siteUrl}/#website` },
     mainEntity: { "@id": `${siteUrl}/#person` },
-    primaryImageOfPage: profileImage,
+    dateCreated: asDateTime(profileCreated),
+    dateModified: asDateTime(profileUpdated),
+    primaryImageOfPage: { "@id": profileImage["@id"] },
   };
 }
 

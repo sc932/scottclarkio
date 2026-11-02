@@ -9,20 +9,27 @@
 // instead of arriving as a notice weeks later. Estate-wide: the same file
 // (per-repo config block only) runs in talaria-site, scottclarkio and
 // tauopt-site; the self-test below runs before every scan, and
-// scripts/check-structured-data.mutants.mjs proves each self-test can fail.
+// scripts/check-structured-data.mutants.mjs proves each self-test case is
+// wired to the code path it names (a mutation of that path flips the case).
 //
 // Rules:
 //  D1 every date-valued property (date*, *Date, validFrom/validThrough,
 //     expires, lastReviewed) is a valid ISO 8601 date or date-time:
 //     YYYY | YYYY-MM | YYYY-MM-DD | YYYY-MM-DDThh:mm[:ss[.s]](Z|+hh:mm|-hh:mm),
-//     on a real calendar day
+//     on a real calendar day — the EXTENDED form only (a basic-format zone
+//     "+0530" or a lowercase "t" is refused on purpose: every producer here
+//     emits Date.toISOString() or Google's own example shape)
 //  D2 Google's DateTime-typed fields carry the FULL form (a time AND a zone):
 //     ProfilePage.dateCreated/dateModified, VideoObject.uploadDate, and the
-//     datePublished/dateModified of a page's own TOP-LEVEL Article-family node
-//     (a nested list item — a bibliography's ScholarlyArticle — may be a date
-//     or a year; Google reads rich results from the page's own node)
+//     datePublished/dateModified of every Article-family node that is NOT a
+//     list item (a bibliography's ScholarlyArticle or a press listing's
+//     NewsArticle under ItemList/ListItem may be a date or a year; a page's
+//     own article, a Blog's blogPost children, a talk's subjectOf article
+//     carry the full form)
 //  I1 every ImageObject carries contentUrl, an absolute http(s) URL; an
-//     on-site URL must be a file dist/ built
+//     on-site URL must be a file dist/ built (an ESTATE rule: Google needs
+//     contentUrl only for the image-metadata feature, but every image on these
+//     sites is one — one law, no url-only exceptions)
 //  I2 every ImageObject names its creator: a Person or Organization NODE with
 //     a name (a bare {"@id"} reference is not a creator Google can read)
 //  I3 every ImageObject carries at least one of creditText / copyrightNotice /
@@ -30,10 +37,29 @@
 //  R1 a bare {"@id"} reference resolves: on the SAME page for the properties
 //     a rich result reads (mainEntity, creator, author, publisher); elsewhere,
 //     on any page of this site or in the estate's cross-domain identity set
-//  R2 one @id, one @type per page (two nodes sharing an @id with different
-//     types merge into nonsense)
+//     (TRUSTED by name, never fetched — the OK line counts them apart); a node
+//     carrying @type beside its @id is a definition, not a reference (the
+//     `mainEntityOfPage: {@type WebPage, @id <page>}` shape on every post)
+//  R2 one @id, one type SET per page — the estate's authoring policy, stricter
+//     than JSON-LD (which would merge compatible types into one node whose type
+//     is whichever the consumer picks; two descriptions with different @type
+//     values, scalar or array, are refused as the ambiguity they are)
+//  P2 a ProfilePage carries BOTH dateCreated and dateModified (Google's
+//     recommended fields; a missing one is a notice of the founding class)
+//  N1 the pages without any JSON-LD are exactly NO_JSONLD_PAGES (a page
+//     dropping out of the scan — a producer drift the tag match could not
+//     follow — fails; so does a listed page that grows a graph)
+//  A typed all-@-keys node ({"@id", "@type"}) is a reference too: it resolves
+//  when a node WITH properties describes its @id on this page or site, when
+//  the @id is a page or file this site built (mainEntityOfPage's WebPage), or
+//  when it is an estate identity; a typed reference to nothing is dangling.
+//  An ImageObject's on-site contentUrl must be an IMAGE file (png jpg jpeg gif
+//  webp avif svg), never a page or a redirect stub; a license and an
+//  acquireLicensePage are absolute http(s) URLs.
 //  P1 a ProfilePage has a mainEntity that resolves to a named Person or
 //     Organization
+//  Arrays: a creator array must pass I2 element by element; a mainEntity array
+//  resolves if any element does; a nested @graph inside a node is walked.
 // Exit: 0 ok · 1 failures · 2 no dist/ · 3 self-test failed.
 import { readFileSync, readdirSync, existsSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -42,12 +68,16 @@ import { pathToFileURL } from "node:url";
 // ---- per-repo config ----
 const SITE_URL = "https://scottclark.io";
 // The estate's cross-domain identities: ONE Person and ONE Organization per
-// entity, defined on their home site and referenced from the others.
+// entity, defined on their home site and referenced from the others. This set
+// is TRUST, not verification: a reference to one of these resolves by name
+// (nothing fetches the home site); the OK line reports them separately.
 const ESTATE_IDS = new Set([
   "https://scottclark.io/#person",
   "https://talariasci.com/#organization",
   "https://distributional.com/#organization",
 ]);
+// The built pages that carry NO JSON-LD, exactly (dist-relative paths).
+const NO_JSONLD_PAGES = new Set(["about/index.html"]);
 // -------------------------
 
 const DIST = "dist";
@@ -64,7 +94,9 @@ const ARTICLE_TYPES = new Set([
 ]);
 // (type, property) pairs Google documents as DateTime (the full form).
 const DATETIME_FIELDS = new Set(["ProfilePage.dateCreated", "ProfilePage.dateModified", "VideoObject.uploadDate"]);
-const DATE_PROPS_EXTRA = new Set(["validFrom", "validThrough", "expires", "lastReviewed"]);
+const DATE_PROPS_EXTRA = new Set(["validFrom", "validThrough", "expires", "lastReviewed", "availabilityStarts", "availabilityEnds", "priceValidUntil", "startTime", "endTime", "doorTime", "sdDatePublished", "contentReferenceTime"]);
+const IMAGE_EXT = /\.(png|jpe?g|gif|webp|avif|svg)$/i;
+const isHttpUrl = (v) => typeof v === "string" && /^https?:\/\/\S+$/.test(v);
 const SAME_PAGE_PROPS = new Set(["mainEntity", "creator", "author", "publisher"]);
 const CREATOR_TYPES = new Set(["Person", "Organization"]);
 const CREDIT_PROPS = ["creditText", "copyrightNotice", "license"];
@@ -84,14 +116,23 @@ export function calendarOk(value) {
 
 const isDateProp = (k) => /^date[A-Z]/.test(k) || /[a-z]Date$/.test(k) || DATE_PROPS_EXTRA.has(k);
 const typeOf = (n) => (typeof n["@type"] === "string" ? n["@type"] : Array.isArray(n["@type"]) ? String(n["@type"][0]) : null);
+/** Every @type value of a node (a multi-typed node is ONE node with several types). */
+const typesOf = (n) => (typeof n["@type"] === "string" ? [n["@type"]] : Array.isArray(n["@type"]) ? n["@type"].map(String) : []);
+const hasType = (n, set) => typesOf(n).some((t) => set.has(t));
 const isRef = (n) => !!n && typeof n === "object" && !Array.isArray(n) && Object.keys(n).length === 1 && typeof n["@id"] === "string";
+/** A typed node with no properties beyond its @-keys: a reference that names its type. */
+const isTypedRef = (n) => !!n && typeof n === "object" && !Array.isArray(n) && typeof n["@id"] === "string" && !!n["@type"] && Object.keys(n).every((k) => k.startsWith("@"));
 const isNode = (n) => !!n && typeof n === "object" && !Array.isArray(n);
 
 /** Every <script type="application/ld+json"> block of a page, parsed. */
 export function parseLdBlocks(html) {
   const blocks = [];
   const errors = [];
-  for (const m of html.matchAll(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/g)) {
+  // Any attribute order / quoting an Astro upgrade might serialize — a literal
+  // tag match would go blind on the drift and pass every page as "without
+  // JSON-LD" (K3, round 1). A page that mentions ld+json but yields no block
+  // is an error, below.
+  for (const m of html.matchAll(/<script\b[^>]*\btype=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi)) {
     try {
       const j = JSON.parse(m[1]);
       if (!isNode(j) || !(Array.isArray(j["@graph"]) || j["@type"])) errors.push("JSON-LD block is neither a @graph nor a typed node");
@@ -100,6 +141,7 @@ export function parseLdBlocks(html) {
       errors.push(`unparseable JSON-LD: ${e.message}`);
     }
   }
+  if (!blocks.length && !errors.length && /ld\+json/i.test(html)) errors.push("the page mentions ld+json but no JSON-LD block was recognized (a producer drift the tag match could not follow?)");
   return { blocks, errors };
 }
 
@@ -114,7 +156,10 @@ function collect(block, rel, index) {
     if (!isNode(v)) return;
     out.push({ node: v, path, top, parentType, prop });
     const t = typeOf(v) ?? parentType;
-    for (const [k, val] of Object.entries(v)) if (!k.startsWith("@")) visit(val, `${path}.${k}`, false, t, k);
+    for (const [k, val] of Object.entries(v)) {
+      if (k === "@graph" && Array.isArray(val)) val.forEach((x, i) => visit(x, `${path}.@graph[${i}]`, top, null, null)); // a nested graph's members are nodes too
+      else if (!k.startsWith("@")) visit(val, `${path}.${k}`, false, t, k);
+    }
   };
   const roots = Array.isArray(block["@graph"]) ? block["@graph"] : [block];
   roots.forEach((n, i) => visit(n, `${rel} block ${index} @graph[${i}]`, true, null, null));
@@ -127,20 +172,26 @@ function collect(block, rel, index) {
  * Returns the failure strings (empty = GREEN). Pure, so the self-test and the
  * mutants can drive it with fixtures.
  */
-export function checkPages(pages, { siteUrl, estateIds, fileExists }) {
+export function checkPages(pages, { siteUrl, estateIds, fileExists, imageExists = fileExists }) {
   const failures = [];
   const perPage = [];
-  const globalDefs = new Set();
+  const globalDefs = new Set(); // every typed @id on the site
+  const globalFull = new Set(); // typed @ids described WITH properties somewhere on the site
+  const onSitePath = (id) => (typeof id === "string" && id.startsWith(`${siteUrl}/`) ? decodeURIComponent(new URL(id).pathname) : null);
   for (const page of pages) {
     const nodes = page.blocks.flatMap((b, i) => collect(b, page.rel, i));
-    const defs = new Map(); // @id -> { types: Set, node }
+    const defs = new Map(); // @id -> { types: Set of type-set keys, node, full }
     for (const { node } of nodes) {
       const id = node["@id"];
       const t = typeOf(node);
       if (typeof id !== "string" || !t) continue;
-      if (!defs.has(id)) defs.set(id, { types: new Set(), node });
-      defs.get(id).types.add(t);
+      if (!defs.has(id)) defs.set(id, { types: new Set(), node, full: false });
+      defs.get(id).types.add([...typesOf(node)].sort().join("+")); // one key per distinct type set
       if (!defs.get(id).node.name && node.name) defs.get(id).node = node;
+      if (!isTypedRef(node)) {
+        defs.get(id).full = true;
+        globalFull.add(id);
+      }
       globalDefs.add(id);
     }
     perPage.push({ page, nodes, defs });
@@ -150,6 +201,8 @@ export function checkPages(pages, { siteUrl, estateIds, fileExists }) {
     // R2: one @id, one @type per page.
     for (const [id, { types }] of defs)
       if (types.size > 1) failures.push(`${rel}: @id ${id} is defined with different types on one page: ${[...types].join(", ")}`);
+    const resolvesOnPage = (ref) => isRef(ref) && defs.has(ref["@id"]);
+    const creatorOk = (c) => isNode(c) && !isRef(c) && hasType(c, CREATOR_TYPES) && typeof c.name === "string" && !!c.name.trim();
     for (const { node, path, top, parentType, prop } of nodes) {
       const type = typeOf(node);
       // R1: bare references resolve (a creator reference is I2's finding).
@@ -162,6 +215,14 @@ export function checkPages(pages, { siteUrl, estateIds, fileExists }) {
           failures.push(`${path}: the ${prop} reference ${id} must resolve on the same page — a rich result reads it there`);
         continue;
       }
+      // R1 for a TYPED reference ({"@id", "@type"} and nothing else): something must describe it.
+      if (isTypedRef(node) && prop !== null && !(parentType === "ImageObject" && prop === "creator") && prop !== "mainEntity") {
+        const id = node["@id"];
+        const pathOnSite = onSitePath(id);
+        const resolved = defs.get(id)?.full || globalFull.has(id) || estateIds.has(id) || (pathOnSite !== null && fileExists(pathOnSite.split("#")[0]));
+        if (!resolved) failures.push(`${path}: typed reference ${id} (${typesOf(node).join("/")}) — nothing describes it on this page or site, and it is not a page this site built`);
+      }
+      const types = typesOf(node);
       // D1 / D2: dates.
       for (const [k, v] of Object.entries(node)) {
         if (!isDateProp(k)) continue;
@@ -178,37 +239,50 @@ export function checkPages(pages, { siteUrl, estateIds, fileExists }) {
             failures.push(`${path}.${k}: "${value}" is not a real calendar day`);
             continue;
           }
-          const full = DATETIME_FIELDS.has(`${type}.${k}`) || (top && ARTICLE_TYPES.has(type) && (k === "datePublished" || k === "dateModified"));
+          const full = types.some((t) => DATETIME_FIELDS.has(`${t}.${k}`)) || (parentType !== "ListItem" && types.some((t) => ARTICLE_TYPES.has(t)) && (k === "datePublished" || k === "dateModified"));
           if (full && !ISO_DATETIME.test(value))
             failures.push(`${path}.${k}: "${value}" must be a full ISO 8601 date-time with a time zone (Google types ${type}.${k} as DateTime)`);
         }
       }
-      // I1-I3: ImageObjects.
-      if (type === "ImageObject") {
+      // I1-I3: ImageObjects (by type-set membership: ["CreativeWork", "ImageObject"] is one too).
+      if (types.includes("ImageObject")) {
         const contentUrl = node.contentUrl;
-        if (typeof contentUrl !== "string" || !contentUrl) failures.push(`${path}: ImageObject has no contentUrl`);
+        if (typeof contentUrl !== "string" || !contentUrl) failures.push(`${path}: ImageObject has no contentUrl (an estate rule: every ImageObject names its file; url-only is Google-valid only outside the image-metadata feature)`);
         else if (!/^https?:\/\//.test(contentUrl)) failures.push(`${path}: ImageObject contentUrl "${contentUrl}" is not an absolute http(s) URL`);
         else if (contentUrl.startsWith(`${siteUrl}/`)) {
-          const pathname = decodeURIComponent(new URL(contentUrl).pathname);
-          if (!fileExists(pathname)) failures.push(`${path}: ImageObject contentUrl ${contentUrl} is not a file dist/ built`);
+          let pathname = null;
+          try {
+            pathname = decodeURIComponent(new URL(contentUrl).pathname);
+          } catch {
+            failures.push(`${path}: ImageObject contentUrl ${contentUrl} is not a decodable URL`);
+          }
+          if (pathname !== null && !IMAGE_EXT.test(pathname)) failures.push(`${path}: ImageObject contentUrl ${contentUrl} is not an image file (a page or a redirect stub is not image content)`);
+          else if (pathname !== null && !imageExists(pathname)) failures.push(`${path}: ImageObject contentUrl ${contentUrl} is not a file dist/ built`);
         }
-        const creator = node.creator;
-        if (!creator) failures.push(`${path}: ImageObject names no creator (Google's image-metadata field)`);
-        else if (isRef(creator)) failures.push(`${path}: ImageObject creator is a bare @id reference — carry the Person/Organization type and name on the node`);
-        else if (!isNode(creator) || !CREATOR_TYPES.has(typeOf(creator)))
-          failures.push(`${path}: ImageObject creator must be a Person or Organization node (got ${String(JSON.stringify(creator)).slice(0, 80)})`);
-        else if (typeof creator.name !== "string" || !creator.name.trim()) failures.push(`${path}: ImageObject creator has no name`);
+        const creators = Array.isArray(node.creator) ? node.creator : [node.creator];
+        if (!node.creator || !creators.length) failures.push(`${path}: ImageObject names no creator (Google's image-metadata field)`);
+        for (const creator of creators) {
+          if (!node.creator) break;
+          if (isRef(creator)) failures.push(`${path}: ImageObject creator is a bare @id reference — carry the Person/Organization type and name on the node`);
+          else if (!isNode(creator) || !hasType(creator, CREATOR_TYPES))
+            failures.push(`${path}: ImageObject creator must be a Person or Organization node (got ${String(JSON.stringify(creator)).slice(0, 80)})`);
+          else if (typeof creator.name !== "string" || !creator.name.trim()) failures.push(`${path}: ImageObject creator has no name`);
+        }
         if (!CREDIT_PROPS.some((p) => typeof node[p] === "string" && node[p].trim()))
           failures.push(`${path}: ImageObject carries none of creditText / copyrightNotice / license`);
         if (node.license && !node.acquireLicensePage) failures.push(`${path}: ImageObject has a license but no acquireLicensePage (Google reads the pair)`);
+        for (const p of ["license", "acquireLicensePage"])
+          if (node[p] !== undefined && !isHttpUrl(node[p])) failures.push(`${path}: ImageObject ${p} must be an absolute http(s) URL (got ${JSON.stringify(node[p])})`);
       }
-      // P1: ProfilePage.mainEntity.
-      if (type === "ProfilePage") {
-        const me = node.mainEntity;
-        if (!me) failures.push(`${path}: ProfilePage has no mainEntity`);
+      // P1: ProfilePage.mainEntity; P2: both dates present.
+      if (types.includes("ProfilePage")) {
+        for (const d of ["dateCreated", "dateModified"])
+          if (node[d] === undefined) failures.push(`${path}: ProfilePage has no ${d} (Google's recommended DateTime; its absence is a notice of the founding class)`);
+        const mes = Array.isArray(node.mainEntity) ? node.mainEntity : [node.mainEntity];
+        if (!node.mainEntity || !mes.length) failures.push(`${path}: ProfilePage has no mainEntity`);
         else {
-          const target = isRef(me) ? defs.get(me["@id"])?.node : isNode(me) ? me : null;
-          if (!target || !CREATOR_TYPES.has(typeOf(target)) || typeof target.name !== "string" || !target.name.trim())
+          const resolved = mes.map((me) => (isRef(me) ? defs.get(me["@id"])?.node : isNode(me) ? me : null));
+          if (!resolved.some((target) => target && hasType(target, CREATOR_TYPES) && typeof target.name === "string" && target.name.trim()))
             failures.push(`${path}: ProfilePage.mainEntity does not resolve (on this page) to a named Person or Organization`);
         }
       }
@@ -241,6 +315,7 @@ export function selfTest() {
   const site = "https://example.test";
   const estate = new Set([`${site}/#estate-person`]);
   const fileExists = (p) => p.startsWith("/ok/");
+  const imageExists = (p) => p.startsWith("/ok/") && /\.(png|jpe?g|gif|webp|avif|svg)$/i.test(p);
   const org = () => ({ "@type": "Organization", "@id": `${site}/#organization`, name: "Example", url: site });
   const web = () => ({ "@type": "WebSite", "@id": `${site}/#website`, url: `${site}/`, publisher: { "@id": `${site}/#organization` } });
   const img = () => ({
@@ -261,7 +336,7 @@ export function selfTest() {
     dateModified: "2026-09-14T12:34:00-05:00",
   });
   const page = (rel, ...nodes) => ({ rel, blocks: [{ "@context": "https://schema.org", "@graph": nodes }] });
-  const run = (...pages) => checkPages(pages, { siteUrl: site, estateIds: estate, fileExists });
+  const run = (...pages) => checkPages(pages, { siteUrl: site, estateIds: estate, fileExists, imageExists });
   const problems = [];
   const expectRed = (name, failures, re) => {
     if (!failures.some((f) => re.test(f))) problems.push(`${name}: expected a failure matching ${re}, got [${failures.join(" | ")}]`);
@@ -309,13 +384,46 @@ export function selfTest() {
   expectRed("ProfilePage without mainEntity", run(page("p", org(), web(), person(), { ...profile(), mainEntity: undefined })), /has no mainEntity/);
   expectRed("ProfilePage whose mainEntity has no name", run(page("p", org(), web(), { ...person(), name: undefined }, profile())), /does not resolve .* to a named Person/);
   expectGreen("ProfilePage with an inline mainEntity", run(page("p", org(), web(), { ...profile(), mainEntity: { "@type": "Person", name: "Inline" } })));
+  // round-1 folds (2026-11-02): arrays, type sets, nested graphs, typed two-key nodes, the D2 scope
+  expectGreen("a creator typed with an array whose first entry is not a creator type", withImg({ creator: { "@type": ["Thing", "Organization"], name: "Example" } }));
+  expectGreen("an array of creators", withImg({ creator: [{ "@type": "Person", name: "A" }, { "@type": "Organization", name: "B" }] }));
+  expectRed("an array of creators with a nameless member", withImg({ creator: [{ "@type": "Person", name: "A" }, { "@type": "Person" }] }), /creator has no name/);
+  expectRed("one @id as [Person, Organization] and as Person", run(page("p", ...base(), { "@type": ["Person", "Organization"], "@id": `${site}/#person`, name: "Someone" })), /defined with different types/);
+  expectGreen("a typed reference to a page this site built (mainEntityOfPage)", run(page("b", ...base(), article({ mainEntityOfPage: { "@type": "WebPage", "@id": `${site}/ok/b/x` } }))));
+  expectRed("a typed reference to nothing", run(page("b", ...base(), article({ about: { "@type": "Thing", "@id": `${site}/#nowhere` } }))), /typed reference .* nothing describes it/);
+  expectGreen("a typed reference to a node described on another page", run(page("a", ...base(), { "@type": "AboutPage", "@id": `${site}/a#page`, about: { "@type": "BlogPosting", "@id": `${site}/b/x#article` } }), page("x", ...base(), article({}))));
+  expectRed("an ImageObject typed second in its @type array, without a creator", withImg({ "@type": ["CreativeWork", "ImageObject"], creator: undefined }), /names no creator/);
+  expectRed("a ProfilePage typed second in its @type array, with a calendar date", run(page("p", org(), web(), person(), { ...profile(), "@type": ["WebPage", "ProfilePage"], dateModified: "2026-09-14" })), /dateModified: "2026-09-14" must be a full/);
+  expectRed("a ProfilePage without dateModified", run(page("p", org(), web(), person(), { ...profile(), dateModified: undefined })), /has no dateModified/);
+  expectRed("a ProfilePage without dateCreated", run(page("p", org(), web(), person(), { ...profile(), dateCreated: undefined })), /has no dateCreated/);
+  expectRed("an ImageObject whose contentUrl is a page", withImg({ contentUrl: `${site}/ok/press` }), /not an image file/);
+  expectRed("an ImageObject whose contentUrl is a directory", withImg({ contentUrl: `${site}/ok/press/` }), /not an image file/);
+  expectRed("a license that is a label, not a URL", withImg({ license: "CC BY-ND 4.0" }), /license must be an absolute http/);
+  expectRed("an acquireLicensePage that is not a URL", withImg({ acquireLicensePage: true }), /acquireLicensePage must be an absolute http/);
+  expectRed("a prose validFrom", run(page("p", ...base(), { "@type": "Offer", "@id": `${site}/#offer`, validFrom: "soon" })), /validFrom: "soon" is not a valid ISO 8601/);
+  expectRed("a prose priceValidUntil", run(page("p", ...base(), { "@type": "Offer", "@id": `${site}/#offer`, priceValidUntil: "Dec 2026" })), /priceValidUntil: "Dec 2026" is not a valid ISO 8601/);
+  expectRed("a prose availabilityEnds", run(page("p", ...base(), { "@type": "Offer", "@id": `${site}/#offer`, availabilityEnds: "later" })), /availabilityEnds: "later" is not a valid ISO 8601/);
+  expectRed("a ProfilePage typed second in its @type array, without mainEntity", run(page("p", org(), web(), person(), { ...profile(), "@type": ["WebPage", "ProfilePage"], mainEntity: undefined })), /has no mainEntity/);
+  expectRed("an ImageObject inside a nested @graph is checked", run(page("p", ...base(), { "@type": "WebPage", "@id": `${site}/n`, "@graph": [{ ...img(), creator: undefined }] })), /names no creator/);
+  expectRed("a BlogPosting under Blog.blogPost with a calendar date", run(page("l", ...base(), { "@type": "Blog", "@id": `${site}/blog#blog`, blogPost: [{ "@type": "BlogPosting", "@id": `${site}/b/y#article`, headline: "y", datePublished: "2026-07-24" }] })), /datePublished: "2026-07-24" must be a full/);
+  expectGreen("a ProfilePage whose mainEntity is an array with one resolving member", run(page("p", org(), web(), person(), { ...profile(), mainEntity: [{ "@id": `${site}/#nowhere-typed`, "@type": "Thing" }, { "@id": `${site}/#person` }] })));
+  expectRed("a malformed percent-encoding in an on-site contentUrl", withImg({ contentUrl: `${site}/ok/%zz.jpg` }), /not a decodable URL/);
+  expectGreen("the live photo shape: creator + creditText, no license, no copyrightNotice", withImg({ license: undefined, acquireLicensePage: undefined }));
   // parse
   const bad = parseLdBlocks('<script type="application/ld+json">{bad</script>');
-  if (bad.errors.length !== 1 || bad.blocks.length) problems.push(`parse: an unparseable block must be one error (got ${JSON.stringify(bad)})`);
+  if (bad.errors.length !== 1 || bad.blocks.length || !/unparseable JSON-LD/.test(bad.errors[0])) problems.push(`parse: an unparseable block must be one 'unparseable' error (got ${JSON.stringify(bad)})`);
   const typeless = parseLdBlocks('<script type="application/ld+json">{"name":"x"}</script>');
   if (typeless.errors.length !== 1) problems.push("parse: a block with neither @graph nor @type must be an error");
   const good = parseLdBlocks('<script type="application/ld+json">{"@context":"https://schema.org","@graph":[]}</script>');
   if (good.errors.length || good.blocks.length !== 1) problems.push("parse: a @graph block must parse");
+  const drifted = parseLdBlocks("<script data-astro='x' type='application/ld+json'>{\"@context\":\"https://schema.org\",\"@graph\":[]}</script>");
+  if (drifted.errors.length || drifted.blocks.length !== 1) problems.push("parse: a tag with other attributes / single quotes must still parse");
+  const blind = parseLdBlocks('<div>ld+json</div><scriptx type="application/ld+json">{}</scriptx>');
+  if (blind.errors.length !== 1) problems.push("parse: a page mentioning ld+json with no recognized block must be an error");
+  // The GREEN-expectation cases above are self-pinning: a source edit that wrongly
+  // rejects a correct shape turns the case RED and fails this self-test (exit 3),
+  // which the mutants harness's base run would expose; the strictness mutants in
+  // check-structured-data.mutants.mjs prove that path for the main ones.
   return problems;
 }
 
@@ -338,17 +446,25 @@ function main() {
     const rel = f.slice(DIST.length + 1);
     const { blocks, errors } = parseLdBlocks(readFileSync(f, "utf8"));
     for (const e of errors) failures.push(`${rel}: ${e}`);
-    if (!blocks.length) skipped++;
+    if (!blocks.length) {
+      skipped++;
+      if (!errors.length && !NO_JSONLD_PAGES.has(rel)) failures.push(`${rel}: no JSON-LD block, and the page is not in NO_JSONLD_PAGES — a page dropped out of the scan`);
+    } else if (NO_JSONLD_PAGES.has(rel)) failures.push(`${rel}: listed in NO_JSONLD_PAGES but carries a graph — update the set`);
     pages.push({ rel, blocks });
   }
-  failures.push(...checkPages(pages, { siteUrl: SITE_URL, estateIds: ESTATE_IDS, fileExists: (p) => distHas(p) }));
-  const stats = { nodes: 0, images: 0, refs: 0 };
+  for (const rel of NO_JSONLD_PAGES) if (!existsSync(join(DIST, rel))) failures.push(`NO_JSONLD_PAGES names ${rel}, which did not build — update the set`);
+  const isFile = (p) => existsSync(p) && statSync(p).isFile();
+  failures.push(...checkPages(pages, { siteUrl: SITE_URL, estateIds: ESTATE_IDS, fileExists: (p) => distHas(p), imageExists: (p) => isFile(join(DIST, p.replace(/^\//, ""))) }));
+  const stats = { nodes: 0, images: 0, refs: 0, trusted: 0 };
   for (const p of pages)
     for (const [i, b] of p.blocks.entries())
       for (const { node } of collect(b, p.rel, i)) {
         stats.nodes++;
         if (typeOf(node) === "ImageObject") stats.images++;
-        if (isRef(node)) stats.refs++;
+        if (isRef(node)) {
+          stats.refs++;
+          if (ESTATE_IDS.has(node["@id"])) stats.trusted++;
+        }
       }
   if (failures.length) {
     console.error(`\ncheck-structured-data: ${failures.length} FAILURE(S)`);
@@ -356,7 +472,7 @@ function main() {
     process.exit(1);
   }
   console.log(
-    `check-structured-data: OK — ${htmlFiles.length} pages (${skipped} without JSON-LD), ${stats.nodes} nodes, ${stats.images} ImageObjects, ${stats.refs} references resolve; dates ISO 8601, creators named`,
+    `check-structured-data: OK — ${htmlFiles.length} pages (${skipped} without JSON-LD), ${stats.nodes} nodes, ${stats.images} ImageObjects, ${stats.refs} references resolve (${stats.trusted} on the estate's trusted identities, by name); dates ISO 8601, creators named`,
   );
 }
 

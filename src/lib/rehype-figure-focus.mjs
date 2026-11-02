@@ -134,6 +134,9 @@ export default function rehypeFigureFocus() {
           },
           children: [],
         });
+        // A markdown image is a RASTER: its download is the file itself, so no
+        // data-png-download here — Figure.astro carries the PNG twin for house
+        // SVG figures only, and the AIO gate pins that split (2026-11-02).
         const open = {
           type: "element",
           tagName: "a",
